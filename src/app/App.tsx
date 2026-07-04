@@ -24,6 +24,7 @@ import { CareerPrescription } from "./components/CareerPrescription";
 import { CareerEvidence } from "./components/CareerEvidence";
 import { UserProfile } from "./components/UserProfile";
 import { Sidebar } from "./components/Sidebar";
+import { ApplicationPrep } from "./components/ApplicationPrep";
 
 /* MARKER-MAKE-KIT-INVOKED */
 
@@ -33,6 +34,7 @@ type Page =
   | "command"
   | "dna"
   | "jobs"
+  | "apply-prep"
   | "coach"
   | "offers"
   | "portfolio"
@@ -57,6 +59,7 @@ const pageLabels: Record<Page, string> = {
   command:           "Command Center",
   dna:              "Career DNA",
   jobs:             "Job Match Tracker",
+  "apply-prep":     "Application Preparation",
   coach:            "Interview Coach",
   offers:           "Offer Decision AI",
   portfolio:        "Portfolio Builder",
@@ -79,7 +82,7 @@ const pageLabels: Record<Page, string> = {
 };
 
 const allPages: Page[] = [
-  "command", "dna", "jobs", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
+  "command", "dna", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
   "prescription", "evidence", "profile", "employer", "emp-matching", "emp-sla", "emp-reengage",
   "emp-resilience", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
 ];
@@ -88,6 +91,7 @@ const pageRole: Record<Page, Role> = {
   command: "candidate",
   dna: "candidate",
   jobs: "candidate",
+  "apply-prep": "candidate",
   coach: "candidate",
   offers: "candidate",
   portfolio: "candidate",
@@ -125,7 +129,8 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>("landing");
   const [page, setPage]         = useState<Page>("command");
   const [role, setRole]         = useState<Role>("candidate");
-  const [selectedJob, setSelectedJob] = useState<{company: string; position: string} | null>(null);
+  const [prepJobId, setPrepJobId] = useState<string | null>(null);
+  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set(["maybank-da", "grab-ae"]));
 
   const navigate = (target: string) => {
     if (target === "landing")    { setAppState("landing");    return; }
@@ -138,9 +143,13 @@ export default function App() {
     }
   };
 
-  const navigateWithJob = (company: string, position: string) => {
-    setSelectedJob({ company, position });
-    navigate("command");
+  const handlePrepareApp = (jobId: string) => {
+    setPrepJobId(jobId);
+    setPage("apply-prep");
+  };
+
+  const handleApply = (jobId: string) => {
+    setAppliedJobs(prev => new Set([...prev, jobId]));
   };
 
   const switchRole = (nextRole: Role) => {
@@ -213,9 +222,10 @@ export default function App() {
         {/* Page */}
         <div className="flex-1 overflow-hidden flex flex-col">
           {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
-          {page === "command"         && <CareerCommandCenter onNavigate={navigate} selectedJob={selectedJob} onClearJob={() => setSelectedJob(null)} />}
+          {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
           {page === "dna"             && <CareerDna />}
-          {page === "jobs"            && <JobMatchTracker onPrepare={navigateWithJob} />}
+          {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={() => navigate("offers")} appliedJobs={appliedJobs} />}
+          {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("offers")} />}
           {page === "coach"           && <InterviewCoach />}
           {page === "offers"          && <OfferDecisionDashboard />}
           {page === "portfolio"       && <PortfolioBuilder />}

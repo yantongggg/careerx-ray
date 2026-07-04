@@ -7,8 +7,6 @@ import { SkillGraph } from "./SkillGraph";
 
 interface CareerCommandCenterProps {
   onNavigate: (page: string) => void;
-  selectedJob?: { company: string; position: string } | null;
-  onClearJob?: () => void;
 }
 
 const nextActions = [
@@ -39,7 +37,7 @@ const candidateFeatures = [
   { label: "Your Own Track", desc: "Wildcard path builder for founder, freelancer, or non-linear routes.", page: "dna", icon: Sparkles },
 ];
 
-export function CareerCommandCenter({ onNavigate, selectedJob, onClearJob }: CareerCommandCenterProps) {
+export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">
@@ -150,19 +148,7 @@ export function CareerCommandCenter({ onNavigate, selectedJob, onClearJob }: Car
           </div>
         </section>
 
-        {selectedJob && (
-          <div className="bg-[#16284B] text-white rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold">Preparing for: {selectedJob.position}</p>
-              <p className="text-xs text-slate-300">Showing skills relevant to this position at {selectedJob.company}</p>
-            </div>
-            <button onClick={onClearJob} className="text-xs text-slate-300 hover:text-white border border-white/20 px-3 py-1.5 rounded-lg">
-              Show All Companies
-            </button>
-          </div>
-        )}
-
-        <SkillGraph selectedJob={selectedJob} onClearJob={onClearJob} />
+        <SkillGraph />
 
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {candidateFeatures.map(feature => (
