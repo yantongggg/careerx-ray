@@ -1,0 +1,126 @@
+import { Award, BarChart3, Briefcase, Building2, CheckCircle, Clock, Shield, Sparkles, Users } from "lucide-react";
+
+const pipeline = [
+  { stage: "Applied", people: ["Aisyah · 88%", "Daniel · 82%", "Wei Lin · 77%"] },
+  { stage: "Screening", people: ["Jordan · 91%", "Priya · 85%"] },
+  { stage: "Interview", people: ["Faiz · 89%", "Mei Chen · 84%"] },
+  { stage: "Offer", people: ["Nadia · 93%"] },
+];
+
+const kpis = [
+  { label: "Pipeline health", value: "82%", icon: BarChart3 },
+  { label: "Avg time to hire", value: "19d", icon: Clock },
+  { label: "Acceptance rate", value: "88%", icon: CheckCircle },
+  { label: "Candidate engagement", value: "74%", icon: Users },
+];
+
+export function EmployerDashboard() {
+  return (
+    <div className="flex-1 overflow-y-auto bg-muted">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">
+        <div className="bg-white border border-border rounded-2xl p-6 shadow-sm">
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+                <Building2 size={22} className="text-primary" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h1 className="text-2xl font-bold text-foreground tracking-tight">Maybank Employer Trust Hub</h1>
+                  <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-full font-semibold">
+                    <Shield size={11} /> Verified Employer
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full font-semibold">
+                    <Award size={11} /> Graduate Choice Partner
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+                  Employers do more than post jobs. They prove trust, manage hiring performance, and understand which talent signals are converting.
+                </p>
+              </div>
+            </div>
+            <button className="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700">
+              <Briefcase size={14} /> Post verified role
+            </button>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpis.map(kpi => (
+            <div key={kpi.label} className="bg-white border border-border rounded-xl p-5 shadow-sm">
+              <kpi.icon size={17} className="text-muted-foreground" />
+              <p className="text-2xl font-bold text-foreground mt-3">{kpi.value}</p>
+              <p className="text-xs text-muted-foreground mt-1">{kpi.label}</p>
+            </div>
+          ))}
+        </div>
+
+        <section className="bg-white border border-border rounded-xl shadow-sm p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="font-semibold text-foreground">Pipeline kanban</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Candidate cards move through hiring stages with fit scores attached.</p>
+            </div>
+            <span className="text-xs bg-blue-50 text-primary border border-blue-100 px-2.5 py-1 rounded-full font-semibold">21 active candidates</span>
+          </div>
+          <div className="grid md:grid-cols-4 gap-4">
+            {pipeline.map(col => (
+              <div key={col.stage} className="bg-muted/50 border border-border rounded-xl p-3 min-h-[190px]">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{col.stage}</p>
+                  <span className="text-xs text-muted-foreground">{col.people.length}</span>
+                </div>
+                <div className="space-y-2">
+                  {col.people.map(person => (
+                    <div key={person} className="bg-white border border-border rounded-lg p-3 shadow-sm">
+                      <p className="text-sm font-semibold text-foreground">{person.split(" · ")[0]}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">CareerX-Ray fit {person.split(" · ")[1]}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          <section className="bg-white border border-border rounded-xl shadow-sm p-5">
+            <h2 className="font-semibold text-foreground mb-4">Employer brand trust signals</h2>
+            <div className="space-y-3">
+              {[
+                ["Salary transparency", "Roles with salary bands get 31% more strong applicants"],
+                ["Graduate engagement", "UM and APU students saved Maybank roles 248 times this month"],
+                ["Candidate response time", "Median 1.8 days, better than ecosystem benchmark"],
+              ].map(([title, desc]) => (
+                <div key={title} className="flex items-start gap-3 p-3 border border-border rounded-xl">
+                  <CheckCircle size={15} className="text-emerald-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="bg-slate-950 text-white rounded-xl p-5">
+            <Sparkles size={18} className="text-blue-300 mb-3" />
+            <h2 className="font-bold">Career fair performance</h2>
+            <p className="text-sm text-slate-300 leading-relaxed mt-2">Maybank&apos;s booth converted 42% of QR scans into profile follows. Top student skill gaps were cloud, SQL case practice, and stakeholder storytelling.</p>
+            <div className="grid grid-cols-3 gap-3 mt-5">
+              {[
+                ["412", "booth scans"],
+                ["173", "follows"],
+                ["38", "applications"],
+              ].map(([value, label]) => (
+                <div key={label} className="bg-white/10 border border-white/10 rounded-xl p-3">
+                  <p className="text-xl font-bold">{value}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
