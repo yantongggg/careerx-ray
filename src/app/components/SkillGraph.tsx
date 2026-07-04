@@ -1,429 +1,486 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Maximize2, Minimize2, RotateCcw } from "lucide-react";
 
-/* ── Data ── */
+/* ── Solar system data ── */
 
-interface GraphNode {
+interface Planet {
   id: string;
   label: string;
-  type: "person" | "skill" | "company" | "position" | "gap";
-  category?: string;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  color: string;
+  type: "sun" | "planet" | "moon" | "station" | "asteroid";
+  orbit: number;       // distance from sun
+  angle: number;       // current angle in radians
+  speed: number;       // rotation speed
+  r: number;           // radius
+  colors: string[];    // gradient stops
   glow: string;
+  ringColor?: string;  // Saturn-style ring
+  parent?: string;     // orbit around parent instead of sun
+  proficiency?: number;
 }
 
-interface GraphLink {
-  source: string;
-  target: string;
+interface Link {
+  from: string;
+  to: string;
   strength: number;
   dashed?: boolean;
 }
 
-const COLORS = {
-  person:    { fill: "#D9C18A", glow: "rgba(217,193,138,0.5)" },
-  technical: { fill: "#1B9E8B", glow: "rgba(27,158,139,0.4)" },
-  data:      { fill: "#2E86D6", glow: "rgba(46,134,214,0.4)" },
-  soft:      { fill: "#D97740", glow: "rgba(217,119,64,0.4)" },
-  company:   { fill: "#16284B", glow: "rgba(22,40,75,0.4)" },
-  position:  { fill: "#8A7038", glow: "rgba(138,112,56,0.4)" },
-  gap:       { fill: "#DC3545", glow: "rgba(220,53,69,0.35)" },
-};
+const TAU = Math.PI * 2;
 
-function makeNodes(): GraphNode[] {
-  const skillColor = (cat: string) => {
-    if (cat === "data") return COLORS.data;
-    if (cat === "soft") return COLORS.soft;
-    return COLORS.technical;
-  };
-
+function makePlanets(): Planet[] {
   return [
-    { id: "me", label: "Jordan Kim", type: "person", r: 28, color: COLORS.person.fill, glow: COLORS.person.glow, category: "person", x: 0, y: 0, vx: 0, vy: 0 },
+    // ☀ SUN — the candidate
+    { id: "me", label: "Jordan Kim", type: "sun", orbit: 0, angle: 0, speed: 0, r: 38,
+      colors: ["#FFE082", "#FFB300", "#FF8F00", "#E65100"], glow: "rgba(255,179,0,0.6)" },
 
-    { id: "python",    label: "Python",         type: "skill", category: "technical", r: 16, ...pos(), ...skillColor("technical") },
-    { id: "sql",       label: "SQL",            type: "skill", category: "data",      r: 18, ...pos(), ...skillColor("data") },
-    { id: "tableau",   label: "Tableau",        type: "skill", category: "data",      r: 14, ...pos(), ...skillColor("data") },
-    { id: "powerbi",   label: "Power BI",       type: "skill", category: "data",      r: 13, ...pos(), ...skillColor("data") },
-    { id: "dbt",       label: "dbt",            type: "skill", category: "technical", r: 12, ...pos(), ...skillColor("technical") },
-    { id: "bigquery",  label: "BigQuery",       type: "skill", category: "data",      r: 12, ...pos(), ...skillColor("data") },
-    { id: "storytell", label: "Storytelling",    type: "skill", category: "soft",      r: 14, ...pos(), ...skillColor("soft") },
-    { id: "teamwork",  label: "Teamwork",       type: "skill", category: "soft",      r: 12, ...pos(), ...skillColor("soft") },
-    { id: "leadership",label: "Leadership",     type: "skill", category: "soft",      r: 11, ...pos(), ...skillColor("soft") },
-    { id: "excel",     label: "Excel",          type: "skill", category: "data",      r: 11, ...pos(), ...skillColor("data") },
+    // 🪐 PLANETS — core skills (orbiting the sun)
+    { id: "sql",       label: "SQL",          type: "planet", orbit: 105, angle: 0.3,  speed: 0.003,  r: 18, proficiency: 95,
+      colors: ["#64B5F6", "#1565C0", "#0D47A1"], glow: "rgba(100,181,246,0.5)" },
+    { id: "python",    label: "Python",       type: "planet", orbit: 105, angle: 3.5,  speed: 0.0028, r: 16, proficiency: 90,
+      colors: ["#4DB6AC", "#00897B", "#004D40"], glow: "rgba(77,182,172,0.5)" },
+    { id: "tableau",   label: "Tableau",      type: "planet", orbit: 155, angle: 1.1,  speed: 0.002,  r: 14, proficiency: 80,
+      colors: ["#FF8A65", "#E64A19", "#BF360C"], glow: "rgba(255,138,101,0.45)" },
+    { id: "storytell", label: "Storytelling",  type: "planet", orbit: 155, angle: 4.2,  speed: 0.0022, r: 15, proficiency: 85,
+      colors: ["#CE93D8", "#8E24AA", "#4A148C"], glow: "rgba(206,147,216,0.45)",
+      ringColor: "rgba(206,147,216,0.3)" },
+    { id: "powerbi",   label: "Power BI",     type: "planet", orbit: 200, angle: 2.0,  speed: 0.0015, r: 12, proficiency: 70,
+      colors: ["#FFF176", "#F9A825", "#F57F17"], glow: "rgba(255,241,118,0.4)" },
+    { id: "dbt",       label: "dbt",          type: "planet", orbit: 200, angle: 5.1,  speed: 0.0017, r: 11, proficiency: 60,
+      colors: ["#80DEEA", "#00ACC1", "#006064"], glow: "rgba(128,222,234,0.4)" },
+    { id: "bigquery",  label: "BigQuery",     type: "planet", orbit: 240, angle: 0.8,  speed: 0.0012, r: 11, proficiency: 60,
+      colors: ["#A5D6A7", "#2E7D32", "#1B5E20"], glow: "rgba(165,214,167,0.35)" },
+    { id: "teamwork",  label: "Teamwork",     type: "planet", orbit: 240, angle: 3.9,  speed: 0.0013, r: 10, proficiency: 70,
+      colors: ["#FFAB91", "#D84315", "#BF360C"], glow: "rgba(255,171,145,0.35)" },
+    { id: "excel",     label: "Excel",        type: "planet", orbit: 275, angle: 1.5,  speed: 0.001,  r: 9, proficiency: 70,
+      colors: ["#C5E1A5", "#558B2F", "#33691E"], glow: "rgba(197,225,165,0.3)" },
+    { id: "leadership",label: "Leadership",   type: "planet", orbit: 275, angle: 4.6,  speed: 0.0011, r: 9, proficiency: 50,
+      colors: ["#EF9A9A", "#C62828", "#B71C1C"], glow: "rgba(239,154,154,0.3)" },
 
-    // Gap skills
-    { id: "aws",       label: "AWS",            type: "gap", category: "gap", r: 14, ...pos(), color: COLORS.gap.fill, glow: COLORS.gap.glow },
-    { id: "docker",    label: "Docker",         type: "gap", category: "gap", r: 11, ...pos(), color: COLORS.gap.fill, glow: COLORS.gap.glow },
-    { id: "mlops",     label: "MLOps",          type: "gap", category: "gap", r: 12, ...pos(), color: COLORS.gap.fill, glow: COLORS.gap.glow },
+    // 🌙 MOONS — positions (orbit their parent skill planet)
+    { id: "p-da",  label: "Data Analyst",      type: "moon", orbit: 30, angle: 0.5,  speed: 0.008,  r: 7, parent: "sql",
+      colors: ["#B0BEC5", "#546E7A", "#37474F"], glow: "rgba(176,190,197,0.4)" },
+    { id: "p-ae",  label: "Analytics Eng.",     type: "moon", orbit: 28, angle: 2.1,  speed: 0.009,  r: 6, parent: "dbt",
+      colors: ["#B0BEC5", "#546E7A", "#37474F"], glow: "rgba(176,190,197,0.4)" },
+    { id: "p-bi",  label: "BI Associate",      type: "moon", orbit: 26, angle: 3.8,  speed: 0.01,   r: 6, parent: "powerbi",
+      colors: ["#B0BEC5", "#546E7A", "#37474F"], glow: "rgba(176,190,197,0.4)" },
+    { id: "p-mle", label: "ML Engineer",       type: "moon", orbit: 28, angle: 1.0,  speed: 0.007,  r: 6, parent: "python",
+      colors: ["#B0BEC5", "#546E7A", "#37474F"], glow: "rgba(176,190,197,0.4)" },
+    { id: "p-pm",  label: "Product Analyst",   type: "moon", orbit: 28, angle: 4.5,  speed: 0.008,  r: 6, parent: "storytell",
+      colors: ["#B0BEC5", "#546E7A", "#37474F"], glow: "rgba(176,190,197,0.4)" },
 
-    // Companies
-    { id: "maybank",   label: "Maybank",        type: "company", r: 20, ...pos(), color: COLORS.company.fill, glow: COLORS.company.glow },
-    { id: "grab",      label: "Grab",           type: "company", r: 18, ...pos(), color: COLORS.company.fill, glow: COLORS.company.glow },
-    { id: "shopee",    label: "Shopee",         type: "company", r: 17, ...pos(), color: COLORS.company.fill, glow: COLORS.company.glow },
-    { id: "petronas",  label: "Petronas Digital", type: "company", r: 16, ...pos(), color: COLORS.company.fill, glow: COLORS.company.glow },
-    { id: "deloitte",  label: "Deloitte",       type: "company", r: 15, ...pos(), color: COLORS.company.fill, glow: COLORS.company.glow },
+    // 🛰 STATIONS — companies (far orbit)
+    { id: "maybank",  label: "Maybank",         type: "station", orbit: 330, angle: 0.6,  speed: 0.0006, r: 12,
+      colors: ["#FFD54F", "#FF8F00", "#E65100"], glow: "rgba(255,213,79,0.35)" },
+    { id: "grab",     label: "Grab",            type: "station", orbit: 330, angle: 2.0,  speed: 0.0007, r: 11,
+      colors: ["#81C784", "#2E7D32", "#1B5E20"], glow: "rgba(129,199,132,0.35)" },
+    { id: "shopee",   label: "Shopee",          type: "station", orbit: 330, angle: 3.4,  speed: 0.0005, r: 11,
+      colors: ["#FF8A65", "#D84315", "#BF360C"], glow: "rgba(255,138,101,0.35)" },
+    { id: "petronas", label: "Petronas",        type: "station", orbit: 330, angle: 4.8,  speed: 0.0006, r: 10,
+      colors: ["#4FC3F7", "#0277BD", "#01579B"], glow: "rgba(79,195,247,0.35)" },
+    { id: "deloitte", label: "Deloitte",        type: "station", orbit: 330, angle: 5.8,  speed: 0.0005, r: 10,
+      colors: ["#A5D6A7", "#388E3C", "#1B5E20"], glow: "rgba(165,214,167,0.3)" },
 
-    // Positions
-    { id: "p-da",      label: "Data Analyst",       type: "position", r: 14, ...pos(), color: COLORS.position.fill, glow: COLORS.position.glow },
-    { id: "p-ae",      label: "Analytics Engineer",  type: "position", r: 13, ...pos(), color: COLORS.position.fill, glow: COLORS.position.glow },
-    { id: "p-bi",      label: "BI Associate",        type: "position", r: 12, ...pos(), color: COLORS.position.fill, glow: COLORS.position.glow },
-    { id: "p-mle",     label: "ML Engineer",         type: "position", r: 12, ...pos(), color: COLORS.position.fill, glow: COLORS.position.glow },
-    { id: "p-pm",      label: "Product Analyst",     type: "position", r: 12, ...pos(), color: COLORS.position.fill, glow: COLORS.position.glow },
+    // ☄ ASTEROIDS — skill gaps (scattered right side)
+    { id: "aws",    label: "AWS",     type: "asteroid", orbit: 0, angle: 0, speed: 0, r: 10,
+      colors: ["#EF5350", "#C62828", "#B71C1C"], glow: "rgba(239,83,80,0.5)" },
+    { id: "docker", label: "Docker",  type: "asteroid", orbit: 0, angle: 0, speed: 0, r: 8,
+      colors: ["#EF5350", "#C62828", "#B71C1C"], glow: "rgba(239,83,80,0.45)" },
+    { id: "mlops",  label: "MLOps",   type: "asteroid", orbit: 0, angle: 0, speed: 0, r: 9,
+      colors: ["#EF5350", "#C62828", "#B71C1C"], glow: "rgba(239,83,80,0.45)" },
+    { id: "k8s",    label: "Kubernetes", type: "asteroid", orbit: 0, angle: 0, speed: 0, r: 7,
+      colors: ["#EF5350", "#C62828", "#B71C1C"], glow: "rgba(239,83,80,0.4)" },
+    { id: "spark",  label: "Spark",   type: "asteroid", orbit: 0, angle: 0, speed: 0, r: 8,
+      colors: ["#EF5350", "#C62828", "#B71C1C"], glow: "rgba(239,83,80,0.4)" },
   ];
 }
 
-function pos() { return { x: (Math.random() - 0.5) * 500, y: (Math.random() - 0.5) * 400, vx: 0, vy: 0 }; }
-
-const LINKS: GraphLink[] = [
-  // Person → skills
-  { source: "me", target: "python", strength: 0.9 },
-  { source: "me", target: "sql", strength: 1 },
-  { source: "me", target: "tableau", strength: 0.8 },
-  { source: "me", target: "powerbi", strength: 0.7 },
-  { source: "me", target: "dbt", strength: 0.6 },
-  { source: "me", target: "bigquery", strength: 0.6 },
-  { source: "me", target: "storytell", strength: 0.85 },
-  { source: "me", target: "teamwork", strength: 0.7 },
-  { source: "me", target: "leadership", strength: 0.5 },
-  { source: "me", target: "excel", strength: 0.7 },
-  // Person → gaps (dashed)
-  { source: "me", target: "aws", strength: 0.3, dashed: true },
-  { source: "me", target: "docker", strength: 0.2, dashed: true },
-  { source: "me", target: "mlops", strength: 0.2, dashed: true },
-  // Skills → positions
-  { source: "sql", target: "p-da", strength: 0.9 },
-  { source: "python", target: "p-da", strength: 0.7 },
-  { source: "tableau", target: "p-da", strength: 0.8 },
-  { source: "sql", target: "p-ae", strength: 0.8 },
-  { source: "dbt", target: "p-ae", strength: 0.9 },
-  { source: "python", target: "p-ae", strength: 0.8 },
-  { source: "bigquery", target: "p-ae", strength: 0.7 },
-  { source: "powerbi", target: "p-bi", strength: 0.8 },
-  { source: "sql", target: "p-bi", strength: 0.7 },
-  { source: "excel", target: "p-bi", strength: 0.6 },
-  { source: "python", target: "p-mle", strength: 0.9 },
-  { source: "aws", target: "p-mle", strength: 0.8, dashed: true },
-  { source: "mlops", target: "p-mle", strength: 0.9, dashed: true },
-  { source: "docker", target: "p-mle", strength: 0.7, dashed: true },
-  { source: "sql", target: "p-pm", strength: 0.6 },
-  { source: "storytell", target: "p-pm", strength: 0.9 },
-  { source: "tableau", target: "p-pm", strength: 0.7 },
-  // Positions → companies
-  { source: "p-da", target: "maybank", strength: 0.9 },
-  { source: "p-da", target: "petronas", strength: 0.6 },
-  { source: "p-ae", target: "grab", strength: 0.9 },
-  { source: "p-ae", target: "deloitte", strength: 0.6 },
-  { source: "p-bi", target: "shopee", strength: 0.8 },
-  { source: "p-bi", target: "maybank", strength: 0.5 },
-  { source: "p-mle", target: "grab", strength: 0.7 },
-  { source: "p-mle", target: "petronas", strength: 0.7 },
-  { source: "p-pm", target: "shopee", strength: 0.7 },
-  { source: "p-pm", target: "deloitte", strength: 0.7 },
+const LINKS: Link[] = [
+  { from: "sql", to: "p-da", strength: 0.95 },
+  { from: "python", to: "p-da", strength: 0.7 },
+  { from: "tableau", to: "p-da", strength: 0.8 },
+  { from: "dbt", to: "p-ae", strength: 0.9 },
+  { from: "sql", to: "p-ae", strength: 0.8 },
+  { from: "bigquery", to: "p-ae", strength: 0.7 },
+  { from: "powerbi", to: "p-bi", strength: 0.85 },
+  { from: "excel", to: "p-bi", strength: 0.6 },
+  { from: "python", to: "p-mle", strength: 0.9 },
+  { from: "storytell", to: "p-pm", strength: 0.9 },
+  { from: "tableau", to: "p-pm", strength: 0.7 },
+  { from: "p-da", to: "maybank", strength: 0.9 },
+  { from: "p-da", to: "petronas", strength: 0.6 },
+  { from: "p-ae", to: "grab", strength: 0.85 },
+  { from: "p-ae", to: "deloitte", strength: 0.6 },
+  { from: "p-bi", to: "shopee", strength: 0.8 },
+  { from: "p-bi", to: "maybank", strength: 0.5 },
+  { from: "p-mle", to: "grab", strength: 0.7 },
+  { from: "p-mle", to: "petronas", strength: 0.65 },
+  { from: "p-pm", to: "shopee", strength: 0.7 },
+  { from: "p-pm", to: "deloitte", strength: 0.65 },
+  // Gap links (dashed)
+  { from: "aws", to: "p-mle", strength: 0.8, dashed: true },
+  { from: "docker", to: "p-mle", strength: 0.7, dashed: true },
+  { from: "mlops", to: "p-mle", strength: 0.9, dashed: true },
+  { from: "k8s", to: "p-ae", strength: 0.5, dashed: true },
+  { from: "spark", to: "p-da", strength: 0.4, dashed: true },
 ];
 
-/* ── Force simulation ── */
-
-function simulate(nodes: GraphNode[], links: GraphLink[], W: number, H: number) {
-  const map = new Map(nodes.map(n => [n.id, n]));
-
-  // Center gravity
-  for (const n of nodes) {
-    n.vx += (W / 2 - n.x) * 0.003;
-    n.vy += (H / 2 - n.y) * 0.003;
+/* ── Stars background ── */
+function makeStars(count: number, W: number, H: number) {
+  const stars: { x: number; y: number; r: number; o: number }[] = [];
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.2 + 0.3,
+      o: Math.random() * 0.6 + 0.2,
+    });
   }
-
-  // Link forces
-  for (const l of links) {
-    const s = map.get(l.source);
-    const t = map.get(l.target);
-    if (!s || !t) continue;
-    const dx = t.x - s.x;
-    const dy = t.y - s.y;
-    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-    const targetDist = (s.r + t.r) * 3.5;
-    const force = (dist - targetDist) * 0.004 * l.strength;
-    const fx = (dx / dist) * force;
-    const fy = (dy / dist) * force;
-    s.vx += fx;
-    s.vy += fy;
-    t.vx -= fx;
-    t.vy -= fy;
-  }
-
-  // Repulsion
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const a = nodes[i], b = nodes[j];
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const distSq = dx * dx + dy * dy || 1;
-      const minDist = (a.r + b.r) * 2.5;
-      if (distSq < minDist * minDist * 4) {
-        const dist = Math.sqrt(distSq);
-        const force = Math.min(800 / distSq, 2);
-        const fx = (dx / dist) * force;
-        const fy = (dy / dist) * force;
-        a.vx -= fx;
-        a.vy -= fy;
-        b.vx += fx;
-        b.vy += fy;
-      }
-    }
-  }
-
-  // Damping & apply
-  for (const n of nodes) {
-    if ((n as any)._dragging) continue;
-    n.vx *= 0.85;
-    n.vy *= 0.85;
-    n.x += n.vx;
-    n.y += n.vy;
-    n.x = Math.max(n.r + 10, Math.min(W - n.r - 10, n.x));
-    n.y = Math.max(n.r + 10, Math.min(H - n.r - 10, n.y));
-  }
+  return stars;
 }
 
 /* ── Component ── */
 
 export function SkillGraph() {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
-  const [zoom, setZoom] = useState(1);
   const [hovered, setHovered] = useState<string | null>(null);
-  const [dragging, setDragging] = useState<string | null>(null);
-  const [nodes, setNodes] = useState<GraphNode[]>(() => makeNodes());
-  const nodesRef = useRef(nodes);
-  nodesRef.current = nodes;
-  const animRef = useRef<number>(0);
-  const [tick, setTick] = useState(0);
+  const [planets] = useState<Planet[]>(() => makePlanets());
+  const planetsRef = useRef(planets);
+  const [, setTick] = useState(0);
+  const animRef = useRef(0);
 
-  const W = expanded ? 1100 : 780;
-  const H = expanded ? 620 : 420;
+  const W = expanded ? 1200 : 860;
+  const H = expanded ? 600 : 460;
+  const CX = W * 0.38;
+  const CY = H * 0.5;
 
+  const starsRef = useRef(makeStars(200, W, H));
+
+  // Asteroid positions (fixed, scattered on right)
+  const asteroidPositions = useRef<Map<string, { x: number; y: number; twinkle: number }>>(new Map());
+  useEffect(() => {
+    const asteroids = planets.filter(p => p.type === "asteroid");
+    const map = new Map<string, { x: number; y: number; twinkle: number }>();
+    asteroids.forEach((a, i) => {
+      map.set(a.id, {
+        x: W * 0.72 + (i % 3) * 55 + (Math.random() - 0.5) * 40,
+        y: H * 0.2 + i * 65 + (Math.random() - 0.5) * 30,
+        twinkle: Math.random() * TAU,
+      });
+    });
+    asteroidPositions.current = map;
+  }, [W, H, planets]);
+
+  // Animation loop
   useEffect(() => {
     let running = true;
     const loop = () => {
       if (!running) return;
-      simulate(nodesRef.current, LINKS, W, H);
+      for (const p of planetsRef.current) {
+        if (p.speed > 0) p.angle += p.speed;
+      }
       setTick(t => t + 1);
       animRef.current = requestAnimationFrame(loop);
     };
     animRef.current = requestAnimationFrame(loop);
     return () => { running = false; cancelAnimationFrame(animRef.current); };
-  }, [W, H]);
+  }, []);
 
-  const getNode = useCallback((id: string) => nodesRef.current.find(n => n.id === id), []);
-
-  const handlePointerDown = useCallback((id: string, e: React.PointerEvent) => {
-    e.preventDefault();
-    (e.target as Element).setPointerCapture(e.pointerId);
-    const node = getNode(id);
-    if (node) (node as any)._dragging = true;
-    setDragging(id);
-  }, [getNode]);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging) return;
-    const node = getNode(dragging);
-    if (!node) return;
-    const svg = (e.target as Element).closest("svg");
-    if (!svg) return;
-    const rect = svg.getBoundingClientRect();
-    node.x = (e.clientX - rect.left) / zoom;
-    node.y = (e.clientY - rect.top) / zoom;
-    node.vx = 0;
-    node.vy = 0;
-  }, [dragging, zoom, getNode]);
-
-  const handlePointerUp = useCallback(() => {
-    if (dragging) {
-      const node = getNode(dragging);
-      if (node) (node as any)._dragging = false;
+  const getPos = useCallback((p: Planet): { x: number; y: number } => {
+    if (p.type === "sun") return { x: CX, y: CY };
+    if (p.type === "asteroid") {
+      const ap = asteroidPositions.current.get(p.id);
+      return ap ? { x: ap.x, y: ap.y } : { x: W * 0.8, y: H * 0.5 };
     }
-    setDragging(null);
-  }, [dragging, getNode]);
+    if (p.parent) {
+      const parentPlanet = planetsRef.current.find(pp => pp.id === p.parent);
+      if (parentPlanet) {
+        const pp = getPos(parentPlanet);
+        return {
+          x: pp.x + Math.cos(p.angle) * p.orbit,
+          y: pp.y + Math.sin(p.angle) * p.orbit * 0.45,
+        };
+      }
+    }
+    return {
+      x: CX + Math.cos(p.angle) * p.orbit,
+      y: CY + Math.sin(p.angle) * p.orbit * 0.45,
+    };
+  }, [CX, CY, W, H]);
 
-  const resetGraph = () => {
-    const fresh = makeNodes();
-    nodesRef.current = fresh;
-    setNodes(fresh);
-    setZoom(1);
-    setHovered(null);
-  };
-
-  const map = new Map(nodes.map(n => [n.id, n]));
+  const map = new Map(planets.map(p => [p.id, p]));
 
   const connectedTo = (id: string) => {
     const set = new Set<string>();
     for (const l of LINKS) {
-      if (l.source === id) set.add(l.target);
-      if (l.target === id) set.add(l.source);
+      if (l.from === id) set.add(l.to);
+      if (l.to === id) set.add(l.from);
     }
+    // Also add sun connection for planets
+    const p = map.get(id);
+    if (p?.type === "planet") set.add("me");
+    if (id === "me") planets.filter(pp => pp.type === "planet").forEach(pp => set.add(pp.id));
     return set;
   };
 
   const hoveredConns = hovered ? connectedTo(hovered) : null;
   const isHighlighted = (id: string) => !hovered || id === hovered || (hoveredConns && hoveredConns.has(id));
-  const isLinkHighlighted = (l: GraphLink) => !hovered || l.source === hovered || l.target === hovered;
 
-  const hoveredNode = hovered ? map.get(hovered) : null;
-  const hoveredLinks = hovered ? LINKS.filter(l => l.source === hovered || l.target === hovered) : [];
+  const hoveredPlanet = hovered ? map.get(hovered) : null;
+  const hoveredLinks = hovered ? LINKS.filter(l => l.from === hovered || l.to === hovered) : [];
 
-  // Stats
-  const totalSkills = nodes.filter(n => n.type === "skill").length;
-  const totalGaps = nodes.filter(n => n.type === "gap").length;
-  const totalPositions = nodes.filter(n => n.type === "position").length;
-  const matchedPositions = nodes.filter(n => n.type === "position").filter(p => {
-    const inLinks = LINKS.filter(l => l.target === p.id && !l.dashed);
-    return inLinks.length > 0;
-  }).length;
+  const totalSkills = planets.filter(p => p.type === "planet").length;
+  const totalGaps = planets.filter(p => p.type === "asteroid").length;
+  const totalPositions = planets.filter(p => p.type === "moon").length;
+
+  const resetGraph = () => {
+    for (const p of planetsRef.current) {
+      p.angle = makePlanets().find(pp => pp.id === p.id)?.angle || 0;
+    }
+    setHovered(null);
+  };
+
+  const orbits = [105, 155, 200, 240, 275, 330];
 
   return (
-    <div className={`bg-white border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${expanded ? "col-span-full" : ""}`}>
+    <div className={`border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-lg overflow-hidden transition-all ${expanded ? "col-span-full" : ""}`}
+      style={{ background: "linear-gradient(135deg, #0a0e1a 0%, #0f1628 40%, #111827 100%)" }}>
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-[rgba(255,255,255,0.08)] flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>Skill Knowledge Graph</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {totalSkills} skills · {totalGaps} gaps · {matchedPositions}/{totalPositions} positions reachable
+          <h2 className="font-semibold text-white" style={{ fontFamily: "var(--font-display)" }}>Skill Solar System</h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {totalSkills} skills orbiting · {totalGaps} gaps in asteroid belt · {totalPositions} positions mapped
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          <button onClick={() => setZoom(z => Math.min(z + 0.15, 2))} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"><ZoomIn size={15} /></button>
-          <button onClick={() => setZoom(z => Math.max(z - 0.15, 0.5))} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"><ZoomOut size={15} /></button>
-          <button onClick={resetGraph} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"><RotateCcw size={15} /></button>
-          <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+          <button onClick={resetGraph} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400"><RotateCcw size={15} /></button>
+          <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400">
             {expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </button>
         </div>
       </div>
 
-      <div ref={containerRef} className="relative bg-[#FAFAF6]" style={{ height: H * zoom, overflow: "hidden" }}>
-        {/* SVG Graph */}
-        <svg
-          width={W * zoom}
-          height={H * zoom}
-          viewBox={`0 0 ${W} ${H}`}
-          className="select-none"
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          style={{ cursor: dragging ? "grabbing" : "default" }}
-        >
+      <div className="relative" style={{ height: H }}>
+        <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} className="select-none">
           <defs>
-            {/* Glow filters */}
-            <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="6" result="blur" />
-              <feFlood floodColor="#D9C18A" floodOpacity="0.5" result="color" />
-              <feComposite in="color" in2="blur" operator="in" result="shadow" />
-              <feMerge><feMergeNode in="shadow" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-            <filter id="glow-node" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="4" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-            <radialGradient id="bg-gradient" cx="50%" cy="50%">
-              <stop offset="0%" stopColor="rgba(184,154,94,0.06)" />
-              <stop offset="100%" stopColor="rgba(184,154,94,0)" />
+            {/* Sun glow */}
+            <radialGradient id="sun-grad" cx="50%" cy="50%">
+              <stop offset="0%" stopColor="#FFF8E1" />
+              <stop offset="30%" stopColor="#FFB300" />
+              <stop offset="65%" stopColor="#FF8F00" />
+              <stop offset="100%" stopColor="#E65100" />
             </radialGradient>
-            {/* Animated dash */}
+            <radialGradient id="sun-corona" cx="50%" cy="50%">
+              <stop offset="0%" stopColor="rgba(255,179,0,0.25)" />
+              <stop offset="50%" stopColor="rgba(255,143,0,0.08)" />
+              <stop offset="100%" stopColor="rgba(255,143,0,0)" />
+            </radialGradient>
+            <filter id="sun-blur" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="12" />
+            </filter>
+            <filter id="planet-glow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="5" />
+            </filter>
+            <filter id="star-glow" x="-200%" y="-200%" width="500%" height="500%">
+              <feGaussianBlur stdDeviation="2" />
+            </filter>
             <style>{`
-              @keyframes dash { to { stroke-dashoffset: -20; } }
-              .dash-animate { animation: dash 1.5s linear infinite; }
-              @keyframes pulse-ring { 0% { r: 28; opacity: 0.4; } 100% { r: 42; opacity: 0; } }
-              .pulse-ring { animation: pulse-ring 2s ease-out infinite; }
+              @keyframes sunPulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+              @keyframes twinkle { 0%,100% { opacity: 0.3; } 50% { opacity: 0.9; } }
+              @keyframes asteroidGlow { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+              .sun-pulse { animation: sunPulse 3s ease-in-out infinite; }
+              .twinkle { animation: twinkle 3s ease-in-out infinite; }
+              .asteroid-pulse { animation: asteroidGlow 2s ease-in-out infinite; }
             `}</style>
           </defs>
 
-          {/* Background glow */}
-          <circle cx={W / 2} cy={H / 2} r={Math.min(W, H) * 0.4} fill="url(#bg-gradient)" />
+          {/* Stars */}
+          {starsRef.current.map((s, i) => (
+            <circle key={`star-${i}`} cx={s.x} cy={s.y} r={s.r} fill="white" opacity={s.o}
+              className={i % 5 === 0 ? "twinkle" : undefined}
+              style={i % 5 === 0 ? { animationDelay: `${(i * 0.3) % 4}s` } : undefined}
+            />
+          ))}
 
-          {/* Links */}
-          {LINKS.map((l, i) => {
-            const s = map.get(l.source);
-            const t = map.get(l.target);
-            if (!s || !t) return null;
-            const highlighted = isLinkHighlighted(l);
-            const opacity = highlighted ? (l.dashed ? 0.45 : 0.3 + l.strength * 0.4) : 0.06;
-            const width = highlighted ? 1 + l.strength * 1.5 : 0.5;
+          {/* Orbit rings */}
+          {orbits.map((orbit, i) => (
+            <ellipse key={`orbit-${i}`} cx={CX} cy={CY} rx={orbit} ry={orbit * 0.45}
+              fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={1}
+              strokeDasharray={i === orbits.length - 1 ? "4,8" : undefined}
+            />
+          ))}
+
+          {/* Asteroid belt zone label */}
+          <text x={W * 0.74} y={H * 0.09} textAnchor="middle"
+            fontSize={11} fill="rgba(239,83,80,0.6)" fontWeight={600}
+            style={{ fontFamily: "var(--font-sans)", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+            Skill Gaps
+          </text>
+          <text x={W * 0.74} y={H * 0.09 + 16} textAnchor="middle"
+            fontSize={9} fill="rgba(239,83,80,0.35)"
+            style={{ fontFamily: "var(--font-sans)" }}>
+            Acquire to unlock new orbits
+          </text>
+
+          {/* Links (when hovered) */}
+          {hovered && hoveredLinks.map((l, i) => {
+            const fromP = map.get(l.from);
+            const toP = map.get(l.to);
+            if (!fromP || !toP) return null;
+            const fp = getPos(fromP);
+            const tp = getPos(toP);
             return (
-              <line
-                key={`link-${i}`}
-                x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-                stroke={l.dashed ? COLORS.gap.fill : s.color}
-                strokeWidth={width}
-                strokeOpacity={opacity}
+              <line key={`link-${i}`} x1={fp.x} y1={fp.y} x2={tp.x} y2={tp.y}
+                stroke={l.dashed ? "rgba(239,83,80,0.5)" : "rgba(255,255,255,0.25)"}
+                strokeWidth={l.strength * 2}
                 strokeDasharray={l.dashed ? "6,4" : undefined}
-                className={l.dashed && highlighted ? "dash-animate" : undefined}
               />
             );
           })}
 
-          {/* Nodes */}
-          {nodes.map(node => {
-            const highlighted = isHighlighted(node.id);
-            const isHov = hovered === node.id;
-            const scale = isHov ? 1.2 : 1;
-            const r = node.r * scale;
-            const opacity = highlighted ? 1 : 0.15;
+          {/* Sun corona */}
+          <circle cx={CX} cy={CY} r={90} fill="url(#sun-corona)" className="sun-pulse" />
+          <circle cx={CX} cy={CY} r={55} fill="rgba(255,179,0,0.12)" filter="url(#sun-blur)" />
+
+          {/* Sun */}
+          <g onPointerEnter={() => setHovered("me")} onPointerLeave={() => setHovered(null)} style={{ cursor: "pointer" }}>
+            <circle cx={CX} cy={CY} r={38} fill="url(#sun-grad)" />
+            <circle cx={CX} cy={CY} r={38} fill="none" stroke="rgba(255,248,225,0.4)" strokeWidth={1.5} />
+            <text x={CX} y={CY + 4} textAnchor="middle" fontSize={12} fontWeight={700} fill="#fff"
+              style={{ pointerEvents: "none", fontFamily: "var(--font-sans)", textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>
+              JK
+            </text>
+            <text x={CX} y={CY + 52} textAnchor="middle" fontSize={11} fontWeight={600} fill="rgba(255,213,79,0.9)"
+              style={{ pointerEvents: "none", fontFamily: "var(--font-display)" }}>
+              Jordan Kim
+            </text>
+          </g>
+
+          {/* Planets, Moons, Stations */}
+          {planets.filter(p => p.type !== "sun" && p.type !== "asteroid").map(planet => {
+            const pos = getPos(planet);
+            const highlighted = isHighlighted(planet.id);
+            const isHov = hovered === planet.id;
+            const r = isHov ? planet.r * 1.2 : planet.r;
+            const opacity = highlighted ? 1 : 0.25;
+            const gradId = `grad-${planet.id}`;
 
             return (
-              <g
-                key={node.id}
-                onPointerDown={e => handlePointerDown(node.id, e)}
-                onPointerEnter={() => setHovered(node.id)}
-                onPointerLeave={() => { if (!dragging) setHovered(null); }}
-                style={{ cursor: "grab", opacity, transition: "opacity 0.2s" }}
+              <g key={planet.id}
+                onPointerEnter={() => setHovered(planet.id)}
+                onPointerLeave={() => setHovered(null)}
+                style={{ cursor: "pointer", opacity, transition: "opacity 0.3s" }}
               >
-                {/* Outer glow */}
-                {isHov && <circle cx={node.x} cy={node.y} r={r + 8} fill={node.glow} />}
+                <defs>
+                  <radialGradient id={gradId} cx="35%" cy="35%">
+                    <stop offset="0%" stopColor={planet.colors[0]} />
+                    <stop offset="60%" stopColor={planet.colors[1]} />
+                    <stop offset="100%" stopColor={planet.colors[2] || planet.colors[1]} />
+                  </radialGradient>
+                </defs>
 
-                {/* Pulse for person */}
-                {node.type === "person" && <circle cx={node.x} cy={node.y} r={node.r} fill="none" stroke="#D9C18A" strokeWidth={2} className="pulse-ring" />}
+                {/* Glow */}
+                {isHov && <circle cx={pos.x} cy={pos.y} r={r + 10} fill={planet.glow} filter="url(#planet-glow)" />}
 
-                {/* Node circle */}
-                <circle
-                  cx={node.x} cy={node.y} r={r}
-                  fill={node.color}
-                  stroke={isHov ? "#fff" : "rgba(255,255,255,0.6)"}
-                  strokeWidth={isHov ? 2.5 : 1}
-                  filter={node.type === "person" ? "url(#glow-gold)" : isHov ? "url(#glow-node)" : undefined}
-                />
-
-                {/* Gap pattern overlay */}
-                {node.type === "gap" && (
-                  <circle cx={node.x} cy={node.y} r={r} fill="none"
-                    stroke="rgba(255,255,255,0.4)" strokeWidth={1}
-                    strokeDasharray="3,3"
+                {/* Moon orbit ring */}
+                {planet.type === "planet" && planets.some(m => m.parent === planet.id) && (
+                  <ellipse cx={pos.x} cy={pos.y}
+                    rx={planets.find(m => m.parent === planet.id)!.orbit}
+                    ry={planets.find(m => m.parent === planet.id)!.orbit * 0.45}
+                    fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={0.5}
                   />
                 )}
 
+                {/* Saturn ring */}
+                {planet.ringColor && (
+                  <ellipse cx={pos.x} cy={pos.y} rx={r * 2} ry={r * 0.5}
+                    fill="none" stroke={planet.ringColor} strokeWidth={2.5}
+                  />
+                )}
+
+                {/* Planet body */}
+                <circle cx={pos.x} cy={pos.y} r={r} fill={`url(#${gradId})`} />
+
+                {/* Light reflection */}
+                <circle cx={pos.x - r * 0.25} cy={pos.y - r * 0.25} r={r * 0.3}
+                  fill="rgba(255,255,255,0.2)" />
+
+                {/* Shadow crescent */}
+                <circle cx={pos.x + r * 0.15} cy={pos.y + r * 0.15} r={r}
+                  fill="rgba(0,0,0,0.15)" clipPath={`circle(${r}px at ${pos.x}px ${pos.y}px)`}
+                  style={{ clipPath: `circle(${r}px at ${pos.x}px ${pos.y}px)` }}
+                />
+
+                {/* Station icon (hexagon hint) */}
+                {planet.type === "station" && (
+                  <rect x={pos.x - 2} y={pos.y - 2} width={4} height={4} rx={0.5}
+                    fill="rgba(255,255,255,0.5)" style={{ pointerEvents: "none" }} />
+                )}
+
                 {/* Label */}
-                <text
-                  x={node.x} y={node.y + r + 13}
+                <text x={pos.x} y={pos.y + r + (planet.type === "moon" ? 10 : 14)}
                   textAnchor="middle"
-                  fontSize={node.type === "person" ? 12 : 9.5}
-                  fontWeight={node.type === "person" ? 700 : 600}
-                  fill="#16284B"
+                  fontSize={planet.type === "moon" ? 8 : planet.type === "station" ? 9 : 10}
+                  fontWeight={600}
+                  fill={planet.type === "moon" ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.85)"}
                   style={{ pointerEvents: "none", fontFamily: "var(--font-sans)" }}
                 >
-                  {node.label}
+                  {planet.label}
                 </text>
 
-                {/* Type badge inside node */}
-                {node.type === "gap" && (
-                  <text x={node.x} y={node.y + 3.5} textAnchor="middle" fontSize={8} fontWeight={700} fill="#fff" style={{ pointerEvents: "none" }}>
-                    GAP
-                  </text>
+                {/* Proficiency ring */}
+                {planet.type === "planet" && planet.proficiency && isHov && (
+                  <>
+                    <circle cx={pos.x} cy={pos.y} r={r + 5} fill="none"
+                      stroke="rgba(255,255,255,0.1)" strokeWidth={2} />
+                    <circle cx={pos.x} cy={pos.y} r={r + 5} fill="none"
+                      stroke={planet.colors[0]} strokeWidth={2}
+                      strokeDasharray={`${(planet.proficiency / 100) * TAU * (r + 5)} ${TAU * (r + 5)}`}
+                      strokeLinecap="round"
+                      transform={`rotate(-90 ${pos.x} ${pos.y})`}
+                    />
+                  </>
                 )}
-                {node.type === "person" && (
-                  <text x={node.x} y={node.y + 4} textAnchor="middle" fontSize={11} fontWeight={700} fill="#fff" style={{ pointerEvents: "none" }}>
-                    JK
-                  </text>
-                )}
+              </g>
+            );
+          })}
+
+          {/* Asteroids (gap skills) */}
+          {planets.filter(p => p.type === "asteroid").map((a, i) => {
+            const ap = asteroidPositions.current.get(a.id);
+            if (!ap) return null;
+            const highlighted = isHighlighted(a.id);
+            const isHov = hovered === a.id;
+            const r = isHov ? a.r * 1.3 : a.r;
+
+            return (
+              <g key={a.id}
+                onPointerEnter={() => setHovered(a.id)}
+                onPointerLeave={() => setHovered(null)}
+                style={{ cursor: "pointer", opacity: highlighted ? 1 : 0.3, transition: "opacity 0.3s" }}
+              >
+                {/* Glow */}
+                <circle cx={ap.x} cy={ap.y} r={r + 6} fill={a.glow}
+                  filter="url(#planet-glow)" className="asteroid-pulse"
+                  style={{ animationDelay: `${i * 0.5}s` }}
+                />
+
+                {/* Asteroid body — irregular look */}
+                <circle cx={ap.x} cy={ap.y} r={r}
+                  fill={a.colors[1]} />
+                <circle cx={ap.x - r * 0.3} cy={ap.y - r * 0.2} r={r * 0.35}
+                  fill={a.colors[0]} opacity={0.6} />
+
+                {/* Dashed border */}
+                <circle cx={ap.x} cy={ap.y} r={r + 2}
+                  fill="none" stroke="rgba(239,83,80,0.4)" strokeWidth={1} strokeDasharray="3,3" />
+
+                {/* Label */}
+                <text x={ap.x} y={ap.y + r + 13} textAnchor="middle"
+                  fontSize={9} fontWeight={600} fill="rgba(239,83,80,0.8)"
+                  style={{ pointerEvents: "none", fontFamily: "var(--font-sans)" }}>
+                  {a.label}
+                </text>
               </g>
             );
           })}
@@ -432,49 +489,57 @@ export function SkillGraph() {
         {/* Legend */}
         <div className="absolute bottom-3 left-3 flex flex-wrap gap-2">
           {[
-            { color: COLORS.person.fill, label: "You" },
-            { color: COLORS.technical.fill, label: "Technical" },
-            { color: COLORS.data.fill, label: "Data" },
-            { color: COLORS.soft.fill, label: "Soft Skills" },
-            { color: COLORS.gap.fill, label: "Skill Gap" },
-            { color: COLORS.company.fill, label: "Company" },
-            { color: COLORS.position.fill, label: "Position" },
+            { emoji: "☀", label: "You (Sun)", color: "#FFB300" },
+            { emoji: "🪐", label: "Skills", color: "#64B5F6" },
+            { emoji: "🌙", label: "Positions", color: "#B0BEC5" },
+            { emoji: "🛰", label: "Companies", color: "#FFD54F" },
+            { emoji: "☄", label: "Skill Gaps", color: "#EF5350" },
           ].map(l => (
-            <div key={l.label} className="flex items-center gap-1.5 bg-white/80 backdrop-blur border border-border rounded-full px-2 py-1">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
-              <span className="text-[10px] font-medium text-foreground">{l.label}</span>
+            <div key={l.label} className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm border border-white/10 rounded-full px-2.5 py-1">
+              <span className="text-[10px]">{l.emoji}</span>
+              <span className="text-[10px] font-medium" style={{ color: l.color }}>{l.label}</span>
             </div>
           ))}
         </div>
 
         {/* Hover tooltip */}
-        {hoveredNode && (
-          <div className="absolute top-3 right-3 bg-white border border-border rounded-xl shadow-lg p-4 w-56 pointer-events-none">
+        {hoveredPlanet && hoveredPlanet.type !== "sun" && (
+          <div className="absolute top-3 right-3 bg-[rgba(15,22,40,0.95)] backdrop-blur border border-white/10 rounded-xl shadow-2xl p-4 w-56 pointer-events-none">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-4 h-4 rounded-full" style={{ background: hoveredNode.color }} />
-              <span className="text-sm font-bold text-foreground">{hoveredNode.label}</span>
+              <div className="w-4 h-4 rounded-full" style={{ background: hoveredPlanet.colors[0] }} />
+              <span className="text-sm font-bold text-white">{hoveredPlanet.label}</span>
             </div>
-            <p className="text-xs text-muted-foreground capitalize mb-2">
-              {hoveredNode.type === "gap" ? "Missing skill — needed for target roles" : hoveredNode.type}
+            <p className="text-xs text-slate-400 capitalize mb-1">
+              {hoveredPlanet.type === "asteroid" ? "⚠ Missing skill — needed for target roles" :
+               hoveredPlanet.type === "planet" ? `Skill · ${hoveredPlanet.proficiency}% proficiency` :
+               hoveredPlanet.type === "moon" ? "Target position" :
+               "Hiring company"}
             </p>
+            {hoveredPlanet.type === "planet" && hoveredPlanet.proficiency && (
+              <div className="mt-2 mb-2">
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{
+                    width: `${hoveredPlanet.proficiency}%`,
+                    background: `linear-gradient(90deg, ${hoveredPlanet.colors[0]}, ${hoveredPlanet.colors[1]})`
+                  }} />
+                </div>
+              </div>
+            )}
             {hoveredLinks.length > 0 && (
-              <div className="space-y-1 border-t border-border pt-2">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Connections</p>
-                {hoveredLinks.slice(0, 6).map((l, i) => {
-                  const otherId = l.source === hovered ? l.target : l.source;
+              <div className="space-y-1 border-t border-white/10 pt-2">
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Connections</p>
+                {hoveredLinks.slice(0, 5).map((l, i) => {
+                  const otherId = l.from === hovered ? l.to : l.from;
                   const other = map.get(otherId);
                   return (
                     <div key={i} className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full" style={{ background: other?.color || "#ccc" }} />
-                      <span className="text-xs text-foreground">{other?.label}</span>
-                      {l.dashed && <span className="text-[9px] text-red-500 font-semibold">GAP</span>}
-                      <span className="ml-auto text-[10px] text-muted-foreground">{Math.round(l.strength * 100)}%</span>
+                      <div className="w-2 h-2 rounded-full" style={{ background: other?.colors[0] || "#ccc" }} />
+                      <span className="text-xs text-slate-300">{other?.label}</span>
+                      {l.dashed && <span className="text-[9px] text-red-400 font-semibold">GAP</span>}
+                      <span className="ml-auto text-[10px] text-slate-500">{Math.round(l.strength * 100)}%</span>
                     </div>
                   );
                 })}
-                {hoveredLinks.length > 6 && (
-                  <p className="text-[10px] text-muted-foreground">+{hoveredLinks.length - 6} more</p>
-                )}
               </div>
             )}
           </div>
