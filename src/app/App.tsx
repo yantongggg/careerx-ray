@@ -25,6 +25,7 @@ import { CareerEvidence } from "./components/CareerEvidence";
 import { UserProfile } from "./components/UserProfile";
 import { Sidebar } from "./components/Sidebar";
 import { ApplicationPrep } from "./components/ApplicationPrep";
+import { HiringPipeline } from "./components/HiringPipeline";
 
 /* MARKER-MAKE-KIT-INVOKED */
 
@@ -49,6 +50,7 @@ type Page =
   | "emp-sla"
   | "emp-reengage"
   | "emp-resilience"
+  | "emp-pipeline"
   | "insights"
   | "uni-outcomes"
   | "uni-curriculum"
@@ -74,6 +76,7 @@ const pageLabels: Record<Page, string> = {
   "emp-sla":        "Reply SLA Monitor",
   "emp-reengage":   "Talent Re-engagement",
   "emp-resilience": "Workforce Resilience",
+  "emp-pipeline":   "Hiring Pipeline",
   insights:         "University Dashboard",
   "uni-outcomes":   "Outcome Loop",
   "uni-curriculum": "Curriculum Engine",
@@ -84,7 +87,7 @@ const pageLabels: Record<Page, string> = {
 const allPages: Page[] = [
   "command", "dna", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
   "prescription", "evidence", "profile", "employer", "emp-matching", "emp-sla", "emp-reengage",
-  "emp-resilience", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
+  "emp-resilience", "emp-pipeline", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
 ];
 
 const pageRole: Record<Page, Role> = {
@@ -106,6 +109,7 @@ const pageRole: Record<Page, Role> = {
   "emp-sla": "employer",
   "emp-reengage": "employer",
   "emp-resilience": "employer",
+  "emp-pipeline": "employer",
   insights: "university",
   "uni-outcomes": "university",
   "uni-curriculum": "university",
@@ -239,6 +243,7 @@ export default function App() {
           {page === "emp-sla"         && <ReplySlaMonitor />}
           {page === "emp-reengage"    && <TalentReengagement />}
           {page === "emp-resilience"  && <WorkforceResilience />}
+          {page === "emp-pipeline"    && <HiringPipeline />}
           {page === "insights"        && <EcosystemInsights />}
           {page === "uni-outcomes"    && <OutcomeLoop />}
           {page === "uni-curriculum"  && <CurriculumEngine />}

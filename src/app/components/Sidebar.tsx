@@ -4,7 +4,7 @@ import {
   Briefcase, Video, Building2, GraduationCap, LayoutDashboard,
   Fingerprint, Scale, UserCheck, MessageSquareWarning, RotateCcw,
   ShieldCheck, Handshake, School, BookOpenCheck, WalletCards, HeartPulse,
-  Globe
+  Globe, Users
 } from "lucide-react";
 
 type Role = "candidate" | "employer" | "university";
@@ -36,6 +36,7 @@ const employerMain = [
   { id: "emp-sla",        label: "Reply SLA Monitor", icon: MessageSquareWarning },
   { id: "emp-reengage",   label: "Talent Re-engagement", icon: RotateCcw },
   { id: "emp-resilience", label: "Workforce Resilience", icon: ShieldCheck },
+  { id: "emp-pipeline",   label: "Hiring Pipeline", icon: Users },
 ];
 
 const universityMain = [
