@@ -541,14 +541,12 @@ export function SkillGraph({ selectedJob, onClearJob }: SkillGraphProps) {
             const uPos = unrelatedPositions.current.get(s.id);
             if (!uPos) return null;
             return (
-              <g key={s.id} style={{ opacity: 0.5 }}>
-                <circle cx={uPos.x} cy={uPos.y} r={4} fill={s.colors[0]} filter="url(#star-soft)" />
-                <circle cx={uPos.x} cy={uPos.y} r={2.5} fill={s.colors[0]} opacity={0.8} />
-                {/* Cross sparkle */}
-                <line x1={uPos.x - 6} y1={uPos.y} x2={uPos.x + 6} y2={uPos.y} stroke={s.colors[0]} strokeWidth={0.5} opacity={0.4} />
-                <line x1={uPos.x} y1={uPos.y - 6} x2={uPos.x} y2={uPos.y + 6} stroke={s.colors[0]} strokeWidth={0.5} opacity={0.4} />
-                <text x={uPos.x} y={uPos.y + 12} textAnchor="middle" fontSize={8} fontWeight={500}
-                  fill="rgba(255,255,255,0.3)" style={{ pointerEvents: "none", fontFamily: "var(--font-sans)" }}>
+              <g key={s.id} style={{ opacity: 0.45 }}>
+                <circle cx={uPos.x} cy={uPos.y} r={8} fill={s.colors[1]} opacity={0.35} />
+                <circle cx={uPos.x} cy={uPos.y} r={5.5} fill={s.colors[1]} opacity={0.6} />
+                <circle cx={uPos.x - 1.5} cy={uPos.y - 1.5} r={2} fill={s.colors[0]} opacity={0.3} />
+                <text x={uPos.x} y={uPos.y + 16} textAnchor="middle" fontSize={9} fontWeight={600}
+                  fill="rgba(255,255,255,0.35)" style={{ pointerEvents: "none", fontFamily: "var(--font-sans)" }}>
                   {s.label}
                 </text>
               </g>
