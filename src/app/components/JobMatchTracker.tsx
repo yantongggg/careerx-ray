@@ -1,8 +1,9 @@
-import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, MapPin, Shield, Sparkles, TrendingUp, XCircle } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, MapPin, MessageCircle, Send, Shield, Sparkles, TrendingUp, X, XCircle } from "lucide-react";
 
 interface JobMatchTrackerProps {
   onPrepareApp?: (jobId: string) => void;
-  onCoach?: () => void;
+  onCoach?: (jobId: string) => void;
   appliedJobs?: Set<string>;
 }
 
@@ -37,6 +38,8 @@ const jobs = [
     eta: "3–5 days",
     successChance: 82,
     healthDelta: "84 → 91",
+    hrName: "Sarah Tan",
+    hrTitle: "Talent Acquisition, Digital Banking",
   },
   {
     id: "grab-ae",
@@ -58,6 +61,8 @@ const jobs = [
     eta: "5–7 days",
     successChance: 71,
     healthDelta: "84 → 88",
+    hrName: "Daniel Lim",
+    hrTitle: "People Operations, Data Team",
   },
   {
     id: "petronas-pm",
@@ -77,8 +82,32 @@ const jobs = [
     eta: "7–10 days",
     successChance: 65,
     healthDelta: "84 → 86",
+    hrName: "Aisha Rahman",
+    hrTitle: "HR Business Partner, Digital",
   },
 ];
+
+interface ChatMessage {
+  from: "me" | "hr";
+  text: string;
+  time: string;
+}
+
+const HR_CHAT_HISTORY: Record<string, ChatMessage[]> = {
+  "maybank-da": [
+    { from: "hr", text: "Hi Jordan! Thanks for applying. We've reviewed your profile and would like to schedule a technical interview.", time: "Jun 28, 3:15 PM" },
+    { from: "me", text: "Thank you, Sarah! I'm available anytime next week. Looking forward to it.", time: "Jun 28, 4:02 PM" },
+    { from: "hr", text: "Great! Your interview is confirmed for July 3rd at 10:00 AM. It will be a 45-min SQL case + behavioral round.", time: "Jun 30, 9:30 AM" },
+    { from: "me", text: "Confirmed, thank you! Should I prepare anything specific?", time: "Jun 30, 10:15 AM" },
+    { from: "hr", text: "Brush up on fraud detection patterns and dashboard storytelling. Good luck! 😊", time: "Jun 30, 11:00 AM" },
+  ],
+  "grab-ae": [
+    { from: "hr", text: "Hi Jordan, we received your application for Analytics Engineer. Your dbt experience looks strong!", time: "Jun 22, 10:00 AM" },
+    { from: "me", text: "Thanks Daniel! Happy to share my dbt project portfolio if that helps.", time: "Jun 22, 11:30 AM" },
+    { from: "hr", text: "That would be great. We're currently in screening — expect to hear back within 5-7 business days.", time: "Jun 23, 9:00 AM" },
+  ],
+  "petronas-pm": [],
+};
 
 const stageCounts = [
   { label: "Saved", count: 4 },
@@ -89,6 +118,24 @@ const stageCounts = [
 ];
 
 export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatchTrackerProps) {
+  const [chatJobId, setChatJobId] = useState<string | null>(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({ ...HR_CHAT_HISTORY });
+
+  const chatJob = chatJobId ? jobs.find(j => j.id === chatJobId) : null;
+  const messages = chatJobId ? (chatMessages[chatJobId] || []) : [];
+
+  const handleSendMessage = () => {
+    if (!chatInput.trim() || !chatJobId) return;
+    const now = new Date();
+    const timeStr = now.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + ", " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    setChatMessages(prev => ({
+      ...prev,
+      [chatJobId]: [...(prev[chatJobId] || []), { from: "me", text: chatInput.trim(), time: timeStr }],
+    }));
+    setChatInput("");
+  };
+
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">
@@ -222,10 +269,18 @@ export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatch
                     </button>
                     {isApplied && (
                       <button
-                        onClick={onCoach}
+                        onClick={() => onCoach?.(job.id)}
                         className="inline-flex items-center gap-1.5 bg-primary text-white px-3.5 py-2 rounded-lg text-xs font-semibold hover:opacity-90 transition-colors"
                       >
                         AI Interview Coach <Sparkles size={12} />
+                      </button>
+                    )}
+                    {isApplied && (
+                      <button
+                        onClick={() => setChatJobId(job.id)}
+                        className="inline-flex items-center gap-1.5 border border-border text-foreground px-3.5 py-2 rounded-lg text-xs font-semibold hover:bg-muted transition-colors"
+                      >
+                        <MessageCircle size={12} /> Chat with HR
                       </button>
                     )}
                   </div>
@@ -251,6 +306,95 @@ export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatch
           </aside>
         </div>
       </div>
+
+      {/* HR Chat Drawer */}
+      {chatJob && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setChatJobId(null)} />
+          <div className="relative w-full max-w-md bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Building2 size={18} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground text-sm truncate">{chatJob.hrName}</p>
+                <p className="text-xs text-muted-foreground truncate">{chatJob.hrTitle} · {chatJob.company}</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-[10px] text-emerald-600 font-medium">Online</span>
+              </div>
+              <button onClick={() => setChatJobId(null)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Job context */}
+            <div className="px-5 py-3 bg-muted/50 border-b border-border">
+              <div className="flex items-center gap-2 text-xs">
+                <Briefcase size={12} className="text-muted-foreground" />
+                <span className="font-medium text-foreground">{chatJob.role}</span>
+                <span className="text-muted-foreground">·</span>
+                <span className="text-primary font-semibold">{chatJob.fit}% match</span>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <MessageCircle size={24} className="text-muted-foreground" />
+                  </div>
+                  <p className="font-semibold text-foreground text-sm">No messages yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-[220px]">Start a conversation with {chatJob.hrName} about this role.</p>
+                </div>
+              )}
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.from === "me" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[80%] ${msg.from === "me" ? "order-1" : ""}`}>
+                    <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                      msg.from === "me"
+                        ? "bg-primary text-white rounded-br-md"
+                        : "bg-muted text-foreground rounded-bl-md"
+                    }`}>
+                      {msg.text}
+                    </div>
+                    <p className={`text-[10px] text-muted-foreground mt-1 ${msg.from === "me" ? "text-right" : ""}`}>
+                      {msg.from === "hr" ? chatJob.hrName.split(" ")[0] : "You"} · {msg.time}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Input */}
+            <div className="p-4 border-t border-border">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSendMessage()}
+                  placeholder={`Message ${chatJob.hrName.split(" ")[0]}...`}
+                  className="flex-1 border border-border rounded-xl px-4 py-2.5 text-sm bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!chatInput.trim()}
+                  className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center hover:opacity-90 disabled:opacity-40 transition-opacity"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2 text-center">
+                Messages are verified by CareerX-Ray · Response time avg 2.1 hrs
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -224,9 +224,9 @@ export default function App() {
           {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
           {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
           {page === "dna"             && <CareerDna />}
-          {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={() => navigate("offers")} appliedJobs={appliedJobs} />}
-          {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("offers")} />}
-          {page === "coach"           && <InterviewCoach />}
+          {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
+          {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
+          {page === "coach"           && <InterviewCoach jobId={prepJobId} />}
           {page === "offers"          && <OfferDecisionDashboard />}
           {page === "portfolio"       && <PortfolioBuilder />}
           {page === "decisionlab"     && <DecisionLab />}
