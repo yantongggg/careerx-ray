@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ChevronRight, Brain, Star, DollarSign, Clock, Zap, ArrowRight,
   TrendingUp, AlertTriangle, CheckCircle, Sparkles, Users,
@@ -338,6 +338,9 @@ export function DecisionLab() {
           </div>
         </div>
 
+        {/* ── Market Salary Comparison ── */}
+        <MarketSalaryGraph />
+
         {/* CTA to Prescription */}
         <div className="bg-muted border border-border rounded-xl p-5 flex items-center justify-between">
           <div>
@@ -347,6 +350,322 @@ export function DecisionLab() {
           <button className="flex-shrink-0 flex items-center gap-2 bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold">
             View My Prescription <ArrowRight size={14} />
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Market Salary Comparison — animated bar race chart
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+interface SalaryEntry {
+  company: string;
+  min: number;
+  max: number;
+  median: number;
+  color: string;
+  glow: string;
+}
+
+interface PositionSalary {
+  id: string;
+  position: string;
+  yourOffer: number;
+  marketMedian: number;
+  companies: SalaryEntry[];
+}
+
+const SALARY_DATA: PositionSalary[] = [
+  {
+    id: "data-analyst",
+    position: "Data Analyst",
+    yourOffer: 8500,
+    marketMedian: 7800,
+    companies: [
+      { company: "Maybank",          min: 7000, max: 9500,  median: 8200,  color: "#FFB300", glow: "rgba(255,179,0,0.25)" },
+      { company: "CIMB",             min: 6500, max: 9000,  median: 7800,  color: "#C62828", glow: "rgba(198,40,40,0.2)" },
+      { company: "Grab",             min: 8000, max: 12000, median: 9800,  color: "#2E7D32", glow: "rgba(46,125,50,0.2)" },
+      { company: "Shopee",           min: 7500, max: 11000, median: 9200,  color: "#E65100", glow: "rgba(230,81,0,0.2)" },
+      { company: "Petronas Digital", min: 7000, max: 10000, median: 8500,  color: "#0D47A1", glow: "rgba(13,71,161,0.2)" },
+      { company: "Axiata",           min: 6800, max: 9200,  median: 7600,  color: "#4527A0", glow: "rgba(69,39,160,0.15)" },
+      { company: "TNG Digital",      min: 7200, max: 10500, median: 8800,  color: "#00695C", glow: "rgba(0,105,92,0.2)" },
+    ],
+  },
+  {
+    id: "analytics-engineer",
+    position: "Analytics Engineer",
+    yourOffer: 10500,
+    marketMedian: 9600,
+    companies: [
+      { company: "Grab",             min: 9000,  max: 14000, median: 11500, color: "#2E7D32", glow: "rgba(46,125,50,0.2)" },
+      { company: "Shopee",           min: 8500,  max: 13000, median: 10800, color: "#E65100", glow: "rgba(230,81,0,0.2)" },
+      { company: "GoTo",             min: 8000,  max: 12500, median: 10200, color: "#1565C0", glow: "rgba(21,101,192,0.2)" },
+      { company: "Maybank",          min: 7500,  max: 11000, median: 9200,  color: "#FFB300", glow: "rgba(255,179,0,0.25)" },
+      { company: "Petronas Digital", min: 8000,  max: 11500, median: 9800,  color: "#0D47A1", glow: "rgba(13,71,161,0.2)" },
+      { company: "CIMB",             min: 7000,  max: 10500, median: 8800,  color: "#C62828", glow: "rgba(198,40,40,0.2)" },
+      { company: "TNG Digital",      min: 8200,  max: 12000, median: 10000, color: "#00695C", glow: "rgba(0,105,92,0.2)" },
+    ],
+  },
+  {
+    id: "ai-product-analyst",
+    position: "AI Product Analyst",
+    yourOffer: 9500,
+    marketMedian: 10200,
+    companies: [
+      { company: "Petronas Digital", min: 8000,  max: 13000, median: 10500, color: "#0D47A1", glow: "rgba(13,71,161,0.2)" },
+      { company: "Grab",             min: 9000,  max: 15000, median: 12000, color: "#2E7D32", glow: "rgba(46,125,50,0.2)" },
+      { company: "Axiata",           min: 7500,  max: 11500, median: 9500,  color: "#4527A0", glow: "rgba(69,39,160,0.15)" },
+      { company: "Shopee",           min: 8500,  max: 13500, median: 11000, color: "#E65100", glow: "rgba(230,81,0,0.2)" },
+      { company: "MDEC",             min: 7000,  max: 10000, median: 8500,  color: "#00838F", glow: "rgba(0,131,143,0.2)" },
+      { company: "AirAsia Digital",  min: 7800,  max: 12000, median: 9800,  color: "#B71C1C", glow: "rgba(183,28,28,0.2)" },
+      { company: "TNG Digital",      min: 8000,  max: 11000, median: 9600,  color: "#00695C", glow: "rgba(0,105,92,0.2)" },
+    ],
+  },
+];
+
+function MarketSalaryGraph() {
+  const [activePos, setActivePos] = useState(0);
+  const [animProgress, setAnimProgress] = useState(0);
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+  const animRef = useRef(0);
+  const startRef = useRef(0);
+
+  const data = SALARY_DATA[activePos];
+  const sorted = [...data.companies].sort((a, b) => b.median - a.median);
+  const maxVal = Math.max(...sorted.map(c => c.max)) * 1.08;
+
+  useEffect(() => {
+    setAnimProgress(0);
+    startRef.current = performance.now();
+    const dur = 900;
+    const animate = (now: number) => {
+      const elapsed = now - startRef.current;
+      const t = Math.min(elapsed / dur, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setAnimProgress(eased);
+      if (t < 1) animRef.current = requestAnimationFrame(animate);
+    };
+    animRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [activePos]);
+
+  const W = 780;
+  const H = 420;
+  const LEFT = 130;
+  const RIGHT = 40;
+  const TOP = 30;
+  const BOT = 30;
+  const chartW = W - LEFT - RIGHT;
+  const barH = 36;
+  const gap = 8;
+  const chartH = sorted.length * (barH + gap);
+
+  const xScale = (val: number) => LEFT + (val / maxVal) * chartW;
+
+  const yourX = xScale(data.yourOffer);
+  const medianX = xScale(data.marketMedian);
+
+  const gridLines = [0, 2000, 4000, 6000, 8000, 10000, 12000, 14000, 16000].filter(v => v <= maxVal);
+
+  return (
+    <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-5 border-b border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center">
+                <DollarSign size={16} className="text-amber-300" />
+              </div>
+              <h2 className="text-lg font-bold text-foreground">Market Salary Benchmark</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">Compare salary ranges across companies for each position — powered by market intelligence.</p>
+          </div>
+          <div className="flex items-center gap-1.5 bg-muted border border-border rounded-xl p-1">
+            {SALARY_DATA.map((pos, i) => (
+              <button key={pos.id} onClick={() => setActivePos(i)}
+                className={`text-xs font-semibold px-3 py-2 rounded-lg transition-all ${
+                  activePos === i ? "bg-slate-950 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}>
+                {pos.position}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="px-6 py-5">
+        <div className="relative overflow-x-auto">
+          <svg width="100%" viewBox={`0 0 ${W} ${TOP + chartH + BOT}`} className="select-none" style={{ minWidth: 600 }}>
+            <defs>
+              {sorted.map((c, i) => (
+                <linearGradient key={`grad-${i}`} id={`salary-grad-${activePos}-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor={c.color} stopOpacity={0.15} />
+                  <stop offset="100%" stopColor={c.color} stopOpacity={0.7} />
+                </linearGradient>
+              ))}
+              <linearGradient id="your-offer-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#8A7038" />
+                <stop offset="100%" stopColor="#B59B4E" />
+              </linearGradient>
+              <filter id="bar-glow" x="-10%" y="-40%" width="120%" height="180%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Grid */}
+            {gridLines.map(v => {
+              const x = xScale(v);
+              return (
+                <g key={`grid-${v}`}>
+                  <line x1={x} y1={TOP - 5} x2={x} y2={TOP + chartH} stroke="rgba(22,40,75,0.06)" strokeWidth={1} />
+                  <text x={x} y={TOP - 10} textAnchor="middle" fontSize={10} fill="rgba(22,40,75,0.35)"
+                    style={{ fontFamily: "var(--font-mono, monospace)" }}>
+                    {v >= 1000 ? `RM ${(v / 1000).toFixed(0)}k` : `RM ${v}`}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Bars */}
+            {sorted.map((c, i) => {
+              const y = TOP + i * (barH + gap);
+              const minX = xScale(c.min * animProgress);
+              const maxX = xScale(c.max * animProgress);
+              const medX = xScale(c.median * animProgress);
+              const rangeW = maxX - minX;
+              const isHovered = hoveredBar === i;
+
+              return (
+                <g key={c.company}
+                  onPointerEnter={() => setHoveredBar(i)}
+                  onPointerLeave={() => setHoveredBar(null)}
+                  style={{ cursor: "pointer" }}>
+                  {/* Company label */}
+                  <text x={LEFT - 10} y={y + barH / 2 + 1} textAnchor="end" fontSize={12}
+                    fontWeight={isHovered ? 700 : 600}
+                    fill={isHovered ? c.color : "#16284B"}
+                    style={{ fontFamily: "var(--font-sans)", transition: "fill 0.2s" }}>
+                    {c.company}
+                  </text>
+
+                  {/* Range background */}
+                  <rect x={minX} y={y + 4} width={Math.max(rangeW, 0)} height={barH - 8} rx={6}
+                    fill={`url(#salary-grad-${activePos}-${i})`}
+                    filter={isHovered ? "url(#bar-glow)" : undefined}
+                    style={{ transition: "filter 0.2s" }}
+                  />
+
+                  {/* Glow on hover */}
+                  {isHovered && (
+                    <rect x={minX} y={y + 4} width={Math.max(rangeW, 0)} height={barH - 8} rx={6}
+                      fill={c.glow} />
+                  )}
+
+                  {/* Median dot */}
+                  <circle cx={medX} cy={y + barH / 2} r={isHovered ? 7 : 5}
+                    fill={c.color} stroke="white" strokeWidth={2}
+                    style={{ transition: "r 0.2s" }}
+                  />
+
+                  {/* Median label */}
+                  {(isHovered || i === 0) && animProgress > 0.5 && (
+                    <text x={medX} y={y + 1} textAnchor="middle" fontSize={10} fontWeight={700}
+                      fill={c.color} style={{ fontFamily: "var(--font-mono, monospace)" }}>
+                      RM {(c.median * animProgress / 1000).toFixed(1)}k
+                    </text>
+                  )}
+
+                  {/* Min/Max labels on hover */}
+                  {isHovered && animProgress > 0.5 && (
+                    <>
+                      <text x={minX - 4} y={y + barH / 2 + 4} textAnchor="end" fontSize={9}
+                        fill="rgba(22,40,75,0.4)" style={{ fontFamily: "var(--font-mono, monospace)" }}>
+                        {(c.min * animProgress / 1000).toFixed(1)}k
+                      </text>
+                      <text x={maxX + 4} y={y + barH / 2 + 4} textAnchor="start" fontSize={9}
+                        fill="rgba(22,40,75,0.4)" style={{ fontFamily: "var(--font-mono, monospace)" }}>
+                        {(c.max * animProgress / 1000).toFixed(1)}k
+                      </text>
+                    </>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Your offer line */}
+            {animProgress > 0.3 && (
+              <g style={{ opacity: animProgress }}>
+                <line x1={yourX} y1={TOP - 2} x2={yourX} y2={TOP + chartH + 2}
+                  stroke="url(#your-offer-grad)" strokeWidth={2.5} strokeDasharray="6,4" />
+                <rect x={yourX - 40} y={TOP + chartH + 6} width={80} height={20} rx={10}
+                  fill="#8A7038" />
+                <text x={yourX} y={TOP + chartH + 19} textAnchor="middle" fontSize={10} fontWeight={700} fill="white"
+                  style={{ fontFamily: "var(--font-mono, monospace)" }}>
+                  You: RM {(data.yourOffer / 1000).toFixed(1)}k
+                </text>
+              </g>
+            )}
+
+            {/* Market median line */}
+            {animProgress > 0.3 && (
+              <g style={{ opacity: animProgress * 0.6 }}>
+                <line x1={medianX} y1={TOP - 2} x2={medianX} y2={TOP + chartH + 2}
+                  stroke="rgba(22,40,75,0.25)" strokeWidth={1.5} strokeDasharray="3,5" />
+                <text x={medianX} y={TOP + chartH + 18} textAnchor="middle" fontSize={9} fill="rgba(22,40,75,0.4)"
+                  style={{ fontFamily: "var(--font-mono, monospace)" }}>
+                  Mkt RM {(data.marketMedian / 1000).toFixed(1)}k
+                </text>
+              </g>
+            )}
+          </svg>
+        </div>
+
+        {/* Insight cards */}
+        <div className="grid grid-cols-3 gap-3 mt-5">
+          {(() => {
+            const aboveMarket = data.yourOffer > data.marketMedian;
+            const diff = Math.abs(data.yourOffer - data.marketMedian);
+            const pct = Math.round((diff / data.marketMedian) * 100);
+            const highest = sorted[0];
+            const lowest = sorted[sorted.length - 1];
+            return [
+              {
+                label: aboveMarket ? "Above Market" : "Below Market",
+                value: `${aboveMarket ? "+" : "-"}RM ${diff.toLocaleString()}`,
+                desc: `Your offer is ${pct}% ${aboveMarket ? "above" : "below"} market median`,
+                color: aboveMarket ? "#115E50" : "#C62828",
+                bg: aboveMarket ? "rgba(17,94,80,0.06)" : "rgba(198,40,40,0.06)",
+              },
+              {
+                label: "Highest Payer",
+                value: highest.company,
+                desc: `Median RM ${(highest.median / 1000).toFixed(1)}k (range RM ${(highest.min / 1000).toFixed(1)}k–${(highest.max / 1000).toFixed(1)}k)`,
+                color: highest.color,
+                bg: highest.glow,
+              },
+              {
+                label: "Market Spread",
+                value: `RM ${((sorted[0].median - sorted[sorted.length - 1].median) / 1000).toFixed(1)}k`,
+                desc: `Between ${highest.company} and ${lowest.company}`,
+                color: "#16284B",
+                bg: "rgba(22,40,75,0.04)",
+              },
+            ];
+          })().map(card => (
+            <div key={card.label} className="rounded-xl p-4 border" style={{ backgroundColor: card.bg, borderColor: "rgba(22,40,75,0.08)" }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "rgba(22,40,75,0.45)" }}>{card.label}</p>
+              <p className="text-lg font-bold mt-1" style={{ color: card.color }}>{card.value}</p>
+              <p className="text-xs mt-1" style={{ color: "rgba(22,40,75,0.5)" }}>{card.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
