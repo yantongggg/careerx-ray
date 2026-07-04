@@ -58,7 +58,10 @@ export function CareerCommandCenter({ onNavigate, selectedJob, onClearJob }: Car
                 You are close to employable for your target path. CareerX-Ray connects diagnosis, job matching, applications, coaching, and long-term growth in one loop.
               </p>
               <div className="flex flex-wrap gap-3 mt-5">
-                <button onClick={() => onNavigate("coach")} className="inline-flex items-center gap-2 bg-white text-slate-950 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
+                <button onClick={() => onNavigate("onboarding")} className="inline-flex items-center gap-2 bg-white text-slate-950 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
+                  Scan X-Ray <Sparkles size={14} />
+                </button>
+                <button onClick={() => onNavigate("coach")} className="inline-flex items-center gap-2 border border-white/15 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/10">
                   Start Rehearsal <ArrowRight size={14} />
                 </button>
                 <button onClick={() => onNavigate("jobs")} className="inline-flex items-center gap-2 border border-white/15 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/10">
@@ -66,32 +69,86 @@ export function CareerCommandCenter({ onNavigate, selectedJob, onClearJob }: Car
                 </button>
               </div>
             </div>
-            <div>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: "Employability", value: "82", unit: "/100", icon: Shield, tone: "text-emerald-300" },
-                  { label: "Open gaps", value: "4", unit: "", icon: Zap, tone: "text-amber-300" },
-                  { label: "Active apps", value: "3", unit: "", icon: Briefcase, tone: "text-blue-300" },
-                  { label: "Interview ready", value: "71", unit: "%", icon: MessageSquareText, tone: "text-purple-300" },
-                  { label: "Trust Score", value: "94", unit: "/100", icon: Shield, tone: "text-emerald-300" },
-                ].map(m => (
-                  <div key={m.label} className="bg-white/8 border border-white/10 rounded-xl p-4">
-                    <m.icon size={15} className={m.tone} />
-                    <p className="text-2xl font-bold mt-2">{m.value}<span className="text-sm text-slate-400">{m.unit}</span></p>
-                    <p className="text-xs text-slate-400 mt-0.5">{m.label}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="text-xs text-emerald-300 font-medium">Good Standing</span>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: "Employability", value: "82", unit: "/100", icon: Shield, tone: "text-emerald-300" },
+                { label: "Open gaps", value: "4", unit: "", icon: Zap, tone: "text-amber-300" },
+                { label: "Active apps", value: "3", unit: "", icon: Briefcase, tone: "text-blue-300" },
+                { label: "Interview ready", value: "71", unit: "%", icon: MessageSquareText, tone: "text-purple-300" },
+              ].map(m => (
+                <div key={m.label} className="bg-white/8 border border-white/10 rounded-xl p-4">
+                  <m.icon size={15} className={m.tone} />
+                  <p className="text-2xl font-bold mt-2">{m.value}<span className="text-sm text-slate-400">{m.unit}</span></p>
+                  <p className="text-xs text-slate-400 mt-0.5">{m.label}</p>
                 </div>
-                <span className="text-xs text-slate-500">Reply rate 96% · Avg response 2.1hrs</span>
-              </div>
+              ))}
             </div>
           </div>
         </div>
+
+        {/* Trust Rating Section */}
+        <section className="bg-white border border-border rounded-xl shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-semibold text-foreground">Your Trust Rating</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Response speed builds your visibility score — employers see this</p>
+            </div>
+            <Shield size={17} className="text-primary" />
+          </div>
+          <div className="grid sm:grid-cols-[180px_1fr] gap-5">
+            <div className="flex flex-col items-center p-4 rounded-xl bg-accent border border-border">
+              <div className="relative w-20 h-20">
+                <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(22,40,75,0.08)" strokeWidth="10" />
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#115E50" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${94 * 3.14} ${100 * 3.14}`} />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-bold text-foreground">94</span>
+                  <span className="text-[10px] text-muted-foreground">/100</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 mt-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-xs font-semibold text-emerald-700">Good Standing</span>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: "Reply Speed", score: 96, desc: "Avg 2.1 hrs" },
+                  { label: "Interview Attendance", score: 100, desc: "Never missed" },
+                  { label: "Document Timeliness", score: 90, desc: "Submitted on time" },
+                  { label: "Communication", score: 88, desc: "Clear & professional" },
+                ].map(item => (
+                  <div key={item.label} className="p-2.5 rounded-lg border border-border">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-foreground">{item.label}</span>
+                      <span className="text-xs font-bold text-primary">{item.score}%</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-1.5">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${item.score}%` }} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-4 pt-2 border-t border-border">
+                <div className="flex items-center gap-1.5 text-xs">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-muted-foreground">&gt;80%: Full visibility</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span className="text-muted-foreground">60-80%: Reduced exposure</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  <span className="text-muted-foreground">&lt;60%: Account restricted</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {selectedJob && (
           <div className="bg-[#16284B] text-white rounded-xl p-4 flex items-center justify-between">

@@ -206,16 +206,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => onNavigate("onboarding")}
+                  onClick={() => onNavigate("command")}
                   className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:opacity-90 transition-all font-medium shadow-md shadow-[rgba(138,112,56,0.2)] text-sm"
                 >
-                  Run My Career X-Ray <ArrowRight size={15} />
-                </button>
-                <button
-                  onClick={() => onNavigate("command")}
-                  className="flex items-center justify-center gap-2 border border-border text-foreground px-5 py-3 rounded-xl hover:bg-muted transition-colors font-medium text-sm"
-                >
-                  See a Demo <ChevronRight size={15} />
+                  Get Started <ArrowRight size={15} />
                 </button>
               </div>
 
