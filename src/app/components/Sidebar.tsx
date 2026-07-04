@@ -3,7 +3,8 @@ import {
   Layers, User, Bell, Settings, ChevronRight, TrendingUp,
   Briefcase, Video, Building2, GraduationCap, LayoutDashboard,
   Fingerprint, Scale, UserCheck, MessageSquareWarning, RotateCcw,
-  ShieldCheck, Handshake, School, BookOpenCheck, WalletCards, HeartPulse
+  ShieldCheck, Handshake, School, BookOpenCheck, WalletCards, HeartPulse,
+  Globe
 } from "lucide-react";
 
 type Role = "candidate" | "employer" | "university";
@@ -14,6 +15,7 @@ const candidateMain = [
   { id: "jobs",    label: "Jobs + Applications", icon: Briefcase },
   { id: "coach",   label: "Interview Coach", icon: Video },
   { id: "offers",  label: "Offer Decision AI", icon: Scale },
+  { id: "portfolio", label: "Portfolio Builder", icon: Globe },
 ];
 
 const journey = [
@@ -29,19 +31,19 @@ const support = [
 ];
 
 const employerMain = [
-  { id: "employer", label: "Hiring Command Center", icon: Building2 },
-  { id: "employer", label: "Smart Talent Matching", icon: UserCheck },
-  { id: "employer", label: "Reply SLA Monitor", icon: MessageSquareWarning },
-  { id: "employer", label: "Talent Re-engagement", icon: RotateCcw },
-  { id: "employer", label: "Workforce Resilience", icon: ShieldCheck },
+  { id: "employer",       label: "Hiring Command Center", icon: Building2 },
+  { id: "emp-matching",   label: "Smart Talent Matching", icon: UserCheck },
+  { id: "emp-sla",        label: "Reply SLA Monitor", icon: MessageSquareWarning },
+  { id: "emp-reengage",   label: "Talent Re-engagement", icon: RotateCcw },
+  { id: "emp-resilience", label: "Workforce Resilience", icon: ShieldCheck },
 ];
 
 const universityMain = [
-  { id: "insights", label: "University Dashboard", icon: School },
-  { id: "insights", label: "Outcome Loop", icon: HeartPulse },
-  { id: "insights", label: "Curriculum Engine", icon: BookOpenCheck },
-  { id: "insights", label: "Internship Marketplace", icon: Handshake },
-  { id: "insights", label: "Learning Wallet", icon: WalletCards },
+  { id: "insights",        label: "University Dashboard", icon: School },
+  { id: "uni-outcomes",    label: "Outcome Loop", icon: HeartPulse },
+  { id: "uni-curriculum",  label: "Curriculum Engine", icon: BookOpenCheck },
+  { id: "uni-internships", label: "Internship Marketplace", icon: Handshake },
+  { id: "uni-wallet",      label: "Learning Wallet", icon: WalletCards },
 ];
 
 interface SidebarProps {
@@ -100,7 +102,7 @@ export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) 
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2 mb-1">{roleTitle}</p>
           <div className="space-y-0.5">
             {roleItems.map((item, index) => {
-              const active = currentPage === item.id && (currentRole === "candidate" || index === 0);
+              const active = currentPage === item.id;
               return (
                 <button
                   key={`${item.label}-${index}`}

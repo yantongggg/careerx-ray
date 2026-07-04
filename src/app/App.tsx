@@ -7,7 +7,16 @@ import { JobMatchTracker } from "./components/JobMatchTracker";
 import { InterviewCoach } from "./components/InterviewCoach";
 import { OfferDecisionDashboard } from "./components/OfferDecisionDashboard";
 import { EmployerDashboard } from "./components/EmployerDashboard";
+import { SmartTalentMatching } from "./components/SmartTalentMatching";
+import { ReplySlaMonitor } from "./components/ReplySlaMonitor";
+import { TalentReengagement } from "./components/TalentReengagement";
+import { WorkforceResilience } from "./components/WorkforceResilience";
 import { EcosystemInsights } from "./components/EcosystemInsights";
+import { OutcomeLoop } from "./components/OutcomeLoop";
+import { CurriculumEngine } from "./components/CurriculumEngine";
+import { InternshipMarketplace } from "./components/InternshipMarketplace";
+import { LearningWallet } from "./components/LearningWallet";
+import { PortfolioBuilder } from "./components/PortfolioBuilder";
 import { Dashboard } from "./components/Dashboard";
 import { DecisionLab } from "./components/DecisionLab";
 import { BlindSpots } from "./components/BlindSpots";
@@ -26,6 +35,7 @@ type Page =
   | "jobs"
   | "coach"
   | "offers"
+  | "portfolio"
   | "dashboard"
   | "decisionlab"
   | "blindspots"
@@ -33,27 +43,45 @@ type Page =
   | "evidence"
   | "profile"
   | "employer"
-  | "insights";
+  | "emp-matching"
+  | "emp-sla"
+  | "emp-reengage"
+  | "emp-resilience"
+  | "insights"
+  | "uni-outcomes"
+  | "uni-curriculum"
+  | "uni-internships"
+  | "uni-wallet";
 
 const pageLabels: Record<Page, string> = {
-  command:      "Command Center",
-  dna:          "Career DNA",
-  jobs:         "Job Match Tracker",
-  coach:        "Interview Coach",
-  offers:       "Offer Decision AI",
-  dashboard:    "Career Dashboard",
-  decisionlab:  "Decision Lab",
-  blindspots:   "Blind Spot Detection",
-  prescription: "Career Prescription",
-  evidence:     "Career Evidence",
-  profile:      "My Profile",
-  employer:     "Employer Dashboard",
-  insights:     "Institution Insights",
+  command:           "Command Center",
+  dna:              "Career DNA",
+  jobs:             "Job Match Tracker",
+  coach:            "Interview Coach",
+  offers:           "Offer Decision AI",
+  portfolio:        "Portfolio Builder",
+  dashboard:        "Career Dashboard",
+  decisionlab:      "Decision Lab",
+  blindspots:       "Blind Spot Detection",
+  prescription:     "Career Prescription",
+  evidence:         "Career Evidence",
+  profile:          "My Profile",
+  employer:         "Employer Dashboard",
+  "emp-matching":   "Smart Talent Matching",
+  "emp-sla":        "Reply SLA Monitor",
+  "emp-reengage":   "Talent Re-engagement",
+  "emp-resilience": "Workforce Resilience",
+  insights:         "University Dashboard",
+  "uni-outcomes":   "Outcome Loop",
+  "uni-curriculum": "Curriculum Engine",
+  "uni-internships":"Internship Marketplace",
+  "uni-wallet":     "Learning Wallet",
 };
 
 const allPages: Page[] = [
-  "command", "dna", "jobs", "coach", "offers", "dashboard", "decisionlab", "blindspots",
-  "prescription", "evidence", "profile", "employer", "insights",
+  "command", "dna", "jobs", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
+  "prescription", "evidence", "profile", "employer", "emp-matching", "emp-sla", "emp-reengage",
+  "emp-resilience", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
 ];
 
 const pageRole: Record<Page, Role> = {
@@ -62,6 +90,7 @@ const pageRole: Record<Page, Role> = {
   jobs: "candidate",
   coach: "candidate",
   offers: "candidate",
+  portfolio: "candidate",
   dashboard: "candidate",
   decisionlab: "candidate",
   blindspots: "candidate",
@@ -69,7 +98,15 @@ const pageRole: Record<Page, Role> = {
   evidence: "candidate",
   profile: "candidate",
   employer: "employer",
+  "emp-matching": "employer",
+  "emp-sla": "employer",
+  "emp-reengage": "employer",
+  "emp-resilience": "employer",
   insights: "university",
+  "uni-outcomes": "university",
+  "uni-curriculum": "university",
+  "uni-internships": "university",
+  "uni-wallet": "university",
 };
 
 const roleHome: Record<Role, Page> = {
@@ -167,19 +204,28 @@ export default function App() {
 
         {/* Page */}
         <div className="flex-1 overflow-hidden flex flex-col">
-          {page === "dashboard"    && <Dashboard onNavigate={navigate} />}
-          {page === "command"      && <CareerCommandCenter onNavigate={navigate} />}
-          {page === "dna"          && <CareerDna />}
-          {page === "jobs"         && <JobMatchTracker />}
-          {page === "coach"        && <InterviewCoach />}
-          {page === "offers"       && <OfferDecisionDashboard />}
-          {page === "decisionlab"  && <DecisionLab />}
-          {page === "blindspots"   && <BlindSpots />}
-          {page === "prescription" && <CareerPrescription />}
-          {page === "evidence"     && <CareerEvidence />}
-          {page === "profile"      && <UserProfile />}
-          {page === "employer"     && <EmployerDashboard />}
-          {page === "insights"     && <EcosystemInsights />}
+          {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
+          {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
+          {page === "dna"             && <CareerDna />}
+          {page === "jobs"            && <JobMatchTracker />}
+          {page === "coach"           && <InterviewCoach />}
+          {page === "offers"          && <OfferDecisionDashboard />}
+          {page === "portfolio"       && <PortfolioBuilder />}
+          {page === "decisionlab"     && <DecisionLab />}
+          {page === "blindspots"      && <BlindSpots />}
+          {page === "prescription"    && <CareerPrescription />}
+          {page === "evidence"        && <CareerEvidence />}
+          {page === "profile"         && <UserProfile />}
+          {page === "employer"        && <EmployerDashboard />}
+          {page === "emp-matching"    && <SmartTalentMatching />}
+          {page === "emp-sla"         && <ReplySlaMonitor />}
+          {page === "emp-reengage"    && <TalentReengagement />}
+          {page === "emp-resilience"  && <WorkforceResilience />}
+          {page === "insights"        && <EcosystemInsights />}
+          {page === "uni-outcomes"    && <OutcomeLoop />}
+          {page === "uni-curriculum"  && <CurriculumEngine />}
+          {page === "uni-internships" && <InternshipMarketplace />}
+          {page === "uni-wallet"      && <LearningWallet />}
         </div>
       </main>
     </div>
