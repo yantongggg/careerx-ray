@@ -344,19 +344,18 @@ export function PositionSkillGraph({ companyId, position, companyLabel, companyC
             );
           })}
 
-          {/* Unrelated skills — dim scattered stars */}
+          {/* Unrelated skills — dim but readable */}
           {unrelatedSkills.map((s, i) => {
             const angle = (i / Math.max(unrelatedSkills.length, 1)) * Math.PI - Math.PI / 4;
-            const ux = W * 0.82 + Math.cos(angle) * 40;
-            const uy = H * 0.2 + i * (H * 0.6 / Math.max(unrelatedSkills.length, 1));
+            const ux = W * 0.82 + Math.cos(angle) * 50;
+            const uy = H * 0.18 + i * (H * 0.64 / Math.max(unrelatedSkills.length, 1));
             return (
-              <g key={s.id} style={{ opacity: 0.4 }}>
-                <circle cx={ux} cy={uy} r={3.5} fill={s.colors[0]} filter="url(#psg-star)" />
-                <circle cx={ux} cy={uy} r={2} fill={s.colors[0]} opacity={0.8} />
-                <line x1={ux - 5} y1={uy} x2={ux + 5} y2={uy} stroke={s.colors[0]} strokeWidth={0.5} opacity={0.3} />
-                <line x1={ux} y1={uy - 5} x2={ux} y2={uy + 5} stroke={s.colors[0]} strokeWidth={0.5} opacity={0.3} />
-                <text x={ux} y={uy + 11} textAnchor="middle" fontSize={7.5} fontWeight={500}
-                  fill="rgba(255,255,255,0.25)" style={{ pointerEvents: "none", fontFamily: "var(--font-sans)" }}>
+              <g key={s.id} style={{ opacity: 0.45 }}>
+                <circle cx={ux} cy={uy} r={8} fill={s.colors[1]} opacity={0.35} />
+                <circle cx={ux} cy={uy} r={5.5} fill={s.colors[1]} opacity={0.6} />
+                <circle cx={ux - 1.5} cy={uy - 1.5} r={2} fill={s.colors[0]} opacity={0.3} />
+                <text x={ux} y={uy + 16} textAnchor="middle" fontSize={9} fontWeight={600}
+                  fill="rgba(255,255,255,0.35)" style={{ pointerEvents: "none", fontFamily: "var(--font-sans)" }}>
                   {s.label}
                 </text>
               </g>
