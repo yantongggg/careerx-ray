@@ -25,6 +25,8 @@ import {
   Award,
   MessageSquare,
   Mail,
+  FileDown,
+  File,
 } from "lucide-react";
 
 const templates = [
@@ -59,6 +61,9 @@ export function PortfolioBuilder() {
   const [customDomain, setCustomDomain] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [resumeFormat, setResumeFormat] = useState<"pdf" | "word">("pdf");
+  const [resumeTemplate, setResumeTemplate] = useState("professional");
+  const [resumeGenerated, setResumeGenerated] = useState(false);
 
   const toggleSection = (id: string) => {
     setSections((prev) =>
@@ -364,6 +369,160 @@ export function PortfolioBuilder() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Step 5: Traditional Resume Generator */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold">5</span>
+            <h2 className="text-xl font-semibold text-foreground">Generate Traditional Resume</h2>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+            <p className="text-sm text-muted-foreground">
+              Generate a professional, ATS-friendly resume document (Word or PDF) from the same data used for your portfolio website.
+            </p>
+
+            {/* Format selector */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-foreground">Output Format</label>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setResumeFormat("pdf")}
+                  className={`flex items-center gap-2.5 px-5 py-3 rounded-xl border-2 transition-all ${
+                    resumeFormat === "pdf"
+                      ? "border-red-400 bg-red-50 text-red-700"
+                      : "border-border bg-white text-muted-foreground hover:border-red-200"
+                  }`}
+                >
+                  <FileDown className="w-5 h-5" />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold">PDF</p>
+                    <p className="text-xs opacity-70">Best for submitting applications</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setResumeFormat("word")}
+                  className={`flex items-center gap-2.5 px-5 py-3 rounded-xl border-2 transition-all ${
+                    resumeFormat === "word"
+                      ? "border-blue-400 bg-blue-50 text-blue-700"
+                      : "border-border bg-white text-muted-foreground hover:border-blue-200"
+                  }`}
+                >
+                  <File className="w-5 h-5" />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold">Word (.docx)</p>
+                    <p className="text-xs opacity-70">Easy to edit & customize further</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Resume template styles */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-foreground">Resume Style</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { id: "professional", name: "Professional", color: "bg-slate-800" },
+                  { id: "modern", name: "Modern", color: "bg-blue-600" },
+                  { id: "classic", name: "Classic", color: "bg-stone-700" },
+                  { id: "creative-resume", name: "Creative", color: "bg-violet-600" },
+                ].map((style) => (
+                  <button
+                    key={style.id}
+                    onClick={() => setResumeTemplate(style.id)}
+                    className={`rounded-xl border-2 p-3 transition-all ${
+                      resumeTemplate === style.id
+                        ? "border-primary ring-2 ring-blue-200"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    {/* Mini resume preview */}
+                    <div className="h-24 rounded-lg bg-white border border-gray-200 p-2 mb-2 relative overflow-hidden">
+                      <div className={`h-2 w-16 rounded ${style.color} mb-1.5`} />
+                      <div className="h-1 w-full rounded bg-gray-200 mb-1" />
+                      <div className="h-1 w-4/5 rounded bg-gray-200 mb-2" />
+                      <div className={`h-1.5 w-12 rounded ${style.color} opacity-60 mb-1`} />
+                      <div className="h-1 w-full rounded bg-gray-100 mb-0.5" />
+                      <div className="h-1 w-3/4 rounded bg-gray-100 mb-0.5" />
+                      <div className="h-1 w-5/6 rounded bg-gray-100" />
+                    </div>
+                    <p className="text-xs font-medium text-foreground text-center">{style.name}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Generate button */}
+            <div className="flex items-center gap-4 pt-2">
+              <button
+                onClick={() => setResumeGenerated(true)}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />
+                Generate Resume ({resumeFormat === "pdf" ? "PDF" : "Word"})
+              </button>
+              {resumeGenerated && (
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
+                    <Check className="w-4 h-4" /> Resume ready!
+                  </span>
+                  <button
+                    onClick={() => {}}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-white text-foreground text-sm font-medium hover:bg-muted transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download {resumeFormat === "pdf" ? ".pdf" : ".docx"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Resume preview */}
+            {resumeGenerated && (
+              <div className="rounded-xl border border-border bg-white p-6 mt-4 shadow-sm">
+                <div className="max-w-[600px] mx-auto space-y-4">
+                  <div className="text-center border-b border-gray-200 pb-4">
+                    <h3 className="text-lg font-bold text-slate-800">Jordan Kim</h3>
+                    <p className="text-sm text-slate-600">Senior Data Analyst · Kuala Lumpur, Malaysia</p>
+                    <p className="text-xs text-slate-500 mt-1">jordan.kim@email.com · linkedin.com/in/jordankim · github.com/jordankim</p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Professional Summary</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Data analyst with 5+ years of experience in digital banking and fintech. Skilled in SQL, Python, and Tableau with a track record of delivering actionable insights that drove 23% revenue growth. Career DNA: Forge Beaver — high execution, technical ownership.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Experience</h4>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="flex justify-between items-baseline">
+                          <p className="text-xs font-semibold text-slate-800">Senior Data Analyst — Maybank</p>
+                          <p className="text-xs text-slate-500">2022 – Present</p>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-0.5">Led analytics for digital banking products, built dashboards serving 200+ stakeholders.</p>
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-baseline">
+                          <p className="text-xs font-semibold text-slate-800">Data Analyst — Grab</p>
+                          <p className="text-xs text-slate-500">2020 – 2022</p>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-0.5">Owned rider-demand forecasting models, reducing supply mismatch by 18%.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Skills</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["SQL", "Python", "Tableau", "Power BI", "dbt", "BigQuery", "Stakeholder Storytelling"].map(s => (
+                        <span key={s} className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Preview & Publish */}
