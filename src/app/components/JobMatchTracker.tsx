@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, MapPin, MessageCircle, Send, Shield, Sparkles, TrendingUp, X, XCircle } from "lucide-react";
+import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, MapPin, MessageCircle, Send, Shield, Sparkles, TrendingUp, X, XCircle, Zap } from "lucide-react";
 
 interface JobMatchTrackerProps {
   onPrepareApp?: (jobId: string) => void;
@@ -40,6 +40,10 @@ const jobs = [
     healthDelta: "84 → 91",
     hrName: "Sarah Tan",
     hrTitle: "Talent Acquisition, Digital Banking",
+    hrReplyRate: 96,
+    hrAvgReply: "~45 min",
+    hrResponseHours: "9 AM – 6 PM",
+    hrLastSeen: "2 min ago",
   },
   {
     id: "grab-ae",
@@ -63,6 +67,10 @@ const jobs = [
     healthDelta: "84 → 88",
     hrName: "Daniel Lim",
     hrTitle: "People Operations, Data Team",
+    hrReplyRate: 82,
+    hrAvgReply: "~2.5 hrs",
+    hrResponseHours: "10 AM – 7 PM",
+    hrLastSeen: "18 min ago",
   },
   {
     id: "petronas-pm",
@@ -84,6 +92,10 @@ const jobs = [
     healthDelta: "84 → 86",
     hrName: "Aisha Rahman",
     hrTitle: "HR Business Partner, Digital",
+    hrReplyRate: 68,
+    hrAvgReply: "~6 hrs",
+    hrResponseHours: "9 AM – 5 PM",
+    hrLastSeen: "3 hrs ago",
   },
 ];
 
@@ -322,21 +334,39 @@ export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatch
                 <p className="text-xs text-muted-foreground truncate">{chatJob.hrTitle} · {chatJob.company}</p>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-[10px] text-emerald-600 font-medium">Online</span>
+                <div className={`w-2 h-2 rounded-full ${chatJob.hrLastSeen.includes("min") ? "bg-emerald-500" : "bg-amber-400"}`} />
+                <span className={`text-[10px] font-medium ${chatJob.hrLastSeen.includes("min") ? "text-emerald-600" : "text-amber-600"}`}>
+                  {chatJob.hrLastSeen.includes("min") ? "Online" : chatJob.hrLastSeen}
+                </span>
               </div>
               <button onClick={() => setChatJobId(null)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
                 <X size={16} />
               </button>
             </div>
 
-            {/* Job context */}
-            <div className="px-5 py-3 bg-muted/50 border-b border-border">
+            {/* Job context + reply stats */}
+            <div className="px-5 py-3 bg-muted/50 border-b border-border space-y-2.5">
               <div className="flex items-center gap-2 text-xs">
                 <Briefcase size={12} className="text-muted-foreground" />
                 <span className="font-medium text-foreground">{chatJob.role}</span>
                 <span className="text-muted-foreground">·</span>
                 <span className="text-primary font-semibold">{chatJob.fit}% match</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-white border border-border rounded-lg px-2.5 py-1.5">
+                  <Zap size={11} className={chatJob.hrReplyRate >= 90 ? "text-emerald-500" : chatJob.hrReplyRate >= 75 ? "text-amber-500" : "text-red-400"} />
+                  <span className="text-[11px] font-semibold text-foreground">{chatJob.hrReplyRate}%</span>
+                  <span className="text-[10px] text-muted-foreground">reply rate</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white border border-border rounded-lg px-2.5 py-1.5">
+                  <Clock size={11} className="text-muted-foreground" />
+                  <span className="text-[11px] font-semibold text-foreground">{chatJob.hrAvgReply}</span>
+                  <span className="text-[10px] text-muted-foreground">avg reply</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white border border-border rounded-lg px-2.5 py-1.5">
+                  <span className="text-[10px] text-muted-foreground">Active</span>
+                  <span className="text-[11px] font-semibold text-foreground">{chatJob.hrResponseHours}</span>
+                </div>
               </div>
             </div>
 
@@ -389,7 +419,7 @@ export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatch
                 </button>
               </div>
               <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                Messages are verified by CareerX-Ray · Response time avg 2.1 hrs
+                Messages are verified by CareerX-Ray · Avg response {chatJob.hrAvgReply}
               </p>
             </div>
           </div>
