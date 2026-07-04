@@ -7,10 +7,26 @@ export const dimensions = [
   "Communication",
 ];
 
+const ANIMAL_IMAGES = {
+  Beaver: "/dna/beaver.png",
+  Owl: "/dna/owl.png",
+  Fox: "/dna/fox.png",
+  Eagle: "/dna/eagle.png",
+  Dolphin: "/dna/dolphin.png",
+  Horse: "/dna/horse.png",
+  Whale: "/dna/whale.png",
+  Hummingbird: "/dna/hummingbird.png",
+  Ant: "/dna/ant.png",
+  Otter: "/dna/otter.png",
+  Elephant: "/dna/elephant.png",
+  Peacock: "/dna/peacock.png",
+};
+
 export const archetypes = [
   {
     name: "Forge Beaver",
     animal: "Beaver",
+    image: ANIMAL_IMAGES.Beaver,
     core: ["Technical", "Execution"],
     type: "The Practical Builder",
     oneLiner: "Turns complex ideas into working solutions.",
@@ -24,6 +40,7 @@ export const archetypes = [
   {
     name: "Signal Owl",
     animal: "Owl",
+    image: ANIMAL_IMAGES.Owl,
     core: ["Technical", "Strategic"],
     type: "The Systems Thinker",
     oneLiner: "Sees patterns others miss.",
@@ -37,6 +54,7 @@ export const archetypes = [
   {
     name: "Spark Fox",
     animal: "Fox",
+    image: ANIMAL_IMAGES.Fox,
     core: ["Innovation", "Strategic"],
     type: "The Opportunity Creator",
     oneLiner: "Finds new paths when others see limits.",
@@ -50,6 +68,7 @@ export const archetypes = [
   {
     name: "Crown Eagle",
     animal: "Eagle",
+    image: ANIMAL_IMAGES.Eagle,
     core: ["Leadership", "Strategic"],
     type: "The Vision Leader",
     oneLiner: "Leads with direction and confidence.",
@@ -63,6 +82,7 @@ export const archetypes = [
   {
     name: "Bridge Dolphin",
     animal: "Dolphin",
+    image: ANIMAL_IMAGES.Dolphin,
     core: ["Communication", "Leadership"],
     type: "The People Connector",
     oneLiner: "Connects people, ideas, and opportunities.",
@@ -76,6 +96,7 @@ export const archetypes = [
   {
     name: "Pulse Horse",
     animal: "Horse",
+    image: ANIMAL_IMAGES.Horse,
     core: ["Execution", "Communication"],
     type: "The Momentum Driver",
     oneLiner: "Keeps people moving and work progressing.",
@@ -89,6 +110,7 @@ export const archetypes = [
   {
     name: "Compass Whale",
     animal: "Whale",
+    image: ANIMAL_IMAGES.Whale,
     core: ["Strategic", "Communication"],
     type: "The Long-Range Guide",
     oneLiner: "Explains the bigger picture clearly.",
@@ -102,6 +124,7 @@ export const archetypes = [
   {
     name: "Neon Hummingbird",
     animal: "Hummingbird",
+    image: ANIMAL_IMAGES.Hummingbird,
     core: ["Innovation", "Communication"],
     type: "The Creative Storyteller",
     oneLiner: "Turns ideas into messages people remember.",
@@ -115,6 +138,7 @@ export const archetypes = [
   {
     name: "Iron Ant",
     animal: "Ant",
+    image: ANIMAL_IMAGES.Ant,
     core: ["Execution", "Strategic"],
     type: "The Reliable Operator",
     oneLiner: "Builds systems that keep working.",
@@ -128,6 +152,7 @@ export const archetypes = [
   {
     name: "Nova Otter",
     animal: "Otter",
+    image: ANIMAL_IMAGES.Otter,
     core: ["Innovation", "Execution"],
     type: "The Experimental Maker",
     oneLiner: "Tests fast, learns fast, builds fast.",
@@ -141,6 +166,7 @@ export const archetypes = [
   {
     name: "Atlas Elephant",
     animal: "Elephant",
+    image: ANIMAL_IMAGES.Elephant,
     core: ["Leadership", "Execution"],
     type: "The Steady Captain",
     oneLiner: "Carries responsibility and delivers results.",
@@ -154,6 +180,7 @@ export const archetypes = [
   {
     name: "Prism Peacock",
     animal: "Peacock",
+    image: ANIMAL_IMAGES.Peacock,
     core: ["Leadership", "Innovation"],
     type: "The Bold Visionary",
     oneLiner: "Inspires people with new possibilities.",

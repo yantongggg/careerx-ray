@@ -92,10 +92,15 @@ export function CareerDna() {
               </div>
             </div>
             <div className="bg-white rounded-2xl p-5 text-slate-950">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Primary Type</p>
-              <h2 className="text-3xl font-bold mt-1">{primary.name}</h2>
-              <p className="text-sm font-semibold text-primary mt-1">{primary.type}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed mt-3">{primary.oneLiner}</p>
+              <div className="flex items-center gap-4 mb-3">
+                <img src={primary.image} alt={primary.animal} className="w-16 h-16 rounded-xl object-cover shadow-md" />
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Primary Type</p>
+                  <h2 className="text-2xl font-bold mt-0.5">{primary.name}</h2>
+                </div>
+              </div>
+              <p className="text-sm font-semibold text-primary">{primary.type}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-2">{primary.oneLiner}</p>
             </div>
           </div>
         </div>
@@ -136,12 +141,14 @@ export function CareerDna() {
           <section className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="p-5 border-b border-border">
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Archetype</p>
-                  <h2 className="text-2xl font-bold text-foreground mt-1">{primary.name}</h2>
-                  <p className="text-primary font-semibold text-sm mt-1">{primary.careerStyle}</p>
+                <div className="flex items-center gap-4">
+                  <img src={primary.image} alt={primary.animal} className="w-14 h-14 rounded-xl object-cover shadow-sm" />
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Archetype</p>
+                    <h2 className="text-2xl font-bold text-foreground mt-1">{primary.name}</h2>
+                    <p className="text-primary font-semibold text-sm mt-0.5">{primary.careerStyle}</p>
+                  </div>
                 </div>
-                <span className="bg-blue-50 text-primary border border-blue-100 rounded-full px-3 py-1 text-xs font-semibold">{primary.animal}</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed mt-4">{primary.copy}</p>
             </div>
@@ -239,12 +246,14 @@ export function CareerDna() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {archetypes.map(archetype => (
               <div key={archetype.name} className={`border rounded-xl p-4 ${archetype.name === primary.name ? "border-primary bg-blue-50" : "border-border bg-white"}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-bold text-foreground">{archetype.name}</p>
-                  <span className="text-xs text-muted-foreground">{archetype.animal}</span>
+                <div className="flex items-center gap-3">
+                  <img src={archetype.image} alt={archetype.animal} className="w-11 h-11 rounded-lg object-cover shadow-sm flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-foreground truncate">{archetype.name}</p>
+                    <p className="text-xs text-primary font-semibold mt-0.5">{archetype.core.join(" + ")}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{archetype.type}</p>
+                  </div>
                 </div>
-                <p className="text-xs text-primary font-semibold mt-1">{archetype.core.join(" + ")}</p>
-                <p className="text-xs text-muted-foreground mt-2">{archetype.type}</p>
               </div>
             ))}
           </div>
