@@ -1,15 +1,19 @@
 import {
   BarChart3, AlertTriangle, FlaskConical, Pill,
   Layers, User, Bell, Settings, ChevronRight, TrendingUp,
-  Briefcase, Video, Building2, GraduationCap, LayoutDashboard
-  , Fingerprint
+  Briefcase, Video, Building2, GraduationCap, LayoutDashboard,
+  Fingerprint, Scale, UserCheck, MessageSquareWarning, RotateCcw,
+  ShieldCheck, Handshake, School, BookOpenCheck, WalletCards, HeartPulse
 } from "lucide-react";
 
-const main = [
+type Role = "candidate" | "employer" | "university";
+
+const candidateMain = [
   { id: "command", label: "Command Center", icon: LayoutDashboard },
   { id: "dna",     label: "Career DNA", icon: Fingerprint },
   { id: "jobs",    label: "Jobs + Applications", icon: Briefcase },
   { id: "coach",   label: "Interview Coach", icon: Video },
+  { id: "offers",  label: "Offer Decision AI", icon: Scale },
 ];
 
 const journey = [
@@ -24,17 +28,37 @@ const support = [
   { id: "profile",  label: "My Profile",       icon: User   },
 ];
 
-const ecosystem = [
-  { id: "employer", label: "Employer Dashboard", icon: Building2 },
-  { id: "insights", label: "Institution + Policy", icon: GraduationCap },
+const employerMain = [
+  { id: "employer", label: "Hiring Command Center", icon: Building2 },
+  { id: "employer", label: "Smart Talent Matching", icon: UserCheck },
+  { id: "employer", label: "Reply SLA Monitor", icon: MessageSquareWarning },
+  { id: "employer", label: "Talent Re-engagement", icon: RotateCcw },
+  { id: "employer", label: "Workforce Resilience", icon: ShieldCheck },
+];
+
+const universityMain = [
+  { id: "insights", label: "University Dashboard", icon: School },
+  { id: "insights", label: "Outcome Loop", icon: HeartPulse },
+  { id: "insights", label: "Curriculum Engine", icon: BookOpenCheck },
+  { id: "insights", label: "Internship Marketplace", icon: Handshake },
+  { id: "insights", label: "Learning Wallet", icon: WalletCards },
 ];
 
 interface SidebarProps {
   currentPage: string;
+  currentRole: Role;
   onNavigate: (page: string) => void;
 }
 
-export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
+export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) {
+  const roleTitle = currentRole === "candidate" ? "Candidates" : currentRole === "employer" ? "Employers" : "Universities";
+  const roleSubtitle = currentRole === "candidate"
+    ? "Discover, prepare, grow"
+    : currentRole === "employer"
+      ? "Find, engage, retain"
+      : "Track, align, intervene";
+  const roleItems = currentRole === "candidate" ? candidateMain : currentRole === "employer" ? employerMain : universityMain;
+
   return (
     <aside className="flex-shrink-0 bg-white border-r border-border flex flex-col md:h-full max-md:h-auto max-md:border-r-0 max-md:border-b" style={{ width: "min(252px, 100%)" }}>
 
@@ -46,7 +70,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           </div>
           <div>
             <p className="font-semibold text-foreground tracking-tight text-sm leading-none">CareerX-Ray</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Decision Intelligence</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{roleSubtitle}</p>
           </div>
         </button>
       </div>
@@ -54,11 +78,11 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       {/* Health score */}
       <div className="mx-4 my-4 p-4 rounded-xl bg-blue-50 border border-blue-100 max-md:hidden">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs text-primary font-semibold">Career Health Score</span>
+          <span className="text-xs text-primary font-semibold">{currentRole === "candidate" ? "Career Health Score" : currentRole === "employer" ? "Trust Response Score" : "Graduate Outcome Score"}</span>
           <span className="text-xs text-emerald-600 font-medium">+6 pts</span>
         </div>
         <div className="flex items-end gap-1.5 mb-2">
-          <span className="text-2xl font-bold text-primary">84</span>
+          <span className="text-2xl font-bold text-primary">{currentRole === "candidate" ? "84" : currentRole === "employer" ? "91" : "88"}</span>
           <span className="text-xs text-muted-foreground mb-0.5">/100</span>
         </div>
         <div className="h-1.5 bg-blue-100 rounded-full overflow-hidden">
@@ -66,20 +90,20 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         </div>
         <div className="flex items-center gap-1 mt-2">
           <TrendingUp size={10} className="text-emerald-500" />
-          <span className="text-xs text-emerald-600 font-medium">Improving · 4 risks open</span>
+          <span className="text-xs text-emerald-600 font-medium">{currentRole === "candidate" ? "Improving · 4 risks open" : currentRole === "employer" ? "Transparent · 3 replies due" : "Strong · 128 need support"}</span>
         </div>
       </div>
 
       {/* Journey nav */}
       <nav className="flex-1 px-3 overflow-y-auto max-md:flex max-md:gap-2 max-md:pb-3">
         <div className="max-md:min-w-[220px]">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2 mb-1">Candidate</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2 mb-1">{roleTitle}</p>
           <div className="space-y-0.5">
-            {main.map(item => {
-              const active = currentPage === item.id;
+            {roleItems.map((item, index) => {
+              const active = currentPage === item.id && (currentRole === "candidate" || index === 0);
               return (
                 <button
-                  key={item.id}
+                  key={`${item.label}-${index}`}
                   onClick={() => onNavigate(item.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     active
@@ -96,7 +120,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           </div>
         </div>
 
-        <div className="max-md:min-w-[220px]">
+        {currentRole === "candidate" && <div className="max-md:min-w-[220px]">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2 mb-1 md:mt-4 md:border-t md:border-border md:pt-5">X-Ray Journey</p>
         <div className="space-y-0.5">
           {journey.map(item => {
@@ -126,9 +150,9 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             );
           })}
         </div>
-        </div>
+        </div>}
 
-        <div className="max-md:min-w-[220px]">
+        {currentRole === "candidate" && <div className="max-md:min-w-[220px]">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-5 pb-2 mt-2 border-t border-border max-md:mt-0 max-md:pt-2 max-md:border-t-0">Supporting Data</p>
         <div className="space-y-0.5">
           {support.map(item => {
@@ -150,31 +174,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             );
           })}
         </div>
-        </div>
-
-        <div className="max-md:min-w-[230px]">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-5 pb-2 mt-2 border-t border-border max-md:mt-0 max-md:pt-2 max-md:border-t-0">Ecosystem Demo</p>
-        <div className="space-y-0.5">
-          {ecosystem.map(item => {
-            const active = currentPage === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <item.icon size={14} className="flex-shrink-0" />
-                <span className="flex-1 text-left">{item.label}</span>
-                {active && <ChevronRight size={13} className="opacity-50" />}
-              </button>
-            );
-          })}
-        </div>
-        </div>
+        </div>}
       </nav>
 
       {/* Bottom */}

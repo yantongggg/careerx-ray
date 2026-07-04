@@ -1,4 +1,8 @@
-import { Award, BarChart3, Briefcase, Building2, CheckCircle, Clock, Shield, Sparkles, Users } from "lucide-react";
+import { useState } from "react";
+import {
+  Award, BarChart3, Briefcase, Building2, CheckCircle, Clock,
+  MessageSquareWarning, RotateCcw, Shield, Sparkles, UserCheck, Users
+} from "lucide-react";
 
 const pipeline = [
   { stage: "Applied", people: ["Aisyah · 88%", "Daniel · 82%", "Wei Lin · 77%"] },
@@ -14,7 +18,48 @@ const kpis = [
   { label: "Candidate engagement", value: "74%", icon: Users },
 ];
 
+const employerFeatures = [
+  {
+    label: "Smart Talent Matching",
+    icon: UserCheck,
+    metric: "34 high-fit grads",
+    desc: "Matches candidates by skills, Career DNA, verified evidence, salary range, and response likelihood.",
+  },
+  {
+    label: "Talent Retention Signals",
+    icon: BarChart3,
+    metric: "12 at-risk hires",
+    desc: "Predicts which early-career hires may churn based on role fit, onboarding confidence, and growth stagnation.",
+  },
+  {
+    label: "Talent Re-Engagement",
+    icon: RotateCcw,
+    metric: "218 warm candidates",
+    desc: "Finds silver-medalist candidates and career-fair leads worth re-contacting before competitors do.",
+  },
+  {
+    label: "Onboarding Success Predictor",
+    icon: CheckCircle,
+    metric: "87% success odds",
+    desc: "Forecasts whether a candidate will ramp successfully based on skill gaps and manager support needed.",
+  },
+  {
+    label: "Workforce Resilience Planner",
+    icon: Shield,
+    metric: "3 fragile teams",
+    desc: "Shows which teams depend on scarce skills and recommends graduate pipelines to reduce hiring risk.",
+  },
+];
+
+const delayedReplies = [
+  { candidate: "Jordan Kim", role: "Data Analyst", due: "18h overdue", action: "Send interview outcome" },
+  { candidate: "Priya Raman", role: "Analytics Engineer", due: "1d overdue", action: "Confirm screening slot" },
+  { candidate: "Wei Lin", role: "BI Associate", due: "2d overdue", action: "Send transparent rejection" },
+];
+
 export function EmployerDashboard() {
+  const [activeFeature, setActiveFeature] = useState(employerFeatures[0]);
+
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">
@@ -56,6 +101,52 @@ export function EmployerDashboard() {
         </div>
 
         <section className="bg-white border border-border rounded-xl shadow-sm p-5">
+          <div className="flex items-center justify-between gap-4 mb-5">
+            <div>
+              <h2 className="font-semibold text-foreground">Employer AI modules</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Find, engage, retain. Built around trust and measurable hiring behavior.</p>
+            </div>
+            <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-semibold">No sponsored-ad wording</span>
+          </div>
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-4">
+            <div className="space-y-2">
+              {employerFeatures.map(feature => (
+                <button
+                  key={feature.label}
+                  onClick={() => setActiveFeature(feature)}
+                  className={`w-full text-left border rounded-xl p-4 transition-all ${
+                    activeFeature.label === feature.label ? "bg-blue-50 border-primary" : "bg-white border-border hover:border-primary/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <feature.icon size={16} className="text-primary" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-foreground">{feature.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{feature.metric}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="bg-slate-950 text-white rounded-xl p-5">
+              <activeFeature.icon size={20} className="text-blue-300 mb-4" />
+              <p className="text-xl font-bold">{activeFeature.label}</p>
+              <p className="text-sm text-slate-300 leading-relaxed mt-2">{activeFeature.desc}</p>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="bg-white/10 border border-white/10 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">AI signal</p>
+                  <p className="text-lg font-bold mt-1">{activeFeature.metric}</p>
+                </div>
+                <div className="bg-white/10 border border-white/10 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">Next action</p>
+                  <p className="text-sm font-semibold mt-1">Review today</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white border border-border rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="font-semibold text-foreground">Pipeline kanban</h2>
@@ -79,6 +170,26 @@ export function EmployerDashboard() {
                   ))}
                 </div>
               </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-red-50 border border-red-100 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquareWarning size={18} className="text-red-500" />
+            <div>
+              <h2 className="font-semibold text-foreground">Candidate transparency SLA</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Solves the common candidate pain: no reply, slow reply, unclear progress.</p>
+            </div>
+          </div>
+          <div className="grid lg:grid-cols-3 gap-3">
+            {delayedReplies.map(item => (
+              <button key={item.candidate} className="bg-white border border-red-100 rounded-xl p-4 text-left hover:border-red-300 transition-colors">
+                <p className="text-sm font-semibold text-foreground">{item.candidate}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{item.role}</p>
+                <p className="text-xs text-red-600 font-semibold mt-3">{item.due}</p>
+                <p className="text-xs text-foreground mt-1">{item.action}</p>
+              </button>
             ))}
           </div>
         </section>

@@ -11,6 +11,7 @@ interface CareerCommandCenterProps {
 const nextActions = [
   { title: "Tailor resume for Maybank Data Analyst", impact: "+11% interview chance", page: "jobs", icon: FileText },
   { title: "Rehearse SQL case interview", impact: "Interview in 2 days", page: "coach", icon: Video },
+  { title: "Compare 3 offers with AI", impact: "Choose by long-term fit", page: "offers", icon: BarChart3 },
   { title: "Close cloud skill gap", impact: "Blocks 3 target roles", page: "prescription", icon: GraduationCap },
 ];
 
@@ -24,6 +25,15 @@ const marketSignals = [
   { label: "Analytics roles in Malaysia", value: "+18%", caption: "posting growth this quarter" },
   { label: "Median target salary", value: "RM 8.5k", caption: "Klang Valley, 2-4 yrs" },
   { label: "Most requested missing skill", value: "Cloud", caption: "AWS / GCP appears in 61%" },
+];
+
+const candidateFeatures = [
+  { label: "Career Path Navigator", desc: "16-30 roadmap from first role to senior pivot.", page: "decisionlab", icon: Target },
+  { label: "Living Portfolio", desc: "Evidence-backed profile that grows every 6 months.", page: "evidence", icon: FileText },
+  { label: "AI Career Coach", desc: "Interview, resume, and career guidance in one loop.", page: "coach", icon: MessageSquareText },
+  { label: "Fair Pay Engine", desc: "Salary benchmark and offer negotiation guidance.", page: "offers", icon: BarChart3 },
+  { label: "Life Chapter Designer", desc: "Plan career moves around study, family, location, and growth.", page: "prescription", icon: GraduationCap },
+  { label: "Your Own Track", desc: "Wildcard path builder for founder, freelancer, or non-linear routes.", page: "dna", icon: Sparkles },
 ];
 
 export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
@@ -68,6 +78,25 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
               ))}
             </div>
           </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {candidateFeatures.map(feature => (
+            <button
+              key={feature.label}
+              onClick={() => onNavigate(feature.page)}
+              className="bg-white border border-border rounded-xl p-5 shadow-sm text-left hover:border-primary/40 hover:shadow-md transition-all"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+                  <feature.icon size={17} className="text-primary" />
+                </div>
+                <ArrowRight size={14} className="text-muted-foreground" />
+              </div>
+              <p className="font-semibold text-foreground mt-4">{feature.label}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-1">{feature.desc}</p>
+            </button>
+          ))}
         </div>
 
         <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-6">
@@ -145,8 +174,8 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
               <p className="text-sm text-muted-foreground mt-0.5">Every recommendation is connected to verified evidence, market demand, skill gaps, and interview readiness.</p>
             </div>
           </div>
-          <button onClick={() => onNavigate("dashboard")} className="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700">
-            Open X-Ray <TrendingUp size={14} />
+          <button onClick={() => onNavigate("offers")} className="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700">
+            Compare Offers <TrendingUp size={14} />
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { CareerCommandCenter } from "./components/CareerCommandCenter";
 import { CareerDna } from "./components/CareerDna";
 import { JobMatchTracker } from "./components/JobMatchTracker";
 import { InterviewCoach } from "./components/InterviewCoach";
+import { OfferDecisionDashboard } from "./components/OfferDecisionDashboard";
 import { EmployerDashboard } from "./components/EmployerDashboard";
 import { EcosystemInsights } from "./components/EcosystemInsights";
 import { Dashboard } from "./components/Dashboard";
@@ -18,11 +19,13 @@ import { Sidebar } from "./components/Sidebar";
 /* MARKER-MAKE-KIT-INVOKED */
 
 type AppState = "landing" | "onboarding" | "app";
+type Role = "candidate" | "employer" | "university";
 type Page =
   | "command"
   | "dna"
   | "jobs"
   | "coach"
+  | "offers"
   | "dashboard"
   | "decisionlab"
   | "blindspots"
@@ -37,6 +40,7 @@ const pageLabels: Record<Page, string> = {
   dna:          "Career DNA",
   jobs:         "Job Match Tracker",
   coach:        "Interview Coach",
+  offers:       "Offer Decision AI",
   dashboard:    "Career Dashboard",
   decisionlab:  "Decision Lab",
   blindspots:   "Blind Spot Detection",
@@ -48,21 +52,58 @@ const pageLabels: Record<Page, string> = {
 };
 
 const allPages: Page[] = [
-  "command", "dna", "jobs", "coach", "dashboard", "decisionlab", "blindspots",
+  "command", "dna", "jobs", "coach", "offers", "dashboard", "decisionlab", "blindspots",
   "prescription", "evidence", "profile", "employer", "insights",
 ];
+
+const pageRole: Record<Page, Role> = {
+  command: "candidate",
+  dna: "candidate",
+  jobs: "candidate",
+  coach: "candidate",
+  offers: "candidate",
+  dashboard: "candidate",
+  decisionlab: "candidate",
+  blindspots: "candidate",
+  prescription: "candidate",
+  evidence: "candidate",
+  profile: "candidate",
+  employer: "employer",
+  insights: "university",
+};
+
+const roleHome: Record<Role, Page> = {
+  candidate: "command",
+  employer: "employer",
+  university: "insights",
+};
+
+const roleLabels: Record<Role, string> = {
+  candidate: "Candidate",
+  employer: "Employer",
+  university: "University",
+};
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>("landing");
   const [page, setPage]         = useState<Page>("command");
+  const [role, setRole]         = useState<Role>("candidate");
 
   const navigate = (target: string) => {
     if (target === "landing")    { setAppState("landing");    return; }
     if (target === "onboarding") { setAppState("onboarding"); return; }
     if ((allPages as string[]).includes(target)) {
-      setPage(target as Page);
+      const nextPage = target as Page;
+      setPage(nextPage);
+      setRole(pageRole[nextPage]);
       setAppState("app");
     }
+  };
+
+  const switchRole = (nextRole: Role) => {
+    setRole(nextRole);
+    setPage(roleHome[nextRole]);
+    setAppState("app");
   };
 
   if (appState === "landing")    return <LandingPage onNavigate={navigate} />;
@@ -72,7 +113,7 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-muted">
-      <Sidebar currentPage={page} onNavigate={navigate} />
+      <Sidebar currentPage={page} currentRole={role} onNavigate={navigate} />
 
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
@@ -82,10 +123,32 @@ export default function App() {
             <span>/</span>
             <span className="text-foreground font-medium">{pageLabels[page]}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <select
+              value={role}
+              onChange={e => switchRole(e.target.value as Role)}
+              className="lg:hidden text-xs font-semibold border border-border bg-white rounded-lg px-2 py-1.5 text-foreground"
+            >
+              <option value="candidate">Candidate</option>
+              <option value="employer">Employer</option>
+              <option value="university">University</option>
+            </select>
+            <div className="hidden lg:flex items-center bg-muted border border-border rounded-lg p-1">
+              {(["candidate", "employer", "university"] as Role[]).map(option => (
+                <button
+                  key={option}
+                  onClick={() => switchRole(option)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${
+                    role === option ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {roleLabels[option]}
+                </button>
+              ))}
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg">
               <div className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="text-xs font-medium text-red-600">4 open risks</span>
+              <span className="text-xs font-medium text-red-600">{role === "candidate" ? "4 open risks" : role === "employer" ? "3 delayed replies" : "128 students need support"}</span>
             </div>
             <button
               onClick={() => navigate("onboarding")}
@@ -109,6 +172,7 @@ export default function App() {
           {page === "dna"          && <CareerDna />}
           {page === "jobs"         && <JobMatchTracker />}
           {page === "coach"        && <InterviewCoach />}
+          {page === "offers"       && <OfferDecisionDashboard />}
           {page === "decisionlab"  && <DecisionLab />}
           {page === "blindspots"   && <BlindSpots />}
           {page === "prescription" && <CareerPrescription />}
