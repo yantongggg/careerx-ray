@@ -155,7 +155,12 @@ function getBestFit(company: Company, skillId: string): { position: string; fit:
 
 /* ── Component ── */
 
-export function SkillGraph() {
+interface SkillGraphProps {
+  selectedJob?: { company: string; position: string } | null;
+  onClearJob?: () => void;
+}
+
+export function SkillGraph({ selectedJob, onClearJob }: SkillGraphProps) {
   const [expanded, setExpanded] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(COMPANIES[0]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -172,11 +177,35 @@ export function SkillGraph() {
 
   const starsRef = useRef(makeStars(220, W, H));
 
+  // Auto-select company when navigating from Job Match Tracker
+  useEffect(() => {
+    if (selectedJob) {
+      const company = COMPANIES.find(c => c.id === selectedJob.company);
+      if (company) {
+        setSelectedCompany(company);
+        setHovered(null);
+      }
+    }
+  }, [selectedJob]);
+
   const relatedIds = getRelatedSkillIds(selectedCompany);
   const gapIds = getGapSkillIds(selectedCompany);
-  const relatedSkills = SKILLS.filter(s => relatedIds.has(s.id));
-  const unrelatedSkills = SKILLS.filter(s => !relatedIds.has(s.id));
-  const gapEntries = Array.from(gapIds.entries()).map(([id, importance]) => ({ id, importance, ...(GAP_SKILLS[id] || { label: id, colors: ["#EF5350","#C62828"], glow: "rgba(239,83,80,0.4)" }) }));
+
+  // If a specific position is selected, narrow down to just that position's skills
+  const selectedPosition = selectedJob
+    ? selectedCompany.positions.find(p => p.label.toLowerCase().includes(selectedJob.position.toLowerCase()) || selectedJob.position.toLowerCase().includes(p.label.toLowerCase()))
+    : null;
+
+  const filteredRelatedIds = selectedPosition
+    ? new Set(selectedPosition.skills.map(s => s.skillId))
+    : relatedIds;
+  const filteredGapIds = selectedPosition
+    ? new Map(selectedPosition.gaps.map(g => [g.skillId, g.importance]))
+    : gapIds;
+
+  const relatedSkills = SKILLS.filter(s => filteredRelatedIds.has(s.id));
+  const unrelatedSkills = SKILLS.filter(s => !filteredRelatedIds.has(s.id));
+  const gapEntries = Array.from(filteredGapIds.entries()).map(([id, importance]) => ({ id, importance, ...(GAP_SKILLS[id] || { label: id, colors: ["#EF5350","#C62828"], glow: "rgba(239,83,80,0.4)" }) }));
 
   // Initialize angles for orbiting skills
   useEffect(() => {

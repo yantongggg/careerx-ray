@@ -7,6 +7,8 @@ import { SkillGraph } from "./SkillGraph";
 
 interface CareerCommandCenterProps {
   onNavigate: (page: string) => void;
+  selectedJob?: { company: string; position: string } | null;
+  onClearJob?: () => void;
 }
 
 const nextActions = [
@@ -37,7 +39,7 @@ const candidateFeatures = [
   { label: "Your Own Track", desc: "Wildcard path builder for founder, freelancer, or non-linear routes.", page: "dna", icon: Sparkles },
 ];
 
-export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
+export function CareerCommandCenter({ onNavigate, selectedJob, onClearJob }: CareerCommandCenterProps) {
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">
@@ -64,24 +66,46 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Employability", value: "82", unit: "/100", icon: Shield, tone: "text-emerald-300" },
-                { label: "Open gaps", value: "4", unit: "", icon: Zap, tone: "text-amber-300" },
-                { label: "Active apps", value: "3", unit: "", icon: Briefcase, tone: "text-blue-300" },
-                { label: "Interview ready", value: "71", unit: "%", icon: MessageSquareText, tone: "text-purple-300" },
-              ].map(m => (
-                <div key={m.label} className="bg-white/8 border border-white/10 rounded-xl p-4">
-                  <m.icon size={15} className={m.tone} />
-                  <p className="text-2xl font-bold mt-2">{m.value}<span className="text-sm text-slate-400">{m.unit}</span></p>
-                  <p className="text-xs text-slate-400 mt-0.5">{m.label}</p>
+            <div>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Employability", value: "82", unit: "/100", icon: Shield, tone: "text-emerald-300" },
+                  { label: "Open gaps", value: "4", unit: "", icon: Zap, tone: "text-amber-300" },
+                  { label: "Active apps", value: "3", unit: "", icon: Briefcase, tone: "text-blue-300" },
+                  { label: "Interview ready", value: "71", unit: "%", icon: MessageSquareText, tone: "text-purple-300" },
+                  { label: "Trust Score", value: "94", unit: "/100", icon: Shield, tone: "text-emerald-300" },
+                ].map(m => (
+                  <div key={m.label} className="bg-white/8 border border-white/10 rounded-xl p-4">
+                    <m.icon size={15} className={m.tone} />
+                    <p className="text-2xl font-bold mt-2">{m.value}<span className="text-sm text-slate-400">{m.unit}</span></p>
+                    <p className="text-xs text-slate-400 mt-0.5">{m.label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="text-xs text-emerald-300 font-medium">Good Standing</span>
                 </div>
-              ))}
+                <span className="text-xs text-slate-500">Reply rate 96% · Avg response 2.1hrs</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <SkillGraph />
+        {selectedJob && (
+          <div className="bg-[#16284B] text-white rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold">Preparing for: {selectedJob.position}</p>
+              <p className="text-xs text-slate-300">Showing skills relevant to this position at {selectedJob.company}</p>
+            </div>
+            <button onClick={onClearJob} className="text-xs text-slate-300 hover:text-white border border-white/20 px-3 py-1.5 rounded-lg">
+              Show All Companies
+            </button>
+          </div>
+        )}
+
+        <SkillGraph selectedJob={selectedJob} onClearJob={onClearJob} />
 
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {candidateFeatures.map(feature => (

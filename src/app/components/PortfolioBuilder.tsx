@@ -27,6 +27,8 @@ import {
   Mail,
   FileDown,
   File,
+  X,
+  ArrowRight,
 } from "lucide-react";
 
 const templates = [
@@ -91,6 +93,14 @@ export function PortfolioBuilder() {
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Create a stunning portfolio website from your LinkedIn, GitHub, and existing resume in minutes
           </p>
+          <button
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-[#16284B] text-white font-semibold text-base hover:bg-[#1e3a6a] transition-all shadow-lg shadow-[#16284B]/25 hover:shadow-xl hover:shadow-[#16284B]/30 hover:-translate-y-0.5 mt-2"
+          >
+            <Eye className="w-5 h-5" />
+            Preview Portfolio Website
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Step 1: Import Sources */}
@@ -624,6 +634,316 @@ export function PortfolioBuilder() {
           </div>
         </div>
       </div>
+
+      {/* ── Full-Screen Portfolio Preview Modal ── */}
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-sm flex flex-col">
+          {/* Close button */}
+          <button
+            onClick={() => setPreviewOpen(false)}
+            className="fixed top-4 right-4 z-[60] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors backdrop-blur-sm border border-white/10"
+            aria-label="Close preview"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Preview badge */}
+          <div className="fixed top-4 left-4 z-[60] inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-white/80 text-xs font-medium">
+            <Eye className="w-3.5 h-3.5" />
+            Portfolio Preview
+          </div>
+
+          {/* Scrollable preview content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="min-h-full bg-slate-950">
+
+              {/* ── NAV BAR ── */}
+              <nav className="sticky top-0 z-50 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800">
+                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+                  <span className="text-xl font-bold text-white tracking-tight">
+                    Jordan<span className="text-violet-400">.</span>Kim
+                  </span>
+                  <div className="hidden sm:flex items-center gap-8">
+                    {["About", "Skills", "Experience", "Projects", "Contact"].map((link) => (
+                      <span
+                        key={link}
+                        className="text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        {link}
+                      </span>
+                    ))}
+                  </div>
+                  <button className="px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-500 transition-colors">
+                    Hire Me
+                  </button>
+                </div>
+              </nav>
+
+              {/* ── HERO SECTION ── */}
+              <section className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a]" />
+                <div className="absolute inset-0">
+                  <div className="absolute top-20 left-10 w-72 h-72 bg-violet-600/20 rounded-full blur-3xl" />
+                  <div className="absolute bottom-10 right-20 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl" />
+                  <div className="absolute top-40 right-40 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl" />
+                </div>
+                <div className="relative max-w-6xl mx-auto px-6 py-24 sm:py-32">
+                  <div className="max-w-3xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm mb-6">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      Available for opportunities
+                    </div>
+                    <h1 className="text-5xl sm:text-7xl font-bold text-white mb-4 tracking-tight">
+                      Jordan Kim
+                    </h1>
+                    <p className="text-xl sm:text-2xl text-violet-300 font-medium mb-6">
+                      Data Analyst & Analytics Professional
+                    </p>
+                    <p className="text-lg text-slate-400 leading-relaxed max-w-2xl mb-10">
+                      Transforming complex data into actionable business insights. 5+ years of experience
+                      in digital banking, fintech, and e-commerce analytics. Passionate about building
+                      data-driven cultures and delivering measurable impact through storytelling and
+                      visualization.
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                      <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-500 transition-all shadow-lg shadow-violet-600/25">
+                        <FolderGit2 className="w-4 h-4" />
+                        View Projects
+                      </button>
+                      <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 transition-all">
+                        <Mail className="w-4 h-4" />
+                        Contact Me
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── SKILLS SECTION ── */}
+              <section className="bg-[#0f172a] py-20 border-t border-slate-800/50">
+                <div className="max-w-6xl mx-auto px-6">
+                  <div className="text-center mb-14">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Technical Skills</h2>
+                    <p className="text-slate-400 max-w-xl mx-auto">
+                      Core competencies honed across multiple industries and data-intensive roles
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {[
+                      { name: "SQL", level: 95, color: "from-blue-500 to-cyan-400", bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-400" },
+                      { name: "Python", level: 90, color: "from-emerald-500 to-teal-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-400" },
+                      { name: "Tableau", level: 80, color: "from-orange-500 to-amber-400", bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-400" },
+                      { name: "Storytelling", level: 85, color: "from-violet-500 to-purple-400", bg: "bg-violet-500/10", border: "border-violet-500/20", text: "text-violet-400" },
+                      { name: "Power BI", level: 70, color: "from-yellow-500 to-amber-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20", text: "text-yellow-400" },
+                      { name: "dbt", level: 60, color: "from-rose-500 to-pink-400", bg: "bg-rose-500/10", border: "border-rose-500/20", text: "text-rose-400" },
+                      { name: "BigQuery", level: 60, color: "from-sky-500 to-blue-400", bg: "bg-sky-500/10", border: "border-sky-500/20", text: "text-sky-400" },
+                      { name: "Excel", level: 70, color: "from-green-500 to-emerald-400", bg: "bg-green-500/10", border: "border-green-500/20", text: "text-green-400" },
+                    ].map((skill) => (
+                      <div
+                        key={skill.name}
+                        className={`rounded-xl ${skill.bg} border ${skill.border} p-5 hover:scale-[1.02] transition-transform`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="font-semibold text-white text-sm">{skill.name}</h3>
+                          <span className={`text-xs font-bold ${skill.text}`}>{skill.level}%</span>
+                        </div>
+                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full bg-gradient-to-r ${skill.color}`}
+                            style={{ width: `${skill.level}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* ── EXPERIENCE SECTION ── */}
+              <section className="bg-slate-950 py-20 border-t border-slate-800/50">
+                <div className="max-w-6xl mx-auto px-6">
+                  <div className="text-center mb-14">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Experience</h2>
+                    <p className="text-slate-400 max-w-xl mx-auto">
+                      A track record of turning data into business outcomes
+                    </p>
+                  </div>
+                  <div className="relative max-w-3xl mx-auto">
+                    {/* Timeline line */}
+                    <div className="absolute left-[19px] top-2 bottom-2 w-px bg-gradient-to-b from-violet-500 via-blue-500 to-slate-700" />
+
+                    <div className="space-y-10">
+                      {[
+                        {
+                          role: "Data Analyst",
+                          company: "Maybank",
+                          period: "2024 - Present",
+                          description: "Analyzed customer data patterns across digital banking products, built executive dashboards serving 200+ stakeholders, and identified cross-selling opportunities that drove 23% revenue growth in targeted segments.",
+                          color: "bg-violet-500",
+                          tags: ["SQL", "Tableau", "Python"],
+                        },
+                        {
+                          role: "Analytics Intern",
+                          company: "Grab",
+                          period: "2023 - 2024",
+                          description: "Supported the analytics engineering team in building rider-demand forecasting models, reducing supply-demand mismatch by 18%. Developed automated reporting pipelines using dbt and BigQuery.",
+                          color: "bg-blue-500",
+                          tags: ["dbt", "BigQuery", "Python"],
+                        },
+                        {
+                          role: "Data Intern",
+                          company: "Petronas Digital",
+                          period: "2023",
+                          description: "Assisted in data pipeline development and maintenance for upstream operations analytics. Built data quality monitoring dashboards and contributed to the migration of legacy ETL processes.",
+                          color: "bg-cyan-500",
+                          tags: ["SQL", "Power BI", "Excel"],
+                        },
+                      ].map((exp, i) => (
+                        <div key={i} className="relative pl-12">
+                          {/* Timeline dot */}
+                          <div className={`absolute left-2.5 top-1.5 w-4 h-4 rounded-full ${exp.color} border-4 border-slate-950 shadow-lg`} />
+                          <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-6 hover:border-slate-700 transition-colors">
+                            <div className="flex flex-wrap items-center gap-3 mb-2">
+                              <h3 className="text-lg font-bold text-white">{exp.role}</h3>
+                              <span className="text-slate-500">--</span>
+                              <span className="text-violet-400 font-medium">{exp.company}</span>
+                            </div>
+                            <p className="text-sm text-slate-500 mb-3">{exp.period}</p>
+                            <p className="text-slate-400 leading-relaxed text-sm mb-4">{exp.description}</p>
+                            <div className="flex flex-wrap gap-2">
+                              {exp.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 text-xs font-medium"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── PROJECTS SECTION ── */}
+              <section className="bg-[#0f172a] py-20 border-t border-slate-800/50">
+                <div className="max-w-6xl mx-auto px-6">
+                  <div className="text-center mb-14">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Featured Projects</h2>
+                    <p className="text-slate-400 max-w-xl mx-auto">
+                      Selected work showcasing analytical thinking and technical execution
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[
+                      {
+                        title: "Customer Churn Prediction Model",
+                        tags: ["Python", "SQL"],
+                        description: "Built a machine learning model achieving 87% accuracy in predicting customer churn for a digital banking product, enabling proactive retention campaigns that saved an estimated RM 2.4M annually.",
+                        gradient: "from-violet-600/20 to-blue-600/20",
+                        border: "border-violet-500/30",
+                        icon: "from-violet-500 to-blue-500",
+                      },
+                      {
+                        title: "Executive Analytics Dashboard",
+                        tags: ["Tableau", "Power BI"],
+                        description: "Designed and deployed a real-time KPI dashboard for C-suite executives, consolidating data from 12+ sources into a single pane of glass with automated daily refreshes and anomaly alerts.",
+                        gradient: "from-orange-600/20 to-amber-600/20",
+                        border: "border-orange-500/30",
+                        icon: "from-orange-500 to-amber-500",
+                      },
+                      {
+                        title: "Data Pipeline Automation",
+                        tags: ["dbt", "BigQuery"],
+                        description: "Automated ETL workflows reducing manual data processing work by 60%, improving data freshness from T+2 to near-real-time, and establishing data quality checks across 50+ critical tables.",
+                        gradient: "from-cyan-600/20 to-teal-600/20",
+                        border: "border-cyan-500/30",
+                        icon: "from-cyan-500 to-teal-500",
+                      },
+                    ].map((project, i) => (
+                      <div
+                        key={i}
+                        className={`group rounded-xl bg-gradient-to-br ${project.gradient} border ${project.border} p-6 hover:scale-[1.02] transition-all duration-300`}
+                      >
+                        {/* Project icon */}
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${project.icon} flex items-center justify-center mb-5 shadow-lg`}>
+                          <Code2 className="w-6 h-6 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-2">{project.title}</h3>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {project.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-2 py-0.5 rounded-md bg-white/5 text-slate-300 text-xs font-medium border border-white/10"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-sm text-slate-400 leading-relaxed mb-5">{project.description}</p>
+                        <span className="inline-flex items-center gap-1.5 text-sm text-violet-400 font-medium group-hover:gap-2.5 transition-all cursor-pointer">
+                          View Details <ArrowRight className="w-4 h-4" />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* ── CONTACT SECTION ── */}
+              <section className="bg-slate-950 py-20 border-t border-slate-800/50">
+                <div className="max-w-6xl mx-auto px-6">
+                  <div className="text-center mb-14">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Get In Touch</h2>
+                    <p className="text-slate-400 max-w-xl mx-auto">
+                      Interested in working together? Feel free to reach out through any of these channels.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+                    <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-6 text-center hover:border-slate-700 transition-colors group">
+                      <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                        <Mail className="w-5 h-5 text-violet-400" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-white mb-1">Email</h3>
+                      <p className="text-sm text-slate-400">jordan.kim@email.com</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-6 text-center hover:border-slate-700 transition-colors group">
+                      <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                        <Linkedin className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-white mb-1">LinkedIn</h3>
+                      <p className="text-sm text-slate-400">linkedin.com/in/jordankim</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-6 text-center hover:border-slate-700 transition-colors group">
+                      <div className="w-12 h-12 rounded-xl bg-slate-500/10 border border-slate-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                        <Github className="w-5 h-5 text-slate-300" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-white mb-1">GitHub</h3>
+                      <p className="text-sm text-slate-400">github.com/jordankim</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── FOOTER ── */}
+              <footer className="bg-[#0f172a] border-t border-slate-800/50 py-8">
+                <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <span className="text-sm text-slate-500">
+                    Built with <span className="text-violet-400">CareerX-Ray</span> Portfolio Builder
+                  </span>
+                  <span className="text-sm text-slate-600">
+                    &copy; 2026 Jordan Kim. All rights reserved.
+                  </span>
+                </div>
+              </footer>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

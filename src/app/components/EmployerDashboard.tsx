@@ -100,6 +100,68 @@ export function EmployerDashboard() {
           ))}
         </div>
 
+        <section className="bg-white border border-[rgba(22,40,75,0.14)] rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-bold" style={{ color: "#16284B" }}>Employer Trust Score</h2>
+              <p className="text-xs mt-0.5" style={{ color: "#8A7038" }}>Transparency builds talent trust</p>
+            </div>
+            <Shield size={20} style={{ color: "#8A7038" }} />
+          </div>
+
+          <div className="grid lg:grid-cols-[0.4fr_1fr] gap-6 items-start">
+            <div className="flex flex-col items-center justify-center p-5 rounded-xl" style={{ backgroundColor: "#EFEDE6" }}>
+              <div className="relative w-28 h-28">
+                <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(22,40,75,0.08)" strokeWidth="10" />
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#8A7038" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${87 * 3.267} ${100 * 3.267}`} />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-bold" style={{ color: "#16284B" }}>87</span>
+                  <span className="text-xs" style={{ color: "#8A7038" }}>/100</span>
+                </div>
+              </div>
+              <p className="text-xs font-semibold mt-2" style={{ color: "#16284B" }}>Overall Trust</p>
+            </div>
+
+            <div>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: "Reply Speed", score: 92, detail: "Avg 4.2 hours" },
+                  { label: "Review Rate", score: 85, detail: "Applications reviewed" },
+                  { label: "Feedback Quality", score: 78, detail: "Candidate feedback" },
+                  { label: "Offer Timeline", score: 88, detail: "Days to decision" },
+                ].map(item => (
+                  <div key={item.label} className="p-3 rounded-xl border" style={{ borderColor: "rgba(22,40,75,0.14)" }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-semibold" style={{ color: "#16284B" }}>{item.label}</p>
+                      <span className="text-sm font-bold" style={{ color: "#8A7038" }}>{item.score}/100</span>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "#EFEDE6" }}>
+                      <div className="h-full rounded-full" style={{ width: `${item.score}%`, backgroundColor: "#8A7038" }} />
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: "rgba(22,40,75,0.55)" }}>{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-sm font-semibold text-emerald-700">Good Standing — Full Visibility</span>
+                </div>
+                <p className="text-xs text-emerald-600 mt-1">Your job posts are shown with priority ranking</p>
+              </div>
+
+              <div className="mt-3 space-y-1">
+                <p className="text-xs" style={{ color: "rgba(22,40,75,0.45)" }}>Above 80%: Full visibility &amp; priority ranking</p>
+                <p className="text-xs" style={{ color: "rgba(22,40,75,0.45)" }}>60-80%: Warning — Reduced exposure in search results</p>
+                <p className="text-xs" style={{ color: "rgba(22,40,75,0.45)" }}>Below 60%: Critical — Account under review, listings may be hidden</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-white border border-border rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between gap-4 mb-5">
             <div>
@@ -231,6 +293,40 @@ export function EmployerDashboard() {
             </div>
           </section>
         </div>
+
+        <section className="bg-white border border-[rgba(22,40,75,0.14)] rounded-xl shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-semibold" style={{ color: "#16284B" }}>Top candidates by trust score</h2>
+              <p className="text-xs mt-0.5" style={{ color: "#8A7038" }}>Candidates are also rated on response behavior</p>
+            </div>
+            <UserCheck size={17} style={{ color: "#8A7038" }} />
+          </div>
+          <div className="space-y-3">
+            {[
+              { name: "Jordan Kim", trust: 94, reply: "2hrs avg" },
+              { name: "Aisha Rahman", trust: 91, reply: "3hrs avg" },
+              { name: "Wei Chen", trust: 88, reply: "5hrs avg" },
+            ].map(c => (
+              <div key={c.name} className="flex items-center gap-4 p-3 rounded-xl border" style={{ borderColor: "rgba(22,40,75,0.14)" }}>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: "#EFEDE6", color: "#8A7038" }}>
+                  {c.name.split(" ").map(n => n[0]).join("")}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: "#16284B" }}>{c.name}</p>
+                  <p className="text-xs" style={{ color: "rgba(22,40,75,0.55)" }}>Reply: {c.reply}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold" style={{ color: "#8A7038" }}>{c.trust}/100</p>
+                  <p className="text-xs" style={{ color: "rgba(22,40,75,0.45)" }}>Trust</p>
+                </div>
+                <div className="w-16 h-2 rounded-full overflow-hidden" style={{ backgroundColor: "#EFEDE6" }}>
+                  <div className="h-full rounded-full" style={{ width: `${c.trust}%`, backgroundColor: "#8A7038" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );

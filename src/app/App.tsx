@@ -125,6 +125,7 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>("landing");
   const [page, setPage]         = useState<Page>("command");
   const [role, setRole]         = useState<Role>("candidate");
+  const [selectedJob, setSelectedJob] = useState<{company: string; position: string} | null>(null);
 
   const navigate = (target: string) => {
     if (target === "landing")    { setAppState("landing");    return; }
@@ -135,6 +136,11 @@ export default function App() {
       setRole(pageRole[nextPage]);
       setAppState("app");
     }
+  };
+
+  const navigateWithJob = (company: string, position: string) => {
+    setSelectedJob({ company, position });
+    navigate("command");
   };
 
   const switchRole = (nextRole: Role) => {
@@ -187,12 +193,14 @@ export default function App() {
               <div className="w-2 h-2 rounded-full bg-[#8A7038]" />
               <span className="text-xs font-medium text-[#6F5A2B]">{role === "candidate" ? "4 open risks" : role === "employer" ? "3 delayed replies" : "128 students need support"}</span>
             </div>
-            <button
-              onClick={() => navigate("onboarding")}
-              className="text-xs text-muted-foreground hover:text-primary transition-colors border border-border px-3 py-1.5 rounded-lg hover:bg-muted"
-            >
-              Re-scan
-            </button>
+            {role === "candidate" && (
+              <button
+                onClick={() => navigate("onboarding")}
+                className="text-xs text-muted-foreground hover:text-primary transition-colors border border-border px-3 py-1.5 rounded-lg hover:bg-muted"
+              >
+                Re-scan
+              </button>
+            )}
             <button
               onClick={() => navigate("profile")}
               className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D9C18A] to-[#8A7038] flex items-center justify-center text-white text-xs font-bold"
@@ -205,9 +213,9 @@ export default function App() {
         {/* Page */}
         <div className="flex-1 overflow-hidden flex flex-col">
           {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
-          {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
+          {page === "command"         && <CareerCommandCenter onNavigate={navigate} selectedJob={selectedJob} onClearJob={() => setSelectedJob(null)} />}
           {page === "dna"             && <CareerDna />}
-          {page === "jobs"            && <JobMatchTracker />}
+          {page === "jobs"            && <JobMatchTracker onPrepare={navigateWithJob} />}
           {page === "coach"           && <InterviewCoach />}
           {page === "offers"          && <OfferDecisionDashboard />}
           {page === "portfolio"       && <PortfolioBuilder />}

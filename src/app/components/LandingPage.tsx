@@ -212,7 +212,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   Run My Career X-Ray <ArrowRight size={15} />
                 </button>
                 <button
-                  onClick={() => onNavigate("dashboard")}
+                  onClick={() => onNavigate("command")}
                   className="flex items-center justify-center gap-2 border border-border text-foreground px-5 py-3 rounded-xl hover:bg-muted transition-colors font-medium text-sm"
                 >
                   See a Demo <ChevronRight size={15} />

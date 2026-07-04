@@ -1,9 +1,15 @@
 import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, MapPin, Shield, Sparkles, TrendingUp, XCircle } from "lucide-react";
 
+interface JobMatchTrackerProps {
+  onPrepare?: (company: string, position: string) => void;
+}
+
 const jobs = [
   {
     company: "Maybank",
+    companyId: "maybank",
     role: "Data Analyst, Digital Banking",
+    position: "Data Analyst",
     salary: "RM 7.5k-9.5k",
     location: "Kuala Lumpur",
     fit: 91,
@@ -13,7 +19,9 @@ const jobs = [
   },
   {
     company: "Grab",
+    companyId: "grab",
     role: "Analytics Engineer",
+    position: "Analytics Engineer",
     salary: "RM 9k-12k",
     location: "Petaling Jaya / Hybrid",
     fit: 86,
@@ -23,7 +31,9 @@ const jobs = [
   },
   {
     company: "Petronas Digital",
+    companyId: "petronas",
     role: "AI Product Analyst",
+    position: "AI Product Analyst",
     salary: "RM 8k-11k",
     location: "Kuala Lumpur",
     fit: 78,
@@ -41,7 +51,7 @@ const stages = [
   { label: "Offer", count: 0 },
 ];
 
-export function JobMatchTracker() {
+export function JobMatchTracker({ onPrepare }: JobMatchTrackerProps) {
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">
@@ -106,8 +116,11 @@ export function JobMatchTracker() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-5 pt-4 border-t border-border">
                   <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Clock size={12} /> Current status: <strong className="text-foreground">{job.status}</strong></span>
-                  <button className="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
-                    Prepare application <ArrowRight size={14} />
+                  <button
+                    onClick={() => onPrepare?.(job.companyId, job.position)}
+                    className="inline-flex items-center gap-1.5 bg-[#16284B] text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#1e3a6b] transition-colors"
+                  >
+                    Prepare Application →
                   </button>
                 </div>
               </div>

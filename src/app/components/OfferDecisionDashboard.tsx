@@ -85,7 +85,7 @@ export function OfferDecisionDashboard() {
                     <p className="font-bold text-foreground">{offer.company}</p>
                     <p className="text-sm text-muted-foreground mt-0.5">{offer.role}</p>
                   </div>
-                  <span className="text-2xl font-bold text-primary">{offer.score}</span>
+                  <span className="text-2xl font-bold text-primary">{offer.score}%</span>
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-4">
                   <span className="inline-flex items-center gap-1"><MapPin size={12} /> {offer.location}</span>
