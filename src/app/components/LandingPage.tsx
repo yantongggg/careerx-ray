@@ -11,8 +11,8 @@ function ScoreArc({ score }: { score: number }) {
   const filled = (score / 100) * circ;
   return (
     <svg width="100%" height="100%" viewBox="0 0 192 112" preserveAspectRatio="xMidYMid meet">
-      <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="#EFF6FF" strokeWidth={14} strokeLinecap="round" />
-      <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="#2563EB" strokeWidth={14} strokeLinecap="round"
+      <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="#EFEDE6" strokeWidth={14} strokeLinecap="round" />
+      <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="#8A7038" strokeWidth={14} strokeLinecap="round"
         strokeDasharray={`${filled} ${circ}`} style={{ transition: "stroke-dasharray 0.9s ease" }} />
       <text x={cx - r} y={cy + 20} textAnchor="middle" fontSize={11} fill="#94A3B8">0</text>
       <text x={cx + r} y={cy + 20} textAnchor="middle" fontSize={11} fill="#94A3B8">100</text>
@@ -52,12 +52,12 @@ function SalaryComparisonChart() {
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} style={{ overflow: "visible" }}>
       <defs>
         <linearGradient id="svg-stay" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#93C5FD" stopOpacity={0.35} />
-          <stop offset="100%" stopColor="#93C5FD" stopOpacity={0}    />
+          <stop offset="0%"   stopColor="#D9C18A" stopOpacity={0.35} />
+          <stop offset="100%" stopColor="#D9C18A" stopOpacity={0}    />
         </linearGradient>
         <linearGradient id="svg-pivot" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#22C55E" stopOpacity={0.3} />
-          <stop offset="100%" stopColor="#22C55E" stopOpacity={0}   />
+          <stop offset="0%"   stopColor="#115E50" stopOpacity={0.3} />
+          <stop offset="100%" stopColor="#115E50" stopOpacity={0}   />
         </linearGradient>
       </defs>
 
@@ -74,16 +74,16 @@ function SalaryComparisonChart() {
       <path d={areaPath(pivot)} fill="url(#svg-pivot)" />
 
       {/* Lines */}
-      <polyline points={polyline(stay)}  fill="none" stroke="#3B82F6" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-      <polyline points={polyline(pivot)} fill="none" stroke="#22C55E" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+      <polyline points={polyline(stay)}  fill="none" stroke="#8A7038" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+      <polyline points={polyline(pivot)} fill="none" stroke="#115E50" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
 
       {/* Dots */}
-      {stay.map((v, i)  => <circle key={`sd-${i}`} cx={px(i)} cy={py(v)} r={3.5} fill="#3B82F6" stroke="white" strokeWidth={1.5} />)}
-      {pivot.map((v, i) => <circle key={`pd-${i}`} cx={px(i)} cy={py(v)} r={3.5} fill="#22C55E" stroke="white" strokeWidth={1.5} />)}
+      {stay.map((v, i)  => <circle key={`sd-${i}`} cx={px(i)} cy={py(v)} r={3.5} fill="#8A7038" stroke="white" strokeWidth={1.5} />)}
+      {pivot.map((v, i) => <circle key={`pd-${i}`} cx={px(i)} cy={py(v)} r={3.5} fill="#115E50" stroke="white" strokeWidth={1.5} />)}
 
       {/* End labels */}
-      <text x={px(n-1) + 6} y={py(stay[n-1])  + 4} fontSize={10} fill="#3B82F6" fontWeight={600}>${stay[n-1]}k</text>
-      <text x={px(n-1) + 6} y={py(pivot[n-1]) + 4} fontSize={10} fill="#22C55E" fontWeight={600}>${pivot[n-1]}k</text>
+      <text x={px(n-1) + 6} y={py(stay[n-1])  + 4} fontSize={10} fill="#8A7038" fontWeight={600}>${stay[n-1]}k</text>
+      <text x={px(n-1) + 6} y={py(pivot[n-1]) + 4} fontSize={10} fill="#115E50" fontWeight={600}>${pivot[n-1]}k</text>
 
       {/* X labels */}
       {labels.map((l, i) => (
@@ -99,9 +99,9 @@ const journeySteps = [
     icon: Zap,
     label: "Career X-Ray Scan",
     desc: "AI extracts your Career DNA, benchmarks you against the market, and calculates your Career Health Score.",
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
+    color: "text-[#8A7038]",
+    bg: "bg-[rgba(184,154,94,0.1)]",
+    border: "border-[rgba(184,154,94,0.3)]",
   },
   {
     num: "02",
@@ -117,18 +117,18 @@ const journeySteps = [
     icon: FlaskConical,
     label: "Decision Lab",
     desc: "Simulate up to 4 career paths. Compare salary, promotion probability, AI risk, and satisfaction across 5 years.",
-    color: "text-purple-600",
-    bg: "bg-purple-50",
-    border: "border-purple-200",
+    color: "text-[#1B5CA3]",
+    bg: "bg-[rgba(27,92,163,0.08)]",
+    border: "border-[rgba(27,92,163,0.25)]",
   },
   {
     num: "04",
     icon: Pill,
     label: "Career Prescription",
     desc: "Receive a personalized 30/90-day action plan — ranked actions, certifications, and moves to prevent regret.",
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
+    color: "text-[#115E50]",
+    bg: "bg-[rgba(17,94,80,0.08)]",
+    border: "border-[rgba(17,94,80,0.25)]",
   },
 ];
 
@@ -171,7 +171,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <button className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2">Sign in</button>
             <button
               onClick={() => onNavigate("onboarding")}
-              className="text-sm bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-colors font-medium"
             >
               Get Your X-Ray
             </button>
@@ -207,7 +207,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => onNavigate("onboarding")}
-                  className="flex items-center justify-center gap-2 bg-primary text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all font-medium shadow-md shadow-blue-100 text-sm"
+                  className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:opacity-90 transition-all font-medium shadow-md shadow-[rgba(138,112,56,0.2)] text-sm"
                 >
                   Run My Career X-Ray <ArrowRight size={15} />
                 </button>
@@ -224,7 +224,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
             {/* ── Right: Product showcase ── */}
             <div>
-              <div className="bg-white rounded-2xl border border-border shadow-2xl shadow-slate-200/60 overflow-hidden">
+              <div className="bg-white rounded-2xl border border-border shadow-2xl shadow-[rgba(22,40,75,0.08)] overflow-hidden">
 
                 {/* Card top bar */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-slate-50/60">
@@ -255,7 +255,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                         { label: "AI Exposure",        value: "High",  color: "text-red-500",    dot: "bg-red-400"    },
                         { label: "Salary Gap",          value: "–14%",  color: "text-amber-500",  dot: "bg-amber-400"  },
                         { label: "Skill Growth",        value: "Flat",  color: "text-amber-500",  dot: "bg-amber-400"  },
-                        { label: "Promotion Ready",     value: "65%",   color: "text-blue-500",   dot: "bg-blue-400"   },
+                        { label: "Promotion Ready",     value: "65%",   color: "text-[#1B5CA3]",  dot: "bg-[#1B5CA3]"  },
                       ].map(m => (
                         <div key={m.label} className="bg-muted rounded-xl px-3 py-3">
                           <div className="flex items-center gap-1.5 mb-0.5">
@@ -318,7 +318,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     {/* CTA inside card */}
                     <button
                       onClick={() => onNavigate("onboarding")}
-                      className="mt-5 w-full flex items-center justify-center gap-2 bg-primary text-white text-xs font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors"
+                      className="mt-5 w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground text-xs font-semibold py-2.5 rounded-xl hover:opacity-90 transition-colors"
                     >
                       <Zap size={13} /> Get My Career X-Ray
                     </button>
@@ -333,11 +333,11 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       </section>
 
       {/* ── The core problem ── */}
-      <section className="py-16 px-6 bg-slate-950 text-white">
+      <section className="py-16 px-6 bg-[#16284B] text-white">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-blue-400 text-sm font-semibold uppercase tracking-wider mb-4">The problem</p>
+          <p className="text-[#D9C18A] text-sm font-semibold uppercase tracking-wider mb-4">The problem</p>
           <h2 className="text-3xl font-bold text-white leading-tight mb-5">
-            Most professionals only realize they made the wrong career decision <span className="text-blue-400">years later.</span>
+            Most professionals only realize they made the wrong career decision <span className="text-[#D9C18A]">years later.</span>
           </h2>
           <p className="text-slate-400 text-base leading-relaxed max-w-xl mx-auto mb-10">
             By the time you notice stagnation, automation, or a salary gap — the compounding damage has already been done. You needed this information 18 months ago.
@@ -456,8 +456,8 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           <div className="bg-white border border-border rounded-2xl shadow-sm p-8">
             <div className="flex items-center gap-3 mb-6">
               {[
-                { label: "Stay → Senior Analyst",  color: "bg-blue-500"    },
-                { label: "Switch → ML Engineer",   color: "bg-emerald-500" },
+                { label: "Stay → Senior Analyst",  color: "bg-[#8A7038]"  },
+                { label: "Switch → ML Engineer",   color: "bg-[#115E50]"  },
               ].map(s => (
                 <div key={s.label} className="flex items-center gap-2 text-xs font-medium text-foreground">
                   <div className={`w-2.5 h-2.5 rounded-full ${s.color}`} />
@@ -482,20 +482,20 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       {/* ── CTA ── */}
       <section className="py-20 px-6">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-slate-950 rounded-2xl p-12 text-center">
-            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-6">
-              <Shield size={22} className="text-white" />
+          <div className="bg-[#16284B] rounded-2xl p-12 text-center">
+            <div className="w-12 h-12 bg-[rgba(217,193,138,0.15)] rounded-xl flex items-center justify-center mx-auto mb-6">
+              <Shield size={22} className="text-[#D9C18A]" />
             </div>
             <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">Run your Career X-Ray.</h2>
-            <p className="text-slate-400 mb-2">Discover hidden risks. Simulate your next move.</p>
-            <p className="text-slate-400 mb-8">Prevent the career regret you won't see coming.</p>
+            <p className="text-slate-300 mb-2">Discover hidden risks. Simulate your next move.</p>
+            <p className="text-slate-300 mb-8">Prevent the career regret you won't see coming.</p>
             <button
               onClick={() => onNavigate("onboarding")}
-              className="bg-primary text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg text-sm"
+              className="bg-[#D9C18A] text-[#16284B] px-8 py-3.5 rounded-xl font-semibold hover:bg-[#B89A5E] transition-colors shadow-lg text-sm"
             >
               Start My Free X-Ray Scan
             </button>
-            <p className="text-slate-600 text-xs mt-4">Free · No credit card · 3 minutes</p>
+            <p className="text-slate-500 text-xs mt-4">Free · No credit card · 3 minutes</p>
           </div>
         </div>
       </section>

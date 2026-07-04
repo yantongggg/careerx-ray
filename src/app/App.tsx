@@ -183,9 +183,9 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <div className="hidden sm:flex items-center gap-1.5 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg">
-              <div className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="text-xs font-medium text-red-600">{role === "candidate" ? "4 open risks" : role === "employer" ? "3 delayed replies" : "128 students need support"}</span>
+            <div className="hidden sm:flex items-center gap-1.5 bg-[rgba(184,154,94,0.14)] border border-[rgba(22,40,75,0.14)] px-3 py-1.5 rounded-lg">
+              <div className="w-2 h-2 rounded-full bg-[#8A7038]" />
+              <span className="text-xs font-medium text-[#6F5A2B]">{role === "candidate" ? "4 open risks" : role === "employer" ? "3 delayed replies" : "128 students need support"}</span>
             </div>
             <button
               onClick={() => navigate("onboarding")}
@@ -195,7 +195,7 @@ export default function App() {
             </button>
             <button
               onClick={() => navigate("profile")}
-              className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold"
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D9C18A] to-[#8A7038] flex items-center justify-center text-white text-xs font-bold"
             >
               JK
             </button>

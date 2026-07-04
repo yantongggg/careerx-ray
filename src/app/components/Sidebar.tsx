@@ -78,21 +78,21 @@ export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) 
       </div>
 
       {/* Health score */}
-      <div className="mx-4 my-4 p-4 rounded-xl bg-blue-50 border border-blue-100 max-md:hidden">
+      <div className="mx-4 my-4 p-4 rounded-xl bg-accent border border-border max-md:hidden">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs text-primary font-semibold">{currentRole === "candidate" ? "Career Health Score" : currentRole === "employer" ? "Trust Response Score" : "Graduate Outcome Score"}</span>
-          <span className="text-xs text-emerald-600 font-medium">+6 pts</span>
+          <span className="text-xs text-[#115E50] font-medium">+6 pts</span>
         </div>
         <div className="flex items-end gap-1.5 mb-2">
           <span className="text-2xl font-bold text-primary">{currentRole === "candidate" ? "84" : currentRole === "employer" ? "91" : "88"}</span>
           <span className="text-xs text-muted-foreground mb-0.5">/100</span>
         </div>
-        <div className="h-1.5 bg-blue-100 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[#EFEDE6] rounded-full overflow-hidden">
           <div className="h-full bg-primary rounded-full" style={{ width: "84%" }} />
         </div>
         <div className="flex items-center gap-1 mt-2">
-          <TrendingUp size={10} className="text-emerald-500" />
-          <span className="text-xs text-emerald-600 font-medium">{currentRole === "candidate" ? "Improving · 4 risks open" : currentRole === "employer" ? "Transparent · 3 replies due" : "Strong · 128 need support"}</span>
+          <TrendingUp size={10} className="text-[#115E50]" />
+          <span className="text-xs text-[#115E50] font-medium">{currentRole === "candidate" ? "Improving · 4 risks open" : currentRole === "employer" ? "Transparent · 3 replies due" : "Strong · 128 need support"}</span>
         </div>
       </div>
 
@@ -196,7 +196,7 @@ export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) 
           </button>
         ))}
         <div className="flex items-center gap-3 px-3 py-2.5 mt-1">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">JK</div>
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D9C18A] to-[#8A7038] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">JK</div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">Jordan Kim</p>
             <p className="text-xs text-muted-foreground truncate">Sr. Data Analyst · Stripe</p>
