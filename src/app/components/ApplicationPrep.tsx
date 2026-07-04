@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, FileText, GraduationCap, Link2, MapPin, Send, Shield, Upload, User } from "lucide-react";
-import { SkillGraph } from "./SkillGraph";
+import { PositionSkillGraph } from "./PositionSkillGraph";
 
 export interface JobData {
   id: string;
@@ -15,6 +15,8 @@ export interface JobData {
   requirements: string[];
   fit: number;
   successChance: number;
+  companyColors: string[];
+  companyGlow: string;
 }
 
 export const ALL_JOBS: JobData[] = [
@@ -31,6 +33,8 @@ export const ALL_JOBS: JobData[] = [
     requirements: ["3+ years in data analytics or BI", "Expert SQL and Python skills", "Experience with Tableau or Power BI", "Strong communication & storytelling", "Banking/fintech domain knowledge preferred"],
     fit: 91,
     successChance: 82,
+    companyColors: ["#FFF8E1","#FFB300","#FF8F00","#E65100"],
+    companyGlow: "rgba(255,179,0,0.5)",
   },
   {
     id: "grab-ae",
@@ -45,6 +49,8 @@ export const ALL_JOBS: JobData[] = [
     requirements: ["Strong SQL and dbt experience", "Python scripting proficiency", "BigQuery / cloud data warehouse experience", "CI/CD and version control (Git)", "Understanding of data modeling best practices"],
     fit: 86,
     successChance: 71,
+    companyColors: ["#E8F5E9","#66BB6A","#2E7D32","#1B5E20"],
+    companyGlow: "rgba(102,187,106,0.5)",
   },
   {
     id: "petronas-pm",
@@ -59,6 +65,8 @@ export const ALL_JOBS: JobData[] = [
     requirements: ["Python and SQL proficiency", "Experience with ML model evaluation", "Strong storytelling & stakeholder communication", "Product analytics or PM experience", "Energy/industrial domain knowledge a plus"],
     fit: 78,
     successChance: 65,
+    companyColors: ["#E3F2FD","#42A5F5","#1565C0","#0D47A1"],
+    companyGlow: "rgba(66,165,245,0.5)",
   },
 ];
 
@@ -195,7 +203,13 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
         </section>
 
         {/* Skill Solar System */}
-        <SkillGraph selectedJob={{ company: job.companyId, position: job.position }} />
+        <PositionSkillGraph
+          companyId={job.companyId}
+          position={job.position}
+          companyLabel={job.company}
+          companyColors={job.companyColors}
+          companyGlow={job.companyGlow}
+        />
 
         {/* Application Review — Auto-filled */}
         <section className="bg-white border border-border rounded-xl shadow-sm p-6">
