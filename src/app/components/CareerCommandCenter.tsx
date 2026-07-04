@@ -3,6 +3,7 @@ import {
   GraduationCap, MessageSquareText, Shield, Sparkles, Target, TrendingUp,
   Video, Zap
 } from "lucide-react";
+import { SkillGraph } from "./SkillGraph";
 
 interface CareerCommandCenterProps {
   onNavigate: (page: string) => void;
@@ -41,7 +42,7 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">
         <div className="bg-slate-950 text-white rounded-2xl p-6 lg:p-7 overflow-hidden relative">
-          <div className="absolute right-0 top-0 h-full w-1/3 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.28),transparent_58%)]" />
+          <div className="absolute right-0 top-0 h-full w-1/3 bg-[radial-gradient(circle_at_top_right,rgba(217,193,138,0.25),transparent_58%)]" />
           <div className="relative grid lg:grid-cols-[1.3fr_0.7fr] gap-6 items-start">
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -80,6 +81,8 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
           </div>
         </div>
 
+        <SkillGraph />
+
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {candidateFeatures.map(feature => (
             <button
@@ -88,7 +91,7 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
               className="bg-white border border-border rounded-xl p-5 shadow-sm text-left hover:border-primary/40 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-accent border border-border flex items-center justify-center">
                   <feature.icon size={17} className="text-primary" />
                 </div>
                 <ArrowRight size={14} className="text-muted-foreground" />
@@ -111,7 +114,7 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
             <div className="divide-y divide-border">
               {nextActions.map((action, i) => (
                 <button key={action.title} onClick={() => onNavigate(action.page)} className="w-full px-5 py-4 flex items-center gap-4 text-left hover:bg-muted/50">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 text-primary flex items-center justify-center text-sm font-bold">{i + 1}</div>
+                  <div className="w-8 h-8 rounded-full bg-accent text-primary flex items-center justify-center text-sm font-bold">{i + 1}</div>
                   <action.icon size={17} className="text-muted-foreground flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground">{action.title}</p>
@@ -166,7 +169,7 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
           ))}
         </div>
 
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-accent border border-border rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <CheckCircle size={18} className="text-primary mt-0.5" />
             <div>
@@ -174,7 +177,7 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
               <p className="text-sm text-muted-foreground mt-0.5">Every recommendation is connected to verified evidence, market demand, skill gaps, and interview readiness.</p>
             </div>
           </div>
-          <button onClick={() => onNavigate("offers")} className="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700">
+          <button onClick={() => onNavigate("offers")} className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90">
             Compare Offers <TrendingUp size={14} />
           </button>
         </div>
