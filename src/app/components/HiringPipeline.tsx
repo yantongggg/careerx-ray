@@ -39,12 +39,12 @@ interface ChatMsg {
 /* ─── Constants ─── */
 const STAGES = ["Applied", "Screening", "Interview", "Offer", "Hired"];
 
-const STAGE_META: Record<string, { color: string; bg: string; border: string; dot: string; desc: string }> = {
-  Applied:   { color: "text-slate-700",   bg: "bg-slate-50",   border: "border-slate-200", dot: "bg-slate-400",   desc: "New applications waiting for initial review" },
-  Screening: { color: "text-blue-700",    bg: "bg-blue-50",    border: "border-blue-200",  dot: "bg-blue-500",    desc: "Resume & profile screening in progress" },
-  Interview: { color: "text-purple-700",  bg: "bg-purple-50",  border: "border-purple-200",dot: "bg-purple-500",  desc: "Scheduled or completed interviews" },
-  Offer:     { color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200", dot: "bg-amber-500",   desc: "Offer extended, waiting for response" },
-  Hired:     { color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200",dot: "bg-emerald-500", desc: "Offer accepted, onboarding scheduled" },
+const STAGE_STYLES: Record<string, { text: string; bg: string; border: string; dot: string; barColor: string; ringColor: string; desc: string }> = {
+  Applied:   { text: "#16284B",  bg: "rgba(22,40,75,0.04)",   border: "rgba(22,40,75,0.12)", dot: "#94a3b8", barColor: "#94a3b8", ringColor: "", desc: "New applications waiting for initial review" },
+  Screening: { text: "#1B5CA3",  bg: "rgba(27,92,163,0.05)",  border: "rgba(27,92,163,0.14)", dot: "#5b92c7", barColor: "#5b92c7", ringColor: "", desc: "Resume & profile screening in progress" },
+  Interview: { text: "#6b5b8a",  bg: "rgba(107,91,138,0.06)", border: "rgba(107,91,138,0.15)", dot: "#8b7aaa", barColor: "#8b7aaa", ringColor: "rgba(107,91,138,0.12)", desc: "Scheduled or completed interviews" },
+  Offer:     { text: "#8A7038",  bg: "rgba(138,112,56,0.06)", border: "rgba(138,112,56,0.15)", dot: "#b59b4e", barColor: "#b59b4e", ringColor: "rgba(138,112,56,0.12)", desc: "Offer extended, waiting for response" },
+  Hired:     { text: "#115E50",  bg: "rgba(17,94,80,0.05)",   border: "rgba(17,94,80,0.14)", dot: "#3d9485", barColor: "#3d9485", ringColor: "", desc: "Offer accepted, onboarding scheduled" },
 };
 
 const ROLES = [
@@ -287,15 +287,16 @@ export function HiringPipeline() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">
+                <Briefcase size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#8A7038" }} />
                 <select
                   value={selectedRole}
                   onChange={e => setSelectedRole(e.target.value)}
-                  className="appearance-none border border-[rgba(22,40,75,0.14)] rounded-xl px-4 py-2.5 pr-9 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#8A7038]/20 focus:border-[#8A7038]"
-                  style={{ color: "#16284B" }}
+                  className="appearance-none rounded-xl pl-9 pr-9 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#8A7038]/20 cursor-pointer"
+                  style={{ color: "#16284B", backgroundColor: "#EFEDE6", border: "1px solid rgba(138,112,56,0.2)" }}
                 >
                   {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "rgba(22,40,75,0.4)" }} />
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#8A7038" }} />
               </div>
               <button className="inline-flex items-center gap-1.5 border border-[rgba(22,40,75,0.14)] px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors" style={{ color: "#16284B" }}>
                 <Filter size={13} /> Filter
@@ -321,14 +322,13 @@ export function HiringPipeline() {
             {STAGES.map((stage, i) => {
               const pct = total > 0 ? (stageCounts[i] / total) * 100 : 0;
               if (pct === 0) return null;
-              const colors = ["#94a3b8", "#3b82f6", "#a855f7", "#f59e0b", "#10b981"];
-              return <div key={stage} style={{ width: `${pct}%`, backgroundColor: colors[i] }} className="transition-all" />;
+              return <div key={stage} style={{ width: `${pct}%`, backgroundColor: STAGE_STYLES[stage].barColor }} className="transition-all" />;
             })}
           </div>
           <div className="flex items-center gap-4 mt-3 flex-wrap">
             {STAGES.map((stage, i) => (
               <div key={stage} className="flex items-center gap-1.5">
-                <div className={`w-2.5 h-2.5 rounded-full ${STAGE_META[stage].dot}`} />
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: STAGE_STYLES[stage].dot }} />
                 <span className="text-[11px] font-medium" style={{ color: "#16284B" }}>{stage}</span>
                 <span className="text-[11px]" style={{ color: "rgba(22,40,75,0.4)" }}>{stageCounts[i]}</span>
               </div>
@@ -339,32 +339,33 @@ export function HiringPipeline() {
         {/* ── Kanban Columns ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto pb-2">
           {STAGES.map((stage, si) => {
-            const meta = STAGE_META[stage];
+            const ss = STAGE_STYLES[stage];
             const cards = filtered.filter(c => c.stage === si);
             const isUrgent = stage === "Interview" || stage === "Offer";
             return (
-              <div key={stage} className={`min-w-[220px] rounded-xl border p-3 ${isUrgent ? "ring-1 ring-offset-1" : ""}`}
+              <div key={stage} className="min-w-[220px] rounded-xl border p-3"
                 style={{
                   backgroundColor: isUrgent ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.7)",
-                  borderColor: isUrgent ? (stage === "Interview" ? "rgba(168,85,247,0.3)" : "rgba(245,158,11,0.3)") : "rgba(22,40,75,0.08)",
-                  ...(isUrgent ? { ringColor: stage === "Interview" ? "rgba(168,85,247,0.15)" : "rgba(245,158,11,0.15)" } : {}),
+                  borderColor: isUrgent ? ss.border : "rgba(22,40,75,0.08)",
+                  boxShadow: isUrgent ? `0 0 0 3px ${ss.ringColor}` : undefined,
                 }}>
                 {/* Column header */}
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold rounded-md px-1.5 py-0.5" style={{ backgroundColor: "#EFEDE6", color: "rgba(22,40,75,0.4)" }}>0{si + 1}</span>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${meta.bg} ${meta.color} ${meta.border}`}>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full border"
+                      style={{ backgroundColor: ss.bg, color: ss.text, borderColor: ss.border }}>
                       {stage}
                     </span>
                   </div>
                   <span className="text-xs font-semibold" style={{ color: "rgba(22,40,75,0.35)" }}>{cards.length}</span>
                 </div>
-                <p className="text-[10px] mb-3" style={{ color: "rgba(22,40,75,0.4)" }}>{meta.desc}</p>
+                <p className="text-[10px] mb-3" style={{ color: "rgba(22,40,75,0.4)" }}>{ss.desc}</p>
 
                 {/* Cards */}
                 <div className="space-y-2.5">
                   {cards.map(c => {
-                    const fitColor = c.fit >= 90 ? "#10b981" : c.fit >= 80 ? "#8A7038" : "#f59e0b";
+                    const fitColor = c.fit >= 90 ? "#3d9485" : c.fit >= 80 ? "#8A7038" : "#b59b4e";
                     return (
                       <button key={c.id} onClick={() => { setSelectedCandidate(c); setDrawerTab("profile"); }}
                         className="w-full text-left bg-white border rounded-xl p-3.5 shadow-sm hover:shadow-md hover:border-[rgba(138,112,56,0.35)] transition-all"
@@ -406,7 +407,7 @@ export function HiringPipeline() {
                         </div>
                         {/* Next action */}
                         <div className="mt-2 pt-2 border-t" style={{ borderColor: "rgba(22,40,75,0.06)" }}>
-                          <p className="text-[10px] font-medium flex items-center gap-1" style={{ color: isUrgent ? "#a855f7" : "rgba(22,40,75,0.5)" }}>
+                          <p className="text-[10px] font-medium flex items-center gap-1" style={{ color: isUrgent ? "#8A7038" : "rgba(22,40,75,0.5)" }}>
                             <ArrowRight size={9} /> {c.nextAction}
                           </p>
                         </div>
@@ -478,8 +479,8 @@ export function HiringPipeline() {
                   </div>
                   {selectedCandidate.interviewScore !== undefined ? (
                     <div className="rounded-xl p-3 text-center border" style={{ backgroundColor: "rgba(168,85,247,0.06)", borderColor: "rgba(168,85,247,0.15)" }}>
-                      <p className="text-xl font-bold text-purple-700">{selectedCandidate.interviewScore}</p>
-                      <p className="text-[10px] font-medium text-purple-600 mt-0.5">Interview</p>
+                      <p className="text-xl font-bold" style={{ color: "#6b5b8a" }}>{selectedCandidate.interviewScore}</p>
+                      <p className="text-[10px] font-medium mt-0.5" style={{ color: "#8b7aaa" }}>Interview</p>
                     </div>
                   ) : (
                     <div className="rounded-xl p-3 text-center border" style={{ backgroundColor: "#F7F6F2", borderColor: "rgba(22,40,75,0.08)" }}>

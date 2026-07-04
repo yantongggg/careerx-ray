@@ -32,11 +32,11 @@ const support = [
 
 const employerMain = [
   { id: "employer",       label: "Hiring Command Center", icon: Building2 },
+  { id: "emp-pipeline",   label: "Hiring Pipeline", icon: Users },
   { id: "emp-matching",   label: "Smart Talent Matching", icon: UserCheck },
   { id: "emp-sla",        label: "Reply SLA Monitor", icon: MessageSquareWarning },
   { id: "emp-reengage",   label: "Talent Re-engagement", icon: RotateCcw },
   { id: "emp-resilience", label: "Workforce Resilience", icon: ShieldCheck },
-  { id: "emp-pipeline",   label: "Hiring Pipeline", icon: Users },
 ];
 
 const universityMain = [
