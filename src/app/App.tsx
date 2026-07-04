@@ -183,10 +183,10 @@ export default function App() {
             >
               <option value="candidate">Candidate</option>
               <option value="employer">Employer</option>
-              <option value="university">University</option>
+              {/* <option value="university">University</option> */}
             </select>
             <div className="hidden lg:flex items-center bg-muted border border-border rounded-lg p-1">
-              {(["candidate", "employer", "university"] as Role[]).map(option => (
+              {(["candidate", "employer"] as Role[]).map(option => (
                 <button
                   key={option}
                   onClick={() => switchRole(option)}
