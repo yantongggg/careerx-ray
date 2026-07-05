@@ -3,7 +3,7 @@ import {
   ShieldCheck, Sparkles, Target, UserRoundCheck
 } from "lucide-react";
 import {
-  RadarChart, Radar as RadarShape, PolarGrid, PolarAngleAxis, ResponsiveContainer,
+  RadarChart, Radar as RadarShape, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend,
 } from "recharts";
 import {
   archetypes,
@@ -20,8 +20,60 @@ const dnaScores = {
   Leadership: 64,
 };
 
+const aspirationScores = {
+  Technical: 72,
+  Execution: 65,
+  Communication: 80,
+  Strategic: 88,
+  Innovation: 85,
+  Leadership: 78,
+};
+
 const radarData = Object.entries(dnaScores).map(([subject, A]) => ({ subject, A }));
+const conflictRadarData = Object.entries(dnaScores).map(([subject, A]) => ({
+  subject,
+  evidence: A,
+  aspiration: aspirationScores[subject as keyof typeof aspirationScores],
+}));
+
+const conflicts = Object.entries(dnaScores)
+  .map(([dim, evidenceVal]) => {
+    const aspVal = aspirationScores[dim as keyof typeof aspirationScores];
+    const gap = aspVal - evidenceVal;
+    return { dimension: dim, evidence: evidenceVal, aspiration: aspVal, gap, absGap: Math.abs(gap) };
+  })
+  .filter(c => c.absGap >= 15)
+  .sort((a, b) => b.absGap - a.absGap);
+
+const conflictInsights: Record<string, { rising: string; falling: string }> = {
+  Technical: {
+    rising: "You're building toward deeper technical mastery — your ambition exceeds your current evidence.",
+    falling: "You've outgrown pure technical work. Your evidence says 'builder' but your mind says 'leader'.",
+  },
+  Execution: {
+    rising: "You want to be more hands-on than your current role allows.",
+    falling: "You're done being the doer. You want to be the one who decides what gets done.",
+  },
+  Strategic: {
+    rising: "You're thinking bigger than your current role. The gap between doing and directing is where your next move lives.",
+    falling: "You've moved past strategy into execution — you want to build, not just plan.",
+  },
+  Innovation: {
+    rising: "You crave creative freedom your current work doesn't offer. This isn't restlessness — it's a signal.",
+    falling: "You've shifted from experimenting to shipping. Your creative phase is maturing into craft.",
+  },
+  Leadership: {
+    rising: "You're ready to lead but haven't had the chance to prove it yet. Seek ownership, not permission.",
+    falling: "You've realized leadership isn't your goal — influence is. You'd rather shape ideas than manage people.",
+  },
+  Communication: {
+    rising: "You want your work to speak louder. The gap says: learn to narrate, not just deliver.",
+    falling: "You're pulling back from the spotlight to focus on depth. That's a valid strategic choice.",
+  },
+};
+
 const primary = getArchetypeForScores(dnaScores);
+const aspirationPrimary = getArchetypeForScores(aspirationScores);
 const topDimensions = getTopDimensions(dnaScores);
 
 const signalLayers = [
@@ -256,6 +308,105 @@ export function CareerDna() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-border">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+              <h2 className="font-semibold text-foreground">DNA Conflict Detection</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">What you're doing vs. what you're becoming — the gap is the signal.</p>
+          </div>
+
+          <div className="grid lg:grid-cols-[1fr_1fr] gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border">
+            <div className="p-5">
+              <div className="flex items-center justify-center gap-6 mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ background: "#2563EB" }} />
+                  <span className="text-xs font-semibold text-muted-foreground">Evidence (What you do)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ background: "#8A7038" }} />
+                  <span className="text-xs font-semibold text-muted-foreground">Aspiration (What you want)</span>
+                </div>
+              </div>
+              <div style={{ width: "100%", height: 300 }}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={conflictRadarData}>
+                    <PolarGrid stroke="#E2E8F0" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: "#64748B" }} />
+                    <RadarShape dataKey="evidence" stroke="#2563EB" fill="#2563EB" fillOpacity={0.12} strokeWidth={2.5} isAnimationActive={false} name="Evidence" />
+                    <RadarShape dataKey="aspiration" stroke="#8A7038" fill="#8A7038" fillOpacity={0.10} strokeWidth={2.5} strokeDasharray="6 3" isAnimationActive={false} name="Aspiration" />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="border border-blue-100 bg-blue-50/50 rounded-lg p-3 text-center">
+                  <img src={primary.image} alt={primary.animal} className="w-10 h-10 rounded-lg object-cover shadow-sm mx-auto mb-1.5" />
+                  <p className="text-xs font-bold text-foreground">{primary.name}</p>
+                  <p className="text-xs text-blue-600 font-semibold">Who you are now</p>
+                </div>
+                <div className="border border-amber-100 bg-amber-50/50 rounded-lg p-3 text-center">
+                  <img src={aspirationPrimary.image} alt={aspirationPrimary.animal} className="w-10 h-10 rounded-lg object-cover shadow-sm mx-auto mb-1.5" />
+                  <p className="text-xs font-bold text-foreground">{aspirationPrimary.name}</p>
+                  <p className="text-xs text-amber-700 font-semibold">Who you're becoming</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <p className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-3">
+                {conflicts.length} Conflict{conflicts.length !== 1 ? "s" : ""} Detected
+              </p>
+              <div className="space-y-3">
+                {conflicts.map(c => {
+                  const direction = c.gap > 0 ? "rising" : "falling";
+                  const insight = conflictInsights[c.dimension]?.[direction] || "";
+                  return (
+                    <div key={c.dimension} className="border border-border rounded-xl p-4 relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-1 h-full" style={{ background: c.gap > 0 ? "#8A7038" : "#2563EB" }} />
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-bold text-foreground">{c.dimension}</p>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          c.gap > 0 ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-blue-50 text-blue-700 border border-blue-200"
+                        }`}>
+                          {c.gap > 0 ? "↑" : "↓"} {c.absGap} pt gap
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                            <span>Evidence: {c.evidence}</span>
+                            <span>Aspiration: {c.aspiration}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden relative">
+                            <div className="absolute h-full bg-blue-400 rounded-full" style={{ width: `${c.evidence}%` }} />
+                            <div className="absolute h-full border-2 border-amber-500 rounded-full" style={{ width: `${c.aspiration}%`, background: "transparent" }} />
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed italic">{insight}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 bg-slate-950 text-white rounded-xl p-4">
+                <div className="flex items-start gap-2">
+                  <Sparkles size={14} className="text-amber-300 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-amber-200 uppercase tracking-wider mb-1">AI Insight</p>
+                    <p className="text-sm leading-relaxed text-slate-200">
+                      You are a <span className="text-blue-300 font-semibold">{primary.name}</span> transitioning toward <span className="text-amber-300 font-semibold">{aspirationPrimary.name}</span>.
+                      This isn't confusion — it's evolution. Your strongest conflicts ({conflicts.slice(0, 2).map(c => c.dimension).join(", ")}) point to a career identity that's outgrowing its current container.
+                      The move: seek roles that reward {conflicts[0]?.gap > 0 ? "your emerging" : "your proven"} {conflicts[0]?.dimension.toLowerCase()} while giving you room to grow.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
