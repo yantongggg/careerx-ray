@@ -19,7 +19,7 @@ const scoreExplanations = {
     summary: "Three structural problems are holding your score below 80 — and without action, they compound. The good news: all three are fixable within 90 days.",
     confidence: 91,
     evidence: [
-      { label: "Salary 14% below peer median ($120k vs $140k)",         positive: false },
+      { label: "Salary 14% below peer median (RM 120k vs RM 140k)",         positive: false },
       { label: "No cloud certification — 73% of target roles require one", positive: false },
       { label: "Core Python skills untouched for 14 months",             positive: false },
       { label: "Strong FinTech domain expertise — top 20%",              positive: true  },
@@ -45,16 +45,16 @@ const scoreExplanations = {
   salary: {
     title: "Salary vs Market",
     value: "–14%", unit: "",
-    verdict: "You are earning $20k below what the market would pay you today.",
+    verdict: "You are earning RM 20k below what the market would pay you today.",
     summary: "Your 8% raise last year felt like progress — but the market for your peer cohort grew 12%. Every year this gap compounds, and it gets harder to close without a role change.",
     confidence: 88,
     evidence: [
-      { label: "Your current salary: $120k",                        positive: false },
-      { label: "Market median for 5–7yr data professionals: $140k", positive: false },
+      { label: "Your current salary: RM 120k",                        positive: false },
+      { label: "Market median for 5–7yr data professionals: RM 140k", positive: false },
       { label: "Last negotiation: 14 months ago — overdue",         positive: false },
-      { label: "Top performers at your level: $155–170k via switch", positive: false },
+      { label: "Top performers at your level: RM 155–170k via switch", positive: false },
     ],
-    impact: "Compounding 3 years of underperformance means a $58k+ cumulative deficit. This is money you are leaving on the table right now.",
+    impact: "Compounding 3 years of underperformance means a RM 58k+ cumulative deficit. This is money you are leaving on the table right now.",
   },
   promotion: {
     title: "Promotion Readiness",
@@ -160,7 +160,7 @@ const strengthsAndRisks = {
   ],
   risks: [
     "62% of daily tasks are automatable within 24 months",
-    "Salary $20k below what the market would pay you today",
+    "Salary RM 20k below what the market would pay you today",
     "Core skills haven't evolved in 14 months",
     "No cross-functional leadership record — promotion blocker",
   ],
@@ -334,15 +334,15 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `$${v}k`} domain={[105, 125]} />
-                  <Tooltip formatter={(v: number) => [`$${v}k`, "Your salary"]} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM${v}k`} domain={[105, 125]} />
+                  <Tooltip formatter={(v: number) => [`RM ${v}k`, "Your salary"]} />
                   <Area key="area-db-sal" type="monotone" dataKey="salary" stroke="#2563EB" strokeWidth={2} fill="url(#db-salGrad)" isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Market median for your cohort (5–7yr, FinTech, SF): <strong className="text-foreground">$140k</strong>.
-              Without action, this gap reaches $30k+ by end of year.
+              Market median for your cohort (5–7yr, FinTech, KL): <strong className="text-foreground">RM 140k</strong>.
+              Without action, this gap reaches RM 30k+ by end of year.
             </p>
           </div>
         </div>

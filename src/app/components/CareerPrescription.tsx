@@ -20,7 +20,7 @@ const diagnosis = {
     { label: "Cloud credential gap",   severity: "high",     impact: "Filters you out of 73% of target roles at screening" },
     { label: "Skill stagnation",       severity: "high",     impact: "Python skills plateau — market has moved to modern stack" },
     { label: "Leadership gap",         severity: "medium",   impact: "Promotion blocker for L5 without cross-functional scope" },
-    { label: "Salary drift",           severity: "medium",   impact: "Earning $20k below market — gap compounds each year"     },
+    { label: "Salary drift",           severity: "medium",   impact: "Earning RM 20k below market — gap compounds each year"     },
   ],
   detectedStrengths: [
     "FinTech domain expertise — top 20% of peers",
@@ -57,7 +57,7 @@ const treatment: Record<Phase, {
     bg: "bg-blue-50",
     border: "border-blue-200",
     tasks: [
-      { id: "t1", label: "Request salary review with your manager", rationale: "You're $20k below market. Every month you wait, you lose leverage and compound the deficit.", effort: "1 hr",  impact: "Critical", category: "Salary"      },
+      { id: "t1", label: "Request salary review with your manager", rationale: "You're RM 20k below market. Every month you wait, you lose leverage and compound the deficit.", effort: "1 hr",  impact: "Critical", category: "Salary"      },
       { id: "t2", label: "Complete AWS Cloud Practitioner exam",    rationale: "8 hours. Free. Immediately changes your ATS screening outcome for 73% of target roles.",          effort: "8 hrs", impact: "Critical", category: "Certification"},
       { id: "t3", label: "Rewrite your LinkedIn summary",           rationale: "Your current summary describes what you do. It should describe the decisions you enable.",          effort: "2 hrs", impact: "High",     category: "Visibility"   },
       { id: "t4", label: "Reconnect with 5 dormant network contacts",rationale: "80% of senior roles are filled through networks. Your reach has declined 22% in 6 months.",       effort: "2 hrs", impact: "Medium",   category: "Network"      },
@@ -72,7 +72,7 @@ const treatment: Record<Phase, {
     bg: "bg-purple-50",
     border: "border-purple-200",
     tasks: [
-      { id: "t6",  label: "Pass AWS Solutions Architect Associate",            rationale: "This credential alone unlocks 73% of target roles and raises your average salary offer by $12k.",                 effort: "40 hrs",  impact: "Critical", category: "Certification" },
+      { id: "t6",  label: "Pass AWS Solutions Architect Associate",            rationale: "This credential alone unlocks 73% of target roles and raises your average salary offer by RM 12k.",                 effort: "40 hrs",  impact: "Critical", category: "Certification" },
       { id: "t7",  label: "Build ML portfolio project #1 — fraud detection",  rationale: "Demonstrates ML engineering depth beyond your analyst background. One project changes how interviewers see you.", effort: "30 hrs",  impact: "Critical", category: "Portfolio"     },
       { id: "t8",  label: "Complete fast.ai Practical Deep Learning course",   rationale: "Bridges the theory-to-practice gap. Fast.ai is how ML engineers actually learn the craft.",                      effort: "20 hrs",  impact: "High",     category: "Skills"        },
       { id: "t9",  label: "Lead one cross-functional project at Stripe",       rationale: "Your promotion is blocked by scope, not performance. One visible leadership contribution changes the calculus.",   effort: "Ongoing", impact: "High",     category: "Leadership"    },
@@ -88,7 +88,7 @@ const treatment: Record<Phase, {
     border: "border-emerald-200",
     tasks: [
       { id: "t11", label: "Land ML Engineer role or earn promotion",              rationale: "This is the goal. Everything in the 30 and 90-day plan is designed to make this moment achievable.",        effort: "Ongoing", impact: "Critical", category: "Career Move"   },
-      { id: "t12", label: "Achieve $140k+ salary",                               rationale: "Market rate for your profile with AWS cert + ML projects. This is not aspirational — it's attainable.",      effort: "Ongoing", impact: "Critical", category: "Salary"       },
+      { id: "t12", label: "Achieve RM 140k+ salary",                               rationale: "Market rate for your profile with AWS cert + ML projects. This is not aspirational — it's attainable.",      effort: "Ongoing", impact: "Critical", category: "Salary"       },
       { id: "t13", label: "Build ML portfolio project #2 — recommendation system",rationale: "Two ML projects in your portfolio creates a pattern, not a fluke. Pattern is what gets you hired.",          effort: "40 hrs",  impact: "High",     category: "Portfolio"    },
       { id: "t14", label: "Complete GCP Professional Data Engineer cert",         rationale: "Multi-cloud credentialing differentiates you from the 80% of candidates with only AWS.",                     effort: "50 hrs",  impact: "High",     category: "Certification"},
       { id: "t15", label: "Speak or present at one industry event",              rationale: "Thought leadership is a force multiplier. One talk generates inbound connections and interview requests.",     effort: "10 hrs",  impact: "Medium",   category: "Visibility"   },
@@ -98,7 +98,7 @@ const treatment: Record<Phase, {
 
 const expectedOutcome = {
   score: 92,
-  salary: "$140k–$155k",
+  salary: "RM 140k–RM 155k",
   aiRisk: "Low (28%)",
   promotionReady: "81%",
   summary: "With consistent execution of this plan, you move from moderate risk to strong positioning within 6 months. The Career Health Score of 92 reflects a professional who is not just performing well — but building in a direction that compounds.",
@@ -106,16 +106,16 @@ const expectedOutcome = {
 
 const certifications = [
   { name: "AWS Cloud Practitioner",                priority: 1, effort: "1 week",    salaryImpact: "Gate-opener",  urgency: "This week" },
-  { name: "AWS Solutions Architect Associate",      priority: 2, effort: "6–8 weeks", salaryImpact: "+$12k avg",    urgency: "By Day 60" },
-  { name: "GCP Professional Data Engineer",         priority: 3, effort: "8–10 weeks",salaryImpact: "+$10k avg",    urgency: "Month 4–5" },
-  { name: "Databricks ML Associate",                priority: 4, effort: "4–5 weeks", salaryImpact: "+$8k avg",     urgency: "Month 5–6" },
+  { name: "AWS Solutions Architect Associate",      priority: 2, effort: "6–8 weeks", salaryImpact: "+RM 12k avg",    urgency: "By Day 60" },
+  { name: "GCP Professional Data Engineer",         priority: 3, effort: "8–10 weeks",salaryImpact: "+RM 10k avg",    urgency: "Month 4–5" },
+  { name: "Databricks ML Associate",                priority: 4, effort: "4–5 weeks", salaryImpact: "+RM 8k avg",     urgency: "Month 5–6" },
 ];
 
 const recommendedRoles = [
-  { title: "Analytics Engineer",           salary: "$130k–$155k", fit: 91, match: "Best immediate fit — minimal gap, AWS cert closes the remaining blocker"       },
-  { title: "ML Engineer",                  salary: "$145k–$175k", fit: 82, match: "Best 12-month target — 2 ML projects + AWS cert makes you credible"            },
-  { title: "Data Science Manager",         salary: "$155k–$190k", fit: 68, match: "Strong ceiling — requires 12–18 months of leadership positioning first"        },
-  { title: "Staff Data Scientist",         salary: "$180k–$240k", fit: 54, match: "Aspirational — plan for 18–24 months of deliberate preparation"                },
+  { title: "Analytics Engineer",           salary: "RM 130k–RM 155k", fit: 91, match: "Best immediate fit — minimal gap, AWS cert closes the remaining blocker"       },
+  { title: "ML Engineer",                  salary: "RM 145k–RM 175k", fit: 82, match: "Best 12-month target — 2 ML projects + AWS cert makes you credible"            },
+  { title: "Data Science Manager",         salary: "RM 155k–RM 190k", fit: 68, match: "Strong ceiling — requires 12–18 months of leadership positioning first"        },
+  { title: "Staff Data Scientist",         salary: "RM 180k–RM 240k", fit: 54, match: "Aspirational — plan for 18–24 months of deliberate preparation"                },
 ];
 
 const impactColors: Record<string, string> = {

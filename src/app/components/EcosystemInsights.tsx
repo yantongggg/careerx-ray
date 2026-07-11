@@ -3,6 +3,7 @@ import {
   BarChart3, BookOpenCheck, Building2, GraduationCap, Handshake,
   HeartPulse, MapPin, ShieldCheck, TrendingUp, Users, WalletCards
 } from "lucide-react";
+import { PatternAlert, HiringOutcomeSignals } from "./universitySignals";
 
 const faculties = [
   { name: "Computer Science", ready: 84, gap: "Cloud architecture" },
@@ -57,7 +58,11 @@ const atRiskStudents = [
   { name: "Mei Lin", faculty: "Finance", gap: "Python automation", action: "Recommend 30-day skill sprint" },
 ];
 
-export function EcosystemInsights() {
+interface EcosystemInsightsProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function EcosystemInsights({ onNavigate }: EcosystemInsightsProps) {
   const [activeModule, setActiveModule] = useState(universityModules[0]);
 
   return (
@@ -74,6 +79,10 @@ export function EcosystemInsights() {
             Talentbank can help universities prove employability, attract students, intervene earlier, and show parents why this institution leads to stronger graduate outcomes.
           </p>
         </div>
+
+        <PatternAlert onAction={onNavigate ? () => onNavigate("uni-curriculum") : undefined} />
+
+        <HiringOutcomeSignals />
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[

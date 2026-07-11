@@ -218,3 +218,16 @@ export function getArchetypeForScores(scores) {
   const [first, second] = getTopDimensions(scores);
   return getArchetypeForDimensions(first, second);
 }
+
+/* Not every dimension pair has an archetype (12 of 15 combinations exist).
+   Walk down the ranking until a defined pair is found. */
+export function getArchetypeForScoresSafe(scores) {
+  const ranked = Object.entries(scores)
+    .sort(([, a], [, b]) => b - a)
+    .map(([dimension]) => dimension);
+  for (let i = 1; i < ranked.length; i++) {
+    const archetype = archetypeByDimensionPair.get(keyFor(ranked[0], ranked[i]));
+    if (archetype) return archetype;
+  }
+  return archetypes[0];
+}

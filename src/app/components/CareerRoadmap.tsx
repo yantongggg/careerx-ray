@@ -12,7 +12,7 @@ const roadmapNodes = [
   {
     title: "Senior Data Analyst",
     status: "current",
-    salary: "$110k–$125k",
+    salary: "RM 110k–RM 125k",
     duration: "Now",
     skills: ["SQL", "Python", "Tableau", "Statistics"],
     completed: true,
@@ -20,7 +20,7 @@ const roadmapNodes = [
   {
     title: "Analytics Engineer",
     status: "next",
-    salary: "$120k–$140k",
+    salary: "RM 120k–RM 140k",
     duration: "3–6 months",
     skills: ["dbt", "Airflow", "Snowflake", "Data Modeling"],
     completed: false,
@@ -28,7 +28,7 @@ const roadmapNodes = [
   {
     title: "ML Engineer",
     status: "locked",
-    salary: "$145k–$175k",
+    salary: "RM 145k–RM 175k",
     duration: "9–14 months",
     skills: ["PyTorch", "MLflow", "Kubernetes", "Feature Engineering"],
     completed: false,
@@ -36,7 +36,7 @@ const roadmapNodes = [
   {
     title: "Staff ML Engineer",
     status: "locked",
-    salary: "$185k–$220k",
+    salary: "RM 185k–RM 220k",
     duration: "2–3 years",
     skills: ["System Design", "ML Architecture", "Technical Leadership", "Research"],
     completed: false,
@@ -181,8 +181,8 @@ export function CareerRoadmap() {
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="role" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `$${v}k`} />
-                  <Tooltip formatter={(v: number) => [`$${v}k`, "Salary"]} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM${v}k`} />
+                  <Tooltip formatter={(v: number) => [`RM${v}k`, "Salary"]} />
                   <Area type="monotone" dataKey="salary" stroke="#2563EB" strokeWidth={2} fill="url(#roadGrad)" isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>

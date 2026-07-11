@@ -65,7 +65,7 @@ function SalaryComparisonChart() {
       {[110, 120, 130, 140, 150].map(v => (
         <g key={v}>
           <line x1={PAD_L} y1={py(v)} x2={W - PAD_R} y2={py(v)} stroke="#F1F5F9" strokeWidth={1} />
-          <text x={PAD_L - 6} y={py(v) + 4} textAnchor="end" fontSize={9} fill="#CBD5E1">${v}k</text>
+          <text x={PAD_L - 6} y={py(v) + 4} textAnchor="end" fontSize={9} fill="#CBD5E1">RM{v}k</text>
         </g>
       ))}
 
@@ -82,8 +82,8 @@ function SalaryComparisonChart() {
       {pivot.map((v, i) => <circle key={`pd-${i}`} cx={px(i)} cy={py(v)} r={3.5} fill="#115E50" stroke="white" strokeWidth={1.5} />)}
 
       {/* End labels */}
-      <text x={px(n-1) + 6} y={py(stay[n-1])  + 4} fontSize={10} fill="#8A7038" fontWeight={600}>${stay[n-1]}k</text>
-      <text x={px(n-1) + 6} y={py(pivot[n-1]) + 4} fontSize={10} fill="#115E50" fontWeight={600}>${pivot[n-1]}k</text>
+      <text x={px(n-1) + 6} y={py(stay[n-1])  + 4} fontSize={10} fill="#8A7038" fontWeight={600}>RM{stay[n-1]}k</text>
+      <text x={px(n-1) + 6} y={py(pivot[n-1]) + 4} fontSize={10} fill="#115E50" fontWeight={600}>RM{pivot[n-1]}k</text>
 
       {/* X labels */}
       {labels.map((l, i) => (
@@ -199,14 +199,14 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               </h1>
 
               <p className="text-base text-muted-foreground leading-relaxed mb-3">
-                CareerX-Ray scans your career, surfaces blind spots, simulates your future decisions, and prescribes a clear path — before you make the wrong move.
+                CareerX-Ray is Talentbank&apos;s career intelligence layer — turning your career evidence, real employer demand, and actual hiring outcomes into a clear path to getting hired.
               </p>
 
               <p className="text-sm font-semibold text-foreground mb-7">Stop guessing. Start navigating.</p>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => onNavigate("command")}
+                  onClick={() => onNavigate("role-select")}
                   className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:opacity-90 transition-all font-medium shadow-md shadow-[rgba(138,112,56,0.2)] text-sm"
                 >
                   Get Started <ArrowRight size={15} />
@@ -282,7 +282,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     <div className="space-y-2.5 flex-1">
                       {[
                         { icon: Brain,         label: "High AI Exposure",       detail: "62% of tasks automatable within 24 months", severity: "critical" },
-                        { icon: TrendingDown,  label: "Salary Below Market",    detail: "Earning $20k below your peer cohort",        severity: "high"     },
+                        { icon: TrendingDown,  label: "Salary Below Market",    detail: "Earning RM 20k below your peer cohort",        severity: "high"     },
                         { icon: Shield,        label: "Skill Stagnation",       detail: "Python skills haven't grown in 14 months",   severity: "high"     },
                         { icon: Users,         label: "Leadership Gap",         detail: "No team-lead record — promotion blocker",    severity: "medium"   },
                       ].map(r => {
@@ -326,6 +326,32 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         </div>
       </section>
 
+      {/* ── Role entry points ── */}
+      <section className="py-10 px-6 border-y border-border bg-slate-50/60">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center mb-5">One intelligence layer · three doors</p>
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { label: "I'm a candidate", desc: "Find my career risks and my fastest path to hired", cta: "Run my X-Ray", target: "onboarding" },
+              { label: "I'm an employer", desc: "Review my hiring pipeline with readiness intelligence", cta: "Open Hiring Pipeline", target: "emp-pipeline" },
+              { label: "I'm a university", desc: "Track graduate readiness gaps before they cost offers", cta: "View readiness gaps", target: "insights" },
+            ].map(door => (
+              <button
+                key={door.label}
+                onClick={() => onNavigate(door.target)}
+                className="bg-white border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-md transition-all group"
+              >
+                <p className="font-semibold text-foreground text-sm">{door.label}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-1 mb-3">{door.desc}</p>
+                <span className="text-xs font-semibold text-primary inline-flex items-center gap-1">
+                  {door.cta} <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── The core problem ── */}
       <section className="py-16 px-6 bg-[#16284B] text-white">
         <div className="max-w-3xl mx-auto text-center">
@@ -340,7 +366,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             {[
               { stat: "67%",  label: "of professionals have experienced a major career regret"     },
               { stat: "2.4yr",label: "average time to notice a bad career decision was wrong"      },
-              { stat: "$84k", label: "average cumulative salary loss from a single delayed switch" },
+              { stat: "RM 84k", label: "average cumulative salary loss from a single delayed switch" },
             ].map(s => (
               <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-5 text-center">
                 <p className="text-3xl font-bold text-white mb-2">{s.stat}</p>
@@ -466,7 +492,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground">5-year salary delta (realistic case)</p>
               <div className="flex items-center gap-1.5 text-emerald-600 font-semibold text-sm">
-                <TrendingDown size={14} className="rotate-180" /> +$38k/yr by switching · 84% confidence
+                <TrendingDown size={14} className="rotate-180" /> +RM 38k/yr by switching · 84% confidence
               </div>
             </div>
           </div>
@@ -502,7 +528,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               <BarChart3 size={11} className="text-white" />
             </div>
             <span className="text-sm font-medium text-foreground">CareerX-Ray</span>
-            <span className="text-xs text-muted-foreground ml-2">Career Decision Intelligence</span>
+            <span className="text-xs text-muted-foreground ml-2">Talentbank&apos;s Career Intelligence Layer — for students, employers, and universities</span>
           </div>
           <p className="text-xs text-muted-foreground">© 2026 CareerX-Ray, Inc.</p>
         </div>

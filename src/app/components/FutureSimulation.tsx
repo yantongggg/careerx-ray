@@ -146,8 +146,8 @@ export function FutureSimulation() {
               <LineChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                 <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `$${v}k`} />
-                <Tooltip formatter={(v: number) => [`$${v}k`, ""]} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM${v}k`} />
+                <Tooltip formatter={(v: number) => [`RM${v}k`, ""]} />
                 {selected.includes("current") && <Line type="monotone" dataKey="stay" name="Stay" stroke="#3B82F6" strokeWidth={2.5} dot={{ r: 4, fill: "#3B82F6" }} />}
                 {selected.includes("ml") && <Line type="monotone" dataKey="ml" name="ML Eng" stroke="#22C55E" strokeWidth={2.5} dot={{ r: 4, fill: "#22C55E" }} />}
                 {selected.includes("manager") && <Line type="monotone" dataKey="manager" name="Manager" stroke="#A855F7" strokeWidth={2.5} dot={{ r: 4, fill: "#A855F7" }} />}
@@ -221,7 +221,7 @@ export function FutureSimulation() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <DollarSign size={12} className="text-emerald-300" />
-                  <span className="text-xs text-blue-100">+$52k potential over 5 years</span>
+                  <span className="text-xs text-blue-100">+RM 52k potential over 5 years</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <TrendingUp size={12} className="text-blue-200" />

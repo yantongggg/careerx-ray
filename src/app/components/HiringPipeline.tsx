@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  ArrowRight, Briefcase, Calendar, CheckCircle, ChevronDown,
+  AlertTriangle, ArrowRight, Briefcase, Calendar, CheckCircle, ChevronDown,
   Clock, FileText, Filter, GraduationCap, MapPin, MessageCircle,
-  Plus, Send, Shield, Sparkles, Star, TrendingUp, User, UserCheck,
-  X, XCircle
+  Plus, Radio, Send, Shield, Sparkles, Star, TrendingDown, TrendingUp,
+  User, UserCheck, X, XCircle, Zap
 } from "lucide-react";
+import { useIntelligence, normalizeSkill } from "./intelligence";
 
 /* ─── Types ─── */
 interface Candidate {
@@ -221,6 +222,21 @@ const CHAT_HISTORY: Record<string, ChatMsg[]> = {
   ],
 };
 
+/* Historical funnel across this hiring cycle (all roles) */
+const FUNNEL = [
+  { stage: "Applied", count: 48 },
+  { stage: "Screening", count: 29 },
+  { stage: "Interview", count: 12 },
+  { stage: "Offer", count: 5 },
+  { stage: "Hired", count: 3 },
+];
+
+/* fit >= 90 hires with minimal ramp-up; below that the gaps are coachable */
+const hireReadiness = (c: Candidate) =>
+  c.fit >= 90
+    ? { label: "Ready now", color: "#115E50", bg: "rgba(17,94,80,0.07)", border: "rgba(17,94,80,0.2)" }
+    : { label: "Trainable", color: "#8A7038", bg: "rgba(138,112,56,0.07)", border: "rgba(138,112,56,0.2)" };
+
 const AI_TEMPLATES = [
   { label: "Schedule interview", text: "Hi {name}, we'd like to invite you for an interview. Are you available on {date} at {time}? The session will include a technical assessment and behavioral discussion." },
   { label: "Request documents", text: "Hi {name}, could you please share your latest portfolio and any relevant certifications? This will help us better evaluate your fit for the role." },
@@ -236,10 +252,32 @@ export function HiringPipeline() {
   const [drawerTab, setDrawerTab] = useState<"profile" | "chat">("profile");
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMsg[]>>({ ...CHAT_HISTORY });
+  const [rejectMode, setRejectMode] = useState<"idle" | "choosing" | "done">("idle");
+  const [rejectReason, setRejectReason] = useState<string | null>(null);
+  const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
+  const [stageOverrides, setStageOverrides] = useState<Record<string, number>>({});
+  const [advanceNote, setAdvanceNote] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const { emitSignal, signals } = useIntelligence();
 
-  const filtered = CANDIDATES.filter(c => c.role === selectedRole || selectedRole === "All Roles");
-  const stageCounts = STAGES.map((_, i) => filtered.filter(c => c.stage === i).length);
+  const stageOf = (c: Candidate) => stageOverrides[c.id] ?? c.stage;
+
+  const filtered = CANDIDATES.filter(c => (c.role === selectedRole || selectedRole === "All Roles") && !rejectedIds.has(c.id));
+
+  /* ── Pipeline Intelligence: aggregate evidence gaps across the whole applicant pool ── */
+  const skillCounts = new Map<string, number>();
+  CANDIDATES.forEach(c => {
+    new Set(c.gaps.map(normalizeSkill)).forEach(s => skillCounts.set(s, (skillCounts.get(s) || 0) + 1));
+  });
+  const topMissing = [...skillCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const liveSkills = new Set(signals.filter(s => s.live).map(s => s.skill));
+  const readyNow = filtered.filter(c => c.fit >= 90).length;
+  const drops = FUNNEL.slice(0, -1).map((f, i) => ({
+    from: f.stage, to: FUNNEL[i + 1].stage,
+    lossPct: Math.round((1 - FUNNEL[i + 1].count / f.count) * 100),
+  }));
+  const worstDrop = drops.reduce((a, b) => (b.lossPct > a.lossPct ? b : a));
+  const stageCounts = STAGES.map((_, i) => filtered.filter(c => stageOf(c) === i).length);
   const total = filtered.length;
   const avgFit = total > 0 ? Math.round(filtered.reduce((s, c) => s + c.fit, 0) / total) : 0;
 
@@ -263,7 +301,7 @@ export function HiringPipeline() {
     const filled = tpl
       .replace("{name}", selectedCandidate.name.split(" ")[0])
       .replace("{role}", selectedCandidate.role)
-      .replace("{stage}", STAGES[selectedCandidate.stage])
+      .replace("{stage}", STAGES[stageOf(selectedCandidate)])
       .replace("{date}", "Jul 10")
       .replace("{time}", "10:00 AM");
     setChatInput(filled);
@@ -336,11 +374,102 @@ export function HiringPipeline() {
           </div>
         </div>
 
+        {/* ── Pipeline Intelligence ── */}
+        <div>
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <Radio size={14} style={{ color: "#8A7038" }} />
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "#8A7038" }}>Pipeline Intelligence</p>
+            <p className="text-[11px]" style={{ color: "rgba(22,40,75,0.45)" }}>
+              · what the Career Intelligence Graph sees across your applicant pool — <strong style={{ color: "#115E50" }}>{readyNow} ready now</strong>, {filtered.length - readyNow} trainable
+            </p>
+          </div>
+          <div className="grid lg:grid-cols-2 gap-4">
+
+            {/* Where candidates drop off */}
+            <div className="bg-white border border-[rgba(22,40,75,0.1)] rounded-xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-semibold" style={{ color: "#16284B" }}>Where candidates drop off</p>
+                <TrendingDown size={15} style={{ color: "rgba(22,40,75,0.35)" }} />
+              </div>
+              <div className="space-y-2">
+                {FUNNEL.map((f, i) => {
+                  const pct = (f.count / FUNNEL[0].count) * 100;
+                  const drop = i > 0 ? drops[i - 1] : null;
+                  const isWorst = drop && drop.lossPct === worstDrop.lossPct && drop.from === worstDrop.from;
+                  return (
+                    <div key={f.stage}>
+                      {drop && (
+                        <p className="text-[10px] font-semibold pl-24 py-0.5" style={{ color: isWorst ? "#b91c1c" : "rgba(22,40,75,0.4)" }}>
+                          ↓ −{drop.lossPct}%{isWorst ? " · biggest loss" : ""}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] font-medium w-20 flex-shrink-0" style={{ color: "#16284B" }}>{f.stage}</span>
+                        <div className="flex-1 h-4 rounded-md overflow-hidden" style={{ backgroundColor: "#EFEDE6" }}>
+                          <div className="h-full rounded-md transition-all" style={{ width: `${pct}%`, backgroundColor: STAGE_STYLES[f.stage].barColor }} />
+                        </div>
+                        <span className="text-xs font-bold w-7 text-right" style={{ color: "#16284B" }}>{f.count}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 pt-3 border-t flex items-start gap-2" style={{ borderColor: "rgba(22,40,75,0.08)" }}>
+                <AlertTriangle size={13} className="mt-0.5 flex-shrink-0" style={{ color: "#b91c1c" }} />
+                <p className="text-[11px] leading-relaxed" style={{ color: "rgba(22,40,75,0.6)" }}>
+                  Biggest drop-off at <strong style={{ color: "#16284B" }}>{worstDrop.from} → {worstDrop.to}</strong> (−{worstDrop.lossPct}%).
+                  Top correlated factor: replies slower than 48h — see <strong style={{ color: "#8A7038" }}>Reply SLA Monitor</strong>.
+                </p>
+              </div>
+            </div>
+
+            {/* Missing skills across applicant pool */}
+            <div className="bg-white border border-[rgba(22,40,75,0.1)] rounded-xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-semibold" style={{ color: "#16284B" }}>Missing skills across your applicant pool</p>
+                <Zap size={15} style={{ color: "rgba(22,40,75,0.35)" }} />
+              </div>
+              <div className="space-y-2.5">
+                {topMissing.map(([skill, count]) => {
+                  const isLive = liveSkills.has(skill);
+                  return (
+                    <div key={skill} className="flex items-center gap-3">
+                      <span className="text-[11px] font-medium flex-1 min-w-0 truncate flex items-center gap-1.5" style={{ color: "#16284B" }}>
+                        {skill}
+                        {isLive && (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5 flex-shrink-0">
+                            <span className="relative flex h-1.5 w-1.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60" />
+                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600" />
+                            </span>
+                            your signal
+                          </span>
+                        )}
+                      </span>
+                      <div className="w-28 h-2 rounded-full overflow-hidden flex-shrink-0" style={{ backgroundColor: "#EFEDE6" }}>
+                        <div className="h-full rounded-full" style={{ width: `${(count / CANDIDATES.length) * 100}%`, backgroundColor: isLive ? "#115E50" : "#b59b4e" }} />
+                      </div>
+                      <span className="text-[11px] font-semibold w-16 text-right flex-shrink-0" style={{ color: "rgba(22,40,75,0.55)" }}>{count} of {CANDIDATES.length}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 pt-3 border-t flex items-start gap-2" style={{ borderColor: "rgba(22,40,75,0.08)" }}>
+                <Sparkles size={13} className="mt-0.5 flex-shrink-0" style={{ color: "#8A7038" }} />
+                <p className="text-[11px] leading-relaxed" style={{ color: "rgba(22,40,75,0.6)" }}>
+                  <strong style={{ color: "#16284B" }}>{topMissing[0]?.[0]}</strong> blocks {topMissing[0]?.[1]} otherwise strong applicants —
+                  consider marking it trainable, or partnering a university micro-credential. Your rejection feedback keeps these signals current.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ── Kanban Columns ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto pb-2">
           {STAGES.map((stage, si) => {
             const ss = STAGE_STYLES[stage];
-            const cards = filtered.filter(c => c.stage === si);
+            const cards = filtered.filter(c => stageOf(c) === si);
             const isUrgent = stage === "Interview" || stage === "Offer";
             return (
               <div key={stage} className="min-w-[220px] rounded-xl border p-3"
@@ -367,7 +496,7 @@ export function HiringPipeline() {
                   {cards.map(c => {
                     const fitColor = c.fit >= 90 ? "#3d9485" : c.fit >= 80 ? "#8A7038" : "#b59b4e";
                     return (
-                      <button key={c.id} onClick={() => { setSelectedCandidate(c); setDrawerTab("profile"); }}
+                      <button key={c.id} onClick={() => { setSelectedCandidate(c); setDrawerTab("profile"); setRejectMode("idle"); setRejectReason(null); setAdvanceNote(false); }}
                         className="w-full text-left bg-white border rounded-xl p-3.5 shadow-sm hover:shadow-md hover:border-[rgba(138,112,56,0.35)] transition-all"
                         style={{ borderColor: "rgba(22,40,75,0.1)" }}>
                         <div className="flex items-center gap-2.5 mb-2.5">
@@ -386,11 +515,19 @@ export function HiringPipeline() {
                           </div>
                           <span className="text-xs font-bold" style={{ color: fitColor }}>{c.fit}%</span>
                         </div>
-                        {/* Career DNA badge */}
-                        <div className="flex items-center gap-1.5 mb-2">
+                        {/* Career DNA + readiness badges */}
+                        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                           <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full border" style={{ backgroundColor: "#EFEDE6", borderColor: "rgba(138,112,56,0.15)", color: "#8A7038" }}>
                             {c.careerDna}
                           </span>
+                          {(() => {
+                            const r = hireReadiness(c);
+                            return (
+                              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border" style={{ backgroundColor: r.bg, borderColor: r.border, color: r.color }}>
+                                {r.label}
+                              </span>
+                            );
+                          })()}
                         </div>
                         {/* Bottom row */}
                         <div className="flex items-center justify-between">
@@ -492,6 +629,14 @@ export function HiringPipeline() {
 
                 {/* Career DNA */}
                 <div className="flex items-center gap-2 flex-wrap">
+                  {(() => {
+                    const r = hireReadiness(selectedCandidate);
+                    return (
+                      <span className="text-xs font-bold px-3 py-1.5 rounded-full border" style={{ backgroundColor: r.bg, borderColor: r.border, color: r.color }}>
+                        {r.label}
+                      </span>
+                    );
+                  })()}
                   <span className="text-xs font-semibold px-3 py-1.5 rounded-full border" style={{ backgroundColor: "#EFEDE6", borderColor: "rgba(138,112,56,0.2)", color: "#8A7038" }}>
                     {selectedCandidate.careerDna}
                   </span>
@@ -507,7 +652,7 @@ export function HiringPipeline() {
                     {STAGES.map((stage, i) => {
                       const entry = selectedCandidate.timeline.find(t => t.stage === stage);
                       const done = entry?.done;
-                      const current = i === selectedCandidate.stage && !done;
+                      const current = i === stageOf(selectedCandidate) && !done;
                       return (
                         <div key={stage} className="flex items-center flex-1">
                           <div className="flex flex-col items-center flex-1">
@@ -518,7 +663,7 @@ export function HiringPipeline() {
                             {entry && <span className="text-[8px]" style={{ color: "rgba(22,40,75,0.35)" }}>{entry.date}</span>}
                           </div>
                           {i < STAGES.length - 1 && (
-                            <div className="w-full h-[2px] -mx-0.5" style={{ backgroundColor: i < selectedCandidate.stage ? "#8A7038" : "rgba(22,40,75,0.1)" }} />
+                            <div className="w-full h-[2px] -mx-0.5" style={{ backgroundColor: i < stageOf(selectedCandidate) ? "#8A7038" : "rgba(22,40,75,0.1)" }} />
                           )}
                         </div>
                       );
@@ -585,33 +730,129 @@ export function HiringPipeline() {
                 </div>
 
                 {/* Actions */}
-                <div className="space-y-2 pt-1">
-                  {selectedCandidate.stage < 4 && (
-                    <button className="w-full inline-flex items-center justify-center gap-2 text-white px-4 py-2.5 rounded-xl text-xs font-semibold hover:opacity-90" style={{ backgroundColor: "#8A7038" }}>
-                      <ArrowRight size={13} /> Advance to {STAGES[selectedCandidate.stage + 1]}
-                    </button>
-                  )}
-                  <div className="grid grid-cols-3 gap-2">
-                    <button onClick={() => setDrawerTab("chat")}
-                      className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
-                      style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
-                      <MessageCircle size={12} /> Chat
-                    </button>
-                    <button className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
-                      style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
-                      <Calendar size={12} /> Schedule
-                    </button>
-                    <button className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
-                      style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
-                      <FileText size={12} /> Resume
+                {rejectMode === "idle" && (
+                  <div className="space-y-2 pt-1">
+                    {stageOf(selectedCandidate) < 4 && (
+                      <button
+                        onClick={() => {
+                          setStageOverrides(prev => ({ ...prev, [selectedCandidate.id]: stageOf(selectedCandidate) + 1 }));
+                          setAdvanceNote(true);
+                        }}
+                        className="w-full inline-flex items-center justify-center gap-2 text-white px-4 py-2.5 rounded-xl text-xs font-semibold hover:opacity-90" style={{ backgroundColor: "#8A7038" }}>
+                        <ArrowRight size={13} /> Advance to {STAGES[stageOf(selectedCandidate) + 1]}
+                      </button>
+                    )}
+                    {advanceNote && (
+                      <div className="flex items-start gap-2 rounded-xl border px-3 py-2.5" style={{ borderColor: "rgba(17,94,80,0.2)", backgroundColor: "rgba(17,94,80,0.04)" }}>
+                        <Radio size={12} className="mt-0.5 flex-shrink-0" style={{ color: "#115E50" }} />
+                        <p className="text-[11px] leading-relaxed" style={{ color: "#115E50" }}>
+                          <strong>Outcome logged.</strong> This improves future readiness predictions for similar candidates across the Talentbank network.
+                        </p>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-3 gap-2">
+                      <button onClick={() => setDrawerTab("chat")}
+                        className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
+                        style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
+                        <MessageCircle size={12} /> Chat
+                      </button>
+                      <button className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
+                        style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
+                        <Calendar size={12} /> Schedule
+                      </button>
+                      <button className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
+                        style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
+                        <FileText size={12} /> Resume
+                      </button>
+                    </div>
+                    {stageOf(selectedCandidate) < 4 && (
+                      <button onClick={() => setRejectMode("choosing")}
+                        className="w-full inline-flex items-center justify-center gap-1.5 border border-red-200 text-red-600 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 transition-colors">
+                        <XCircle size={12} /> Reject with Feedback
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Reject: choose reason */}
+                {rejectMode === "choosing" && (
+                  <div className="rounded-xl border p-4 space-y-3" style={{ borderColor: "rgba(220,38,38,0.2)", backgroundColor: "rgba(254,242,242,0.5)" }}>
+                    <div>
+                      <p className="text-xs font-semibold" style={{ color: "#16284B" }}>Why is {selectedCandidate.name.split(" ")[0]} not moving forward?</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: "rgba(22,40,75,0.5)" }}>
+                        The candidate receives this as constructive feedback. The reason is also shared — anonymized — with the Career Intelligence Graph.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[...selectedCandidate.gaps, "Insufficient role experience", "Salary expectations mismatch"].map(reason => (
+                        <button key={reason} onClick={() => setRejectReason(reason)}
+                          className="text-[11px] font-medium px-2.5 py-1.5 rounded-full border transition-colors"
+                          style={rejectReason === reason
+                            ? { backgroundColor: "#16284B", borderColor: "#16284B", color: "white" }
+                            : { backgroundColor: "white", borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
+                          {reason}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={() => { setRejectMode("idle"); setRejectReason(null); }}
+                        className="flex-1 border px-3 py-2 rounded-xl text-xs font-semibold hover:bg-white transition-colors"
+                        style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
+                        Cancel
+                      </button>
+                      <button
+                        disabled={!rejectReason}
+                        onClick={() => {
+                          if (!rejectReason) return;
+                          emitSignal({
+                            reason: rejectReason,
+                            role: selectedCandidate.role,
+                            employer: "A digital banking employer",
+                            stage: STAGES[stageOf(selectedCandidate)],
+                          });
+                          setRejectMode("done");
+                        }}
+                        className="flex-1 bg-red-600 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-700 disabled:opacity-40 transition-colors">
+                        Confirm Rejection
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reject: signal propagated */}
+                {rejectMode === "done" && rejectReason && (
+                  <div className="rounded-xl border p-4 space-y-3" style={{ borderColor: "rgba(17,94,80,0.2)", backgroundColor: "rgba(17,94,80,0.04)" }}>
+                    <div className="flex items-center gap-2">
+                      <Radio size={14} style={{ color: "#115E50" }} />
+                      <p className="text-xs font-bold" style={{ color: "#115E50" }}>Signal shared with the Career Intelligence Graph</p>
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { text: `${selectedCandidate.name.split(" ")[0]} notified with constructive feedback: “${rejectReason}”` },
+                        { text: `Anonymized skill signal “${normalizeSkill(rejectReason)}” sent to 1,247 candidates targeting similar roles` },
+                        { text: "Gap analysis updated for 3 partner universities' curriculum dashboards" },
+                      ].map((item, i) => (
+                        <p key={i} className="text-[11px] flex items-start gap-1.5 leading-relaxed" style={{ color: "#16284B" }}>
+                          <CheckCircle size={12} className="mt-0.5 flex-shrink-0" style={{ color: "#115E50" }} /> {item.text}
+                        </p>
+                      ))}
+                    </div>
+                    <p className="text-[10px] pt-1 border-t" style={{ color: "rgba(22,40,75,0.45)", borderColor: "rgba(22,40,75,0.08)" }}>
+                      Switch to the Candidate or University view to see this signal arrive in real time.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setRejectedIds(prev => new Set([...prev, selectedCandidate.id]));
+                        setSelectedCandidate(null);
+                        setRejectMode("idle");
+                        setRejectReason(null);
+                      }}
+                      className="w-full text-white px-3 py-2 rounded-xl text-xs font-semibold hover:opacity-90"
+                      style={{ backgroundColor: "#115E50" }}>
+                      Done
                     </button>
                   </div>
-                  {selectedCandidate.stage < 4 && (
-                    <button className="w-full inline-flex items-center justify-center gap-1.5 border border-red-200 text-red-600 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 transition-colors">
-                      <XCircle size={12} /> Reject with Feedback
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
             )}
 

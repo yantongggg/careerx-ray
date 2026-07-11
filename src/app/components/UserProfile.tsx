@@ -26,7 +26,7 @@ const experience = [
     role: "Data Analyst",
     period: "Jul 2021 – Mar 2023",
     location: "Remote",
-    desc: "Owned supply-side analytics for the APAC market. Built cohort analyses and pricing models that informed $2M in host acquisition decisions. Mentored 2 junior analysts.",
+    desc: "Owned supply-side analytics for the APAC market. Built cohort analyses and pricing models that informed RM 2M in host acquisition decisions. Mentored 2 junior analysts.",
     skills: ["Python", "SQL", "Tableau", "A/B Testing", "Spark"],
     logo: "A",
     logoColor: "bg-rose-500",

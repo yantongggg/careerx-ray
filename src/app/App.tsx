@@ -26,13 +26,22 @@ import { UserProfile } from "./components/UserProfile";
 import { Sidebar } from "./components/Sidebar";
 import { ApplicationPrep } from "./components/ApplicationPrep";
 import { HiringPipeline } from "./components/HiringPipeline";
+import { IntelligenceProvider } from "./components/intelligence";
+import { RoleSelect } from "./components/RoleSelect";
+import { JOURNEY, StageHub } from "./components/stages";
+import { SkillGraph } from "./components/SkillGraph";
 
 /* MARKER-MAKE-KIT-INVOKED */
 
-type AppState = "landing" | "onboarding" | "app";
+type AppState = "landing" | "role-select" | "onboarding" | "app";
 type Role = "candidate" | "employer" | "university";
 type Page =
   | "command"
+  | "stage-diagnose"
+  | "stage-decide"
+  | "stage-prepare"
+  | "stage-apply"
+  | "stage-prove"
   | "dna"
   | "jobs"
   | "apply-prep"
@@ -59,6 +68,11 @@ type Page =
 
 const pageLabels: Record<Page, string> = {
   command:           "Command Center",
+  "stage-diagnose": "Diagnose",
+  "stage-decide":   "Decide",
+  "stage-prepare":  "Prepare",
+  "stage-apply":    "Apply",
+  "stage-prove":    "Prove",
   dna:              "Career DNA",
   jobs:             "Job Match Tracker",
   "apply-prep":     "Application Preparation",
@@ -85,13 +99,19 @@ const pageLabels: Record<Page, string> = {
 };
 
 const allPages: Page[] = [
-  "command", "dna", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
+  "command", "stage-diagnose", "stage-decide", "stage-prepare", "stage-apply", "stage-prove",
+  "dna", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
   "prescription", "evidence", "profile", "employer", "emp-matching", "emp-sla", "emp-reengage",
   "emp-resilience", "emp-pipeline", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
 ];
 
 const pageRole: Record<Page, Role> = {
   command: "candidate",
+  "stage-diagnose": "candidate",
+  "stage-decide": "candidate",
+  "stage-prepare": "candidate",
+  "stage-apply": "candidate",
+  "stage-prove": "candidate",
   dna: "candidate",
   jobs: "candidate",
   "apply-prep": "candidate",
@@ -133,14 +153,22 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>("landing");
   const [page, setPage]         = useState<Page>("command");
   const [role, setRole]         = useState<Role>("candidate");
+  const [hasScanned, setHasScanned] = useState(false);
+  const [dnaScores, setDnaScores] = useState<Record<string, number> | null>(null);
   const [prepJobId, setPrepJobId] = useState<string | null>(null);
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set(["maybank-da", "grab-ae"]));
 
   const navigate = (target: string) => {
-    if (target === "landing")    { setAppState("landing");    return; }
-    if (target === "onboarding") { setAppState("onboarding"); return; }
+    if (target === "landing")     { setAppState("landing");     return; }
+    if (target === "role-select") { setAppState("role-select"); return; }
+    if (target === "onboarding")  { setAppState("onboarding");  return; }
     if ((allPages as string[]).includes(target)) {
       const nextPage = target as Page;
+      // Candidate pages are built from scan results — no scan, no dashboard.
+      if (pageRole[nextPage] === "candidate" && !hasScanned) {
+        setAppState("onboarding");
+        return;
+      }
       setPage(nextPage);
       setRole(pageRole[nextPage]);
       setAppState("app");
@@ -157,17 +185,49 @@ export default function App() {
   };
 
   const switchRole = (nextRole: Role) => {
+    if (nextRole === "candidate" && !hasScanned) {
+      setAppState("onboarding");
+      return;
+    }
     setRole(nextRole);
     setPage(roleHome[nextRole]);
     setAppState("app");
   };
 
-  if (appState === "landing")    return <LandingPage onNavigate={navigate} />;
+  if (appState === "landing") {
+    return (
+      <IntelligenceProvider key="ix">
+        <LandingPage onNavigate={navigate} />
+      </IntelligenceProvider>
+    );
+  }
+  if (appState === "role-select") {
+    return (
+      <IntelligenceProvider key="ix">
+        <RoleSelect
+          onBack={() => setAppState("landing")}
+          onSelect={selected => {
+            if (selected === "candidate") {
+              if (hasScanned) { setRole("candidate"); setPage("command"); setAppState("app"); }
+              else setAppState("onboarding");
+            } else {
+              switchRole(selected);
+            }
+          }}
+        />
+      </IntelligenceProvider>
+    );
+  }
   if (appState === "onboarding") {
-    return <Onboarding onComplete={() => { setPage("command"); setAppState("app"); }} />;
+    return (
+      <IntelligenceProvider key="ix">
+        <Onboarding onComplete={scores => { setDnaScores(scores); setHasScanned(true); setRole("candidate"); setPage("command"); setAppState("app"); }} />
+      </IntelligenceProvider>
+    );
   }
 
   return (
+    <IntelligenceProvider key="ix">
     <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-muted">
       <Sidebar currentPage={page} currentRole={role} onNavigate={navigate} />
 
@@ -187,10 +247,10 @@ export default function App() {
             >
               <option value="candidate">Candidate</option>
               <option value="employer">Employer</option>
-              {/* <option value="university">University</option> */}
+              <option value="university">University</option>
             </select>
             <div className="hidden lg:flex items-center bg-muted border border-border rounded-lg p-1">
-              {(["candidate", "employer"] as Role[]).map(option => (
+              {(["candidate", "employer", "university"] as Role[]).map(option => (
                 <button
                   key={option}
                   onClick={() => switchRole(option)}
@@ -227,7 +287,12 @@ export default function App() {
         <div className="flex-1 overflow-hidden flex flex-col">
           {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
           {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
-          {page === "dna"             && <CareerDna />}
+          {page === "stage-diagnose"  && <StageHub stage={JOURNEY[0]} onNavigate={navigate} />}
+          {page === "stage-decide"    && <StageHub stage={JOURNEY[1]} onNavigate={navigate} />}
+          {page === "stage-prepare"   && <StageHub stage={JOURNEY[2]} onNavigate={navigate}><SkillGraph /></StageHub>}
+          {page === "stage-apply"     && <StageHub stage={JOURNEY[3]} onNavigate={navigate} />}
+          {page === "stage-prove"     && <StageHub stage={JOURNEY[4]} onNavigate={navigate} />}
+          {page === "dna"             && <CareerDna scores={dnaScores ?? undefined} />}
           {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
           {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
           {page === "coach"           && <InterviewCoach jobId={prepJobId} />}
@@ -244,7 +309,7 @@ export default function App() {
           {page === "emp-reengage"    && <TalentReengagement />}
           {page === "emp-resilience"  && <WorkforceResilience />}
           {page === "emp-pipeline"    && <HiringPipeline />}
-          {page === "insights"        && <EcosystemInsights />}
+          {page === "insights"        && <EcosystemInsights onNavigate={navigate} />}
           {page === "uni-outcomes"    && <OutcomeLoop />}
           {page === "uni-curriculum"  && <CurriculumEngine />}
           {page === "uni-internships" && <InternshipMarketplace />}
@@ -252,5 +317,6 @@ export default function App() {
         </div>
       </main>
     </div>
+    </IntelligenceProvider>
   );
 }

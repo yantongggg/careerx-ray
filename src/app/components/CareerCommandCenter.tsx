@@ -3,16 +3,16 @@ import {
   GraduationCap, MessageSquareText, Shield, Sparkles, Target, TrendingUp,
   Video, Zap
 } from "lucide-react";
-import { SkillGraph } from "./SkillGraph";
+import { SignalBanner } from "./intelligence";
+import { JourneyTracker } from "./stages";
 
 interface CareerCommandCenterProps {
   onNavigate: (page: string) => void;
 }
 
 const nextActions = [
-  { title: "Tailor resume for Maybank Data Analyst", impact: "+11% interview chance", page: "jobs", icon: FileText },
   { title: "Rehearse SQL case interview", impact: "Interview in 2 days", page: "coach", icon: Video },
-  { title: "Compare 3 offers with AI", impact: "Choose by long-term fit", page: "offers", icon: BarChart3 },
+  { title: "Tailor resume for Maybank Data Analyst", impact: "+11% interview chance", page: "jobs", icon: FileText },
   { title: "Close cloud skill gap", impact: "Blocks 3 target roles", page: "prescription", icon: GraduationCap },
 ];
 
@@ -22,19 +22,32 @@ const applications = [
   { company: "Petronas Digital", role: "AI Product Analyst", stage: "Applied", fit: 78, tone: "bg-amber-50 text-amber-700 border-amber-200" },
 ];
 
-const marketSignals = [
-  { label: "Analytics roles in Malaysia", value: "+18%", caption: "posting growth this quarter" },
-  { label: "Median target salary", value: "RM 8.5k", caption: "Klang Valley, 2-4 yrs" },
-  { label: "Most requested missing skill", value: "Cloud", caption: "AWS / GCP appears in 61%" },
+const topRisks = [
+  {
+    title: "AI disruption risk: Medium",
+    detail: "42% of your current tasks are automatable within 5 years",
+    evidence: "Based on your verified skill evidence",
+    severity: "amber" as const,
+  },
+  {
+    title: "No cloud deployment evidence",
+    detail: "Blocks 3 of your target roles",
+    evidence: "Flagged by live hiring signals this week",
+    severity: "red" as const,
+  },
+  {
+    title: "Salary below market",
+    detail: "RM 1.2k under the Klang Valley median for your level",
+    evidence: "Benchmarked against real offer outcomes",
+    severity: "amber" as const,
+  },
 ];
 
-const candidateFeatures = [
-  { label: "Career Path Navigator", desc: "16-30 roadmap from first role to senior pivot.", page: "decisionlab", icon: Target },
-  { label: "Living Portfolio", desc: "Evidence-backed profile that grows every 6 months.", page: "evidence", icon: FileText },
-  { label: "AI Career Coach", desc: "Interview, resume, and career guidance in one loop.", page: "coach", icon: MessageSquareText },
-  { label: "Fair Pay Engine", desc: "Salary benchmark and offer negotiation guidance.", page: "offers", icon: BarChart3 },
-  { label: "Life Chapter Designer", desc: "Plan career moves around study, family, location, and growth.", page: "prescription", icon: GraduationCap },
-  { label: "Your Own Track", desc: "Wildcard path builder for founder, freelancer, or non-linear routes.", page: "dna", icon: Sparkles },
+const evidenceStrength = [
+  { skill: "SQL", level: "strong" as const, note: "3 verified projects" },
+  { skill: "Data storytelling", level: "strong" as const, note: "Portfolio + interview score" },
+  { skill: "Leadership", level: "weak" as const, note: "1 unverified signal" },
+  { skill: "Cloud deployment", level: "missing" as const, note: "No evidence yet" },
 ];
 
 export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
@@ -43,53 +56,50 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">
         <div className="bg-slate-950 text-white rounded-2xl p-6 lg:p-7 overflow-hidden relative">
           <div className="absolute right-0 top-0 h-full w-1/3 bg-[radial-gradient(circle_at_top_right,rgba(217,193,138,0.25),transparent_58%)]" />
-          <div className="relative grid lg:grid-cols-[1.3fr_0.7fr] gap-6 items-start">
-            <div>
+          <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
+            <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <span className="inline-flex items-center gap-1.5 text-xs bg-white/10 border border-white/10 px-2.5 py-1 rounded-full text-slate-200">
-                  <Sparkles size={12} /> Career Command Center
+                  <Sparkles size={12} /> Your next best move
                 </span>
-                <span className="text-xs text-slate-400">Malaysia graduate journey demo</span>
               </div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Jordan, your next best move is interview preparation.</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Jordan, rehearse your Maybank interview.</h1>
               <p className="text-sm text-slate-300 leading-relaxed mt-2 max-w-2xl">
-                You are close to employable for your target path. CareerX-Ray connects diagnosis, job matching, applications, coaching, and long-term growth in one loop.
+                It's in 2 days. Your SQL evidence is strong — and live hiring signals show the interview stage is where candidates like you drop off most.
               </p>
-              <div className="flex flex-wrap gap-3 mt-5">
-                <button onClick={() => onNavigate("onboarding")} className="inline-flex items-center gap-2 bg-white text-slate-950 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
-                  Scan X-Ray <Sparkles size={14} />
+              <div className="flex flex-wrap items-center gap-4 mt-5">
+                <button onClick={() => onNavigate("coach")} className="inline-flex items-center gap-2 bg-white text-slate-950 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
+                  Start rehearsal <ArrowRight size={14} />
                 </button>
-                <button onClick={() => onNavigate("coach")} className="inline-flex items-center gap-2 border border-white/15 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/10">
-                  Start Rehearsal <ArrowRight size={14} />
+                <button onClick={() => onNavigate("jobs")} className="text-xs text-slate-400 hover:text-white transition-colors underline underline-offset-4">
+                  View job matches
                 </button>
-                <button onClick={() => onNavigate("jobs")} className="inline-flex items-center gap-2 border border-white/15 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/10">
-                  View Job Matches <Briefcase size={14} />
+                <button onClick={() => onNavigate("onboarding")} className="text-xs text-slate-400 hover:text-white transition-colors underline underline-offset-4">
+                  Re-scan my X-Ray
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Employability", value: "82", unit: "/100", icon: Shield, tone: "text-emerald-300" },
-                { label: "Open gaps", value: "4", unit: "", icon: Zap, tone: "text-amber-300" },
-                { label: "Active apps", value: "3", unit: "", icon: Briefcase, tone: "text-blue-300" },
-                { label: "Interview ready", value: "71", unit: "%", icon: MessageSquareText, tone: "text-purple-300" },
-              ].map(m => (
-                <div key={m.label} className="bg-white/8 border border-white/10 rounded-xl p-4">
-                  <m.icon size={15} className={m.tone} />
-                  <p className="text-2xl font-bold mt-2">{m.value}<span className="text-sm text-slate-400">{m.unit}</span></p>
-                  <p className="text-xs text-slate-400 mt-0.5">{m.label}</p>
-                </div>
-              ))}
+            <div className="flex-shrink-0 bg-white/8 border border-white/10 rounded-xl px-6 py-5 text-center">
+              <p className="text-4xl font-bold">82<span className="text-lg text-slate-400">/100</span></p>
+              <p className="text-xs text-slate-400 mt-1">Career Readiness</p>
+              <p className="text-[10px] text-emerald-300 font-semibold mt-1.5">▲ +6 since last scan</p>
             </div>
           </div>
         </div>
 
-        {/* Trust Rating Section */}
+        <JourneyTracker onNavigate={onNavigate} />
+
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Why this matters · powered by Talentbank intelligence</p>
+          <SignalBanner audience="candidate" onAction={() => onNavigate("prescription")} />
+        </div>
+
+        {/* Application Readiness Section */}
         <section className="bg-white border border-border rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-semibold text-foreground">Your Trust Rating</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Response speed builds your visibility score — employers see this</p>
+              <h2 className="font-semibold text-foreground">Application Readiness</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">How ready your applications look to employers — you're doing great</p>
             </div>
             <Shield size={17} className="text-primary" />
           </div>
@@ -130,43 +140,69 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-4 pt-2 border-t border-border">
-                <div className="flex items-center gap-1.5 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-muted-foreground">&gt;80%: Full visibility</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-amber-500" />
-                  <span className="text-muted-foreground">60-80%: Reduced exposure</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-red-500" />
-                  <span className="text-muted-foreground">&lt;60%: Account restricted</span>
-                </div>
+              <div className="flex items-center gap-1.5 pt-2 border-t border-border text-xs">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-muted-foreground">Fast, consistent replies keep you fully visible to employers — keep it up.</span>
               </div>
             </div>
           </div>
         </section>
 
-        <SkillGraph />
-
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {candidateFeatures.map(feature => (
-            <button
-              key={feature.label}
-              onClick={() => onNavigate(feature.page)}
-              className="bg-white border border-border rounded-xl p-5 shadow-sm text-left hover:border-primary/40 hover:shadow-md transition-all"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="w-9 h-9 rounded-xl bg-accent border border-border flex items-center justify-center">
-                  <feature.icon size={17} className="text-primary" />
-                </div>
-                <ArrowRight size={14} className="text-muted-foreground" />
+        <div className="grid lg:grid-cols-2 gap-4">
+          {/* Top 3 risks */}
+          <section className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-foreground">Top 3 risks</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">From your latest X-Ray scan.</p>
               </div>
-              <p className="font-semibold text-foreground mt-4">{feature.label}</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-1">{feature.desc}</p>
-            </button>
-          ))}
+              <button onClick={() => onNavigate("blindspots")} className="text-xs font-semibold text-primary hover:underline">All 5 →</button>
+            </div>
+            <div className="divide-y divide-border">
+              {topRisks.map(risk => (
+                <button key={risk.title} onClick={() => onNavigate("blindspots")} className="w-full px-5 py-3.5 flex items-start gap-3 text-left hover:bg-muted/50">
+                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${risk.severity === "red" ? "bg-red-500" : "bg-amber-500"}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{risk.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{risk.detail}</p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-1 italic">{risk.evidence}</p>
+                  </div>
+                  <ArrowRight size={13} className="text-muted-foreground mt-1" />
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Evidence strength */}
+          <section className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-foreground">Evidence strength</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">What your profile can prove — recommendations are built on this.</p>
+              </div>
+              <button onClick={() => onNavigate("evidence")} className="text-xs font-semibold text-primary hover:underline">Add evidence →</button>
+            </div>
+            <div className="divide-y divide-border">
+              {evidenceStrength.map(item => (
+                <div key={item.skill} className="px-5 py-3 flex items-center gap-3">
+                  <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full border flex-shrink-0 w-[72px] text-center ${
+                    item.level === "strong" ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : item.level === "weak" ? "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-red-50 text-red-600 border-red-200"
+                  }`}>
+                    {item.level}
+                  </span>
+                  <p className="text-sm font-medium text-foreground flex-1">{item.skill}</p>
+                  <p className="text-xs text-muted-foreground">{item.note}</p>
+                </div>
+              ))}
+            </div>
+            <div className="px-5 py-3 bg-accent/60 border-t border-border">
+              <p className="text-[11px] text-muted-foreground">
+                <span className="font-semibold text-foreground">Next best evidence:</span> one cloud project with measurable impact — unblocks 3 target roles.
+              </p>
+            </div>
+          </section>
         </div>
 
         <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-6">
@@ -223,31 +259,6 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
           </section>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
-          {marketSignals.map(signal => (
-            <div key={signal.label} className="bg-white border border-border rounded-xl p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart3 size={15} className="text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">{signal.label}</p>
-              </div>
-              <p className="text-2xl font-bold text-foreground">{signal.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{signal.caption}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-accent border border-border rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <CheckCircle size={18} className="text-primary mt-0.5" />
-            <div>
-              <p className="font-semibold text-foreground">Why this beats a normal job board</p>
-              <p className="text-sm text-muted-foreground mt-0.5">Every recommendation is connected to verified evidence, market demand, skill gaps, and interview readiness.</p>
-            </div>
-          </div>
-          <button onClick={() => onNavigate("offers")} className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90">
-            Compare Offers <TrendingUp size={14} />
-          </button>
-        </div>
       </div>
     </div>
   );

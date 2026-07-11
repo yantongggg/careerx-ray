@@ -4,10 +4,22 @@ import {
   BarChart3, Check, Loader2, Briefcase, Target, DollarSign,
   Sparkles, FileText, Globe, Zap, Brain
 } from "lucide-react";
+import { dimensions, getArchetypeForScoresSafe } from "../careerDna.js";
 
 interface OnboardingProps {
-  onComplete: () => void;
+  onComplete: (dnaScores: Record<string, number>) => void;
 }
+
+/* Each calibration option contributes to one or two Career DNA dimensions
+   (indexed to match the option order in calibrationQuestions below). */
+const OPTION_DIMS: Record<string, string[][]> = {
+  ambiguity:     [["Technical", "Execution"], ["Strategic"], ["Communication"], ["Innovation"]],
+  team:          [["Leadership"], ["Technical", "Execution"], ["Communication"], ["Innovation"]],
+  problem:       [["Technical", "Strategic"], ["Execution", "Innovation"], ["Communication"], ["Strategic", "Innovation"]],
+  motivation:    [["Execution", "Technical"], ["Communication", "Strategic"], ["Innovation"], ["Leadership"]],
+  communication: [["Technical"], ["Strategic"], ["Communication", "Innovation"], ["Execution", "Leadership"]],
+  environment:   [["Execution"], ["Innovation", "Execution"], ["Communication", "Leadership"], ["Technical"]],
+};
 
 const roles = [
   "Data Analyst", "Senior Data Analyst", "Analytics Engineer", "Data Engineer",
@@ -113,7 +125,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const [currentRole, setCurrentRole] = useState("Senior Data Analyst");
   const [targetRole, setTargetRole] = useState("ML Engineer");
   const [experience, setExperience] = useState("5-7");
-  const [salaryRange, setSalaryRange] = useState("100k-150k");
+  const [salaryRange, setSalaryRange] = useState("RM 100k-150k");
   const [selectedGoals, setSelectedGoals] = useState<string[]>(["salary", "pivot"]);
   const [calibrationAnswers, setCalibrationAnswers] = useState<Record<string, string>>({
     ambiguity: "Break it into technical steps and start building",
@@ -129,6 +141,17 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]
     );
   };
+
+  /* Career DNA scores derived from calibration answers */
+  const dnaCounts: Record<string, number> = Object.fromEntries(dimensions.map((d: string) => [d, 0]));
+  calibrationQuestions.forEach(q => {
+    const idx = q.options.indexOf(calibrationAnswers[q.id]);
+    if (idx >= 0) OPTION_DIMS[q.id][idx].forEach(d => { dnaCounts[d] += 1; });
+  });
+  const dnaScores: Record<string, number> = Object.fromEntries(
+    Object.entries(dnaCounts).map(([d, n]) => [d, Math.min(95, 42 + n * 12)])
+  );
+  const archetype = getArchetypeForScoresSafe(dnaScores);
 
   const startScan = () => {
     setStep("scan");
@@ -414,7 +437,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                       onChange={e => setSalaryRange(e.target.value)}
                       className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
-                      {["<$60k", "$60k-$80k", "$80k-$100k", "$100k-$150k", "$150k-$200k", "$200k+"].map(v => <option key={v}>{v}</option>)}
+                      {["<RM 60k", "RM 60k-80k", "RM 80k-100k", "RM 100k-150k", "RM 150k-200k", "RM 200k+"].map(v => <option key={v}>{v}</option>)}
                     </select>
                   </div>
                 </div>
@@ -587,13 +610,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 <Check size={36} className="text-emerald-600" />
               </div>
               <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Your Career DNA is ready</h1>
-              <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">After combining profile evidence with your Career Calibration answers, we found your primary archetype: <strong className="text-foreground">Forge Beaver — The Practical Builder</strong>.</p>
+              <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">After combining profile evidence with your Career Calibration answers, we found your primary archetype: <strong className="text-foreground">{archetype.name} — {archetype.type}</strong>.</p>
 
               <div className="bg-slate-950 text-white rounded-2xl p-5 mb-6 text-left">
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Primary Career DNA Animal</p>
-                <h2 className="text-2xl font-bold mt-1">Forge Beaver</h2>
-                <p className="text-sm text-blue-200 font-semibold mt-1">Technical + Execution</p>
-                <p className="text-sm text-slate-300 leading-relaxed mt-3">You are strongest when turning complex problems into real, working solutions. Growth areas: strategic direction and innovation confidence.</p>
+                <div className="flex items-start gap-4">
+                  <img src={archetype.image} alt={archetype.animal} className="w-16 h-16 rounded-xl object-cover shadow-md flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Primary Career DNA Animal</p>
+                    <h2 className="text-2xl font-bold mt-1">{archetype.name}</h2>
+                    <p className="text-sm text-blue-200 font-semibold mt-1">{archetype.core.join(" + ")}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300 leading-relaxed mt-3">{archetype.copy}</p>
+                <p className="text-sm text-slate-300 leading-relaxed mt-2"><span className="text-blue-200 font-semibold">Growth move:</span> {archetype.move}</p>
               </div>
 
               <div className="grid grid-cols-3 gap-4 mb-8">
@@ -610,7 +639,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <button
-                onClick={onComplete}
+                onClick={() => onComplete(dnaScores)}
                 className="w-full flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold text-sm shadow-lg shadow-blue-200"
               >
                 View My Career Dashboard <ChevronRight size={16} />

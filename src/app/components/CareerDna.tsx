@@ -8,10 +8,11 @@ import {
 import {
   archetypes,
   getArchetypeForScores,
+  getArchetypeForScoresSafe,
   getTopDimensions,
 } from "../careerDna.js";
 
-const dnaScores = {
+const defaultDnaScores = {
   Technical: 88,
   Execution: 92,
   Communication: 76,
@@ -28,22 +29,6 @@ const aspirationScores = {
   Innovation: 85,
   Leadership: 78,
 };
-
-const radarData = Object.entries(dnaScores).map(([subject, A]) => ({ subject, A }));
-const conflictRadarData = Object.entries(dnaScores).map(([subject, A]) => ({
-  subject,
-  evidence: A,
-  aspiration: aspirationScores[subject as keyof typeof aspirationScores],
-}));
-
-const conflicts = Object.entries(dnaScores)
-  .map(([dim, evidenceVal]) => {
-    const aspVal = aspirationScores[dim as keyof typeof aspirationScores];
-    const gap = aspVal - evidenceVal;
-    return { dimension: dim, evidence: evidenceVal, aspiration: aspVal, gap, absGap: Math.abs(gap) };
-  })
-  .filter(c => c.absGap >= 15)
-  .sort((a, b) => b.absGap - a.absGap);
 
 const conflictInsights: Record<string, { rising: string; falling: string }> = {
   Technical: {
@@ -72,9 +57,7 @@ const conflictInsights: Record<string, { rising: string; falling: string }> = {
   },
 };
 
-const primary = getArchetypeForScores(dnaScores);
 const aspirationPrimary = getArchetypeForScores(aspirationScores);
-const topDimensions = getTopDimensions(dnaScores);
 
 const signalLayers = [
   {
@@ -123,7 +106,26 @@ const confidenceRows = [
   { dimension: "Innovation", source: "Project variety, hackathon signals", confidence: "Medium" },
 ];
 
-export function CareerDna() {
+export function CareerDna({ scores }: { scores?: Record<string, number> }) {
+  /* Live scan scores from onboarding calibration; falls back to the demo profile */
+  const dnaScores = { ...defaultDnaScores, ...(scores ?? {}) };
+  const radarData = Object.entries(dnaScores).map(([subject, A]) => ({ subject, A }));
+  const conflictRadarData = Object.entries(dnaScores).map(([subject, A]) => ({
+    subject,
+    evidence: A,
+    aspiration: aspirationScores[subject as keyof typeof aspirationScores],
+  }));
+  const conflicts = Object.entries(dnaScores)
+    .map(([dim, evidenceVal]) => {
+      const aspVal = aspirationScores[dim as keyof typeof aspirationScores];
+      const gap = aspVal - evidenceVal;
+      return { dimension: dim, evidence: evidenceVal, aspiration: aspVal, gap, absGap: Math.abs(gap) };
+    })
+    .filter(c => c.absGap >= 15)
+    .sort((a, b) => b.absGap - a.absGap);
+  const primary = getArchetypeForScoresSafe(dnaScores);
+  const topDimensions = getTopDimensions(dnaScores);
+
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">

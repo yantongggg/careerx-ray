@@ -9,26 +9,7 @@ import {
 
 type Role = "candidate" | "employer" | "university";
 
-const candidateMain = [
-  { id: "command", label: "Command Center", icon: LayoutDashboard },
-  { id: "dna",     label: "Career DNA", icon: Fingerprint },
-  { id: "jobs",    label: "Jobs + Applications", icon: Briefcase },
-  { id: "coach",   label: "Interview Coach", icon: Video },
-  { id: "offers",  label: "Offer Decision AI", icon: Scale },
-  { id: "portfolio", label: "Portfolio Builder", icon: Globe },
-];
-
-const journey = [
-  { id: "dashboard",    label: "X-Ray Dashboard",      icon: BarChart3,     step: "01" },
-  { id: "blindspots",   label: "Blind Spots",          icon: AlertTriangle, step: "02", badge: "5" },
-  { id: "decisionlab",  label: "Decision Lab",         icon: FlaskConical,  step: "03" },
-  { id: "prescription", label: "Prescription",         icon: Pill,          step: "04" },
-];
-
-const support = [
-  { id: "evidence", label: "Career Evidence",  icon: Layers },
-  { id: "profile",  label: "My Profile",       icon: User   },
-];
+import { JOURNEY } from "./stages";
 
 const employerMain = [
   { id: "employer",       label: "Hiring Command Center", icon: Building2 },
@@ -60,7 +41,7 @@ export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) 
     : currentRole === "employer"
       ? "Find, engage, retain"
       : "Track, align, intervene";
-  const roleItems = currentRole === "candidate" ? candidateMain : currentRole === "employer" ? employerMain : universityMain;
+  const roleItems = currentRole === "employer" ? employerMain : universityMain;
 
   return (
     <aside className="flex-shrink-0 bg-white border-r border-border flex flex-col md:h-full max-md:h-auto max-md:border-r-0 max-md:border-b" style={{ width: "min(252px, 100%)" }}>
@@ -99,85 +80,71 @@ export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) 
 
       {/* Journey nav */}
       <nav className="flex-1 px-3 overflow-y-auto max-md:flex max-md:gap-2 max-md:pb-3">
-        <div className="max-md:min-w-[220px]">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2 mb-1">{roleTitle}</p>
-          <div className="space-y-0.5">
-            {roleItems.map((item, index) => {
-              const active = currentPage === item.id;
+        {currentRole === "candidate" ? (
+          <div className="max-md:min-w-[220px] max-md:flex max-md:gap-1 md:space-y-0.5 md:pt-2">
+            {(() => {
+              const commandActive = currentPage === "command";
               return (
                 <button
-                  key={`${item.label}-${index}`}
-                  onClick={() => onNavigate(item.id)}
+                  onClick={() => onNavigate("command")}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    active
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    commandActive ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                 >
-                  <item.icon size={14} className="flex-shrink-0" />
-                  <span className="flex-1 text-left">{item.label}</span>
+                  <LayoutDashboard size={14} className="flex-shrink-0" />
+                  <span className="flex-1 text-left">Command Center</span>
+                  {commandActive && <ChevronRight size={13} className="opacity-50" />}
+                </button>
+              );
+            })()}
+            <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider px-3 pt-4 pb-1 max-md:hidden">Your journey</p>
+            {JOURNEY.map(stage => {
+              const active = currentPage === stage.id || stage.tools.some(t => t.page === currentPage);
+              return (
+                <button
+                  key={stage.id}
+                  onClick={() => onNavigate(stage.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    active ? "shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                  style={active ? { backgroundColor: stage.tint, color: stage.color } : {}}
+                >
+                  <span className="text-[10px] font-bold tabular-nums flex-shrink-0 w-4" style={{ color: active ? stage.color : "rgba(22,40,75,0.3)" }}>
+                    {stage.num}
+                  </span>
+                  <stage.icon size={14} className="flex-shrink-0" style={active ? { color: stage.color } : {}} />
+                  <span className="flex-1 text-left">{stage.label}</span>
+                  {stage.status === "done" && !active && <span className="text-[10px] font-bold text-emerald-600">✓</span>}
                   {active && <ChevronRight size={13} className="opacity-50" />}
                 </button>
               );
             })}
           </div>
-        </div>
-
-        {currentRole === "candidate" && <div className="max-md:min-w-[220px]">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2 mb-1 md:mt-4 md:border-t md:border-border md:pt-5">X-Ray Journey</p>
-        <div className="space-y-0.5">
-          {journey.map(item => {
-            const active = currentPage === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <span className={`text-xs font-bold tabular-nums flex-shrink-0 ${active ? "text-blue-200" : "text-muted-foreground/50"}`}>
-                  {item.step}
-                </span>
-                <item.icon size={14} className="flex-shrink-0" />
-                <span className="flex-1 text-left">{item.label}</span>
-                {(item as any).badge && !active && (
-                  <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-semibold min-w-[18px] text-center leading-tight">
-                    {(item as any).badge}
-                  </span>
-                )}
-                {active && <ChevronRight size={13} className="opacity-50" />}
-              </button>
-            );
-          })}
-        </div>
-        </div>}
-
-        {currentRole === "candidate" && <div className="max-md:min-w-[220px]">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-5 pb-2 mt-2 border-t border-border max-md:mt-0 max-md:pt-2 max-md:border-t-0">Supporting Data</p>
-        <div className="space-y-0.5">
-          {support.map(item => {
-            const active = currentPage === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <item.icon size={14} className="flex-shrink-0" />
-                <span className="flex-1 text-left">{item.label}</span>
-                {active && <ChevronRight size={13} className="opacity-50" />}
-              </button>
-            );
-          })}
-        </div>
-        </div>}
+        ) : (
+          <div className="max-md:min-w-[220px]">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2 mb-1">{roleTitle}</p>
+            <div className="space-y-0.5">
+              {roleItems.map((item, index) => {
+                const active = currentPage === item.id;
+                return (
+                  <button
+                    key={`${item.label}-${index}`}
+                    onClick={() => onNavigate(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      active
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <item.icon size={14} className="flex-shrink-0" />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {active && <ChevronRight size={13} className="opacity-50" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Bottom */}
@@ -196,13 +163,14 @@ export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) 
             )}
           </button>
         ))}
-        <div className="flex items-center gap-3 px-3 py-2.5 mt-1">
+        <button onClick={() => onNavigate("profile")} className="w-full flex items-center gap-3 px-3 py-2.5 mt-1 rounded-lg hover:bg-muted transition-colors text-left">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D9C18A] to-[#8A7038] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">JK</div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">Jordan Kim</p>
             <p className="text-xs text-muted-foreground truncate">Sr. Data Analyst · Stripe</p>
           </div>
-        </div>
+          <ChevronRight size={13} className="text-muted-foreground/50" />
+        </button>
       </div>
     </aside>
   );

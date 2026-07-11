@@ -3,6 +3,8 @@ import {
   BookOpenCheck, Brain, CalendarClock, CheckCircle2, ChevronRight,
   Cpu, Layers, Lightbulb, Sparkles, TrendingUp, Zap, AlertTriangle
 } from "lucide-react";
+import { useIntelligence } from "./intelligence";
+import { PatternAlert } from "./universitySignals";
 
 const kpis = [
   { label: "Course Updates Suggested", value: "4", icon: Lightbulb },
@@ -51,6 +53,15 @@ const recommendations = [
 export function CurriculumEngine() {
   const [selectedTab, setSelectedTab] = useState<"gap" | "actions">("gap");
   const [implementedActions, setImplementedActions] = useState<number[]>([]);
+  const { signals, liveCount } = useIntelligence();
+
+  // Live hiring signals become gap-analysis rows the moment they arrive
+  const liveGaps = signals
+    .filter(s => s.live)
+    .filter((s, i, arr) => arr.findIndex(x => x.skill === s.skill) === i)
+    .filter(s => !gapAnalysis.some(g => s.skill.toLowerCase().includes(g.skill.toLowerCase())))
+    .map(s => ({ skill: s.skill, taught: 22, needed: 88, isLive: true }));
+  const allGaps = [...liveGaps, ...gapAnalysis.map(g => ({ ...g, isLive: false }))];
 
   const handleImplement = (index: number) => {
     if (!implementedActions.includes(index)) {
@@ -75,17 +86,30 @@ export function CurriculumEngine() {
           </p>
         </div>
 
+        <PatternAlert onAction={() => setSelectedTab("gap")} />
+
         {/* KPI Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpis.map((kpi) => (
-            <div key={kpi.label} className="bg-white border border-border rounded-xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <kpi.icon className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">{kpi.label}</span>
+          {kpis.map((kpi) => {
+            const isGapKpi = kpi.label === "Skill Gaps Detected";
+            const value = isGapKpi ? String(12 + liveGaps.length) : kpi.value;
+            return (
+              <div key={kpi.label} className="bg-white border border-border rounded-xl shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <kpi.icon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{kpi.label}</span>
+                </div>
+                <p className="text-2xl font-bold">
+                  {value}
+                  {isGapKpi && liveGaps.length > 0 && (
+                    <span className="ml-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 align-middle">
+                      +{liveGaps.length} live
+                    </span>
+                  )}
+                </p>
               </div>
-              <p className="text-2xl font-bold">{kpi.value}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Two-Column Layout */}
@@ -183,10 +207,21 @@ export function CurriculumEngine() {
           <div className="bg-white border border-border rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold mb-4">Skill Gap Analysis — What We Teach vs. What's Needed</h2>
             <div className="space-y-4">
-              {gapAnalysis.map((item) => (
-                <div key={item.skill} className="space-y-1">
+              {allGaps.map((item) => (
+                <div key={item.skill} className={`space-y-1 ${item.isLive ? "rounded-lg border border-emerald-200 bg-emerald-50/40 p-3 -mx-3" : ""}`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{item.skill}</span>
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      {item.skill}
+                      {item.isLive && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full px-2 py-0.5">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600" />
+                          </span>
+                          From live hiring signal
+                        </span>
+                      )}
+                    </span>
                     <span className="text-xs text-red-600 font-medium">Gap: {item.needed - item.taught}%</span>
                   </div>
                   <div className="flex gap-2 items-center">
