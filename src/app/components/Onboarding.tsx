@@ -202,7 +202,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const [targetRole, setTargetRole] = useState("ML Engineer");
   const [customTargetRole, setCustomTargetRole] = useState("");
   const [experience, setExperience] = useState("5-7");
-  const [salaryRange, setSalaryRange] = useState("RM 100k-150k");
+  const [salaryRange, setSalaryRange] = useState("RM 5k-8k/mo");
   const [customSalary, setCustomSalary] = useState("");
   const [selectedGoals, setSelectedGoals] = useState<string[]>(["salary", "pivot"]);
   /* No preset answers — the archetype must reflect the user's own calibration */
@@ -581,7 +581,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                       onChange={e => setSalaryRange(e.target.value)}
                       className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
-                      {["<RM 60k", "RM 60k-80k", "RM 80k-100k", "RM 100k-150k", "RM 150k-200k", "RM 200k+", "Other…"].map(v => <option key={v}>{v}</option>)}
+                      {["<RM 3k/mo", "RM 3k-5k/mo", "RM 5k-8k/mo", "RM 8k-12k/mo", "RM 12k-20k/mo", "RM 20k+/mo", "Other…"].map(v => <option key={v}>{v}</option>)}
                     </select>
                     {salaryRange === "Other…" && (
                       <input

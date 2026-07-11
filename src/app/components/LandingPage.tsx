@@ -27,10 +27,10 @@ function SalaryComparisonChart() {
   // Data points: [stay, pivot] salary in $k, mapped to SVG coords
   const W = 480, H = 160, PAD_L = 40, PAD_R = 16, PAD_T = 12, PAD_B = 28;
   const labels = ["Now", "Q2", "Q3", "Q4", "Y2"];
-  const stay  = [110, 112, 113, 114, 116];
-  const pivot = [110, 118, 128, 138, 148];
+  const stay  = [9.2, 9.3, 9.4, 9.5, 9.7];
+  const pivot = [9.2, 9.8, 10.7, 11.5, 12.3];
   const allVals = [...stay, ...pivot];
-  const minV = 105, maxV = 155;
+  const minV = 8.8, maxV = 13;
   const n = labels.length;
 
   const chartW = W - PAD_L - PAD_R;
@@ -62,7 +62,7 @@ function SalaryComparisonChart() {
       </defs>
 
       {/* Grid lines */}
-      {[110, 120, 130, 140, 150].map(v => (
+      {[9, 10, 11, 12, 13].map(v => (
         <g key={v}>
           <line x1={PAD_L} y1={py(v)} x2={W - PAD_R} y2={py(v)} stroke="#F1F5F9" strokeWidth={1} />
           <text x={PAD_L - 6} y={py(v) + 4} textAnchor="end" fontSize={9} fill="#CBD5E1">RM{v}k</text>
@@ -282,7 +282,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     <div className="space-y-2.5 flex-1">
                       {[
                         { icon: Brain,         label: "High AI Exposure",       detail: "62% of tasks automatable within 24 months", severity: "critical" },
-                        { icon: TrendingDown,  label: "Salary Below Market",    detail: "Earning RM 20k below your peer cohort",        severity: "high"     },
+                        { icon: TrendingDown,  label: "Salary Below Market",    detail: "Earning RM 1.6k/mo below your peer cohort",        severity: "high"     },
                         { icon: Shield,        label: "Skill Stagnation",       detail: "Python skills haven't grown in 14 months",   severity: "high"     },
                         { icon: Users,         label: "Leadership Gap",         detail: "No team-lead record — promotion blocker",    severity: "medium"   },
                       ].map(r => {
@@ -492,7 +492,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground">5-year salary delta (realistic case)</p>
               <div className="flex items-center gap-1.5 text-emerald-600 font-semibold text-sm">
-                <TrendingDown size={14} className="rotate-180" /> +RM 38k/yr by switching · 84% confidence
+                <TrendingDown size={14} className="rotate-180" /> +RM 3.2k/mo by switching · 84% confidence
               </div>
             </div>
           </div>

@@ -73,7 +73,7 @@ const treatment: Record<Phase, {
     bg: "bg-purple-50",
     border: "border-purple-200",
     tasks: [
-      { id: "t6",  label: "Pass AWS Solutions Architect Associate",            rationale: "This credential alone unlocks 73% of target roles and raises your average salary offer by RM 12k.",                 effort: "40 hrs",  impact: "Critical", category: "Certification" },
+      { id: "t6",  label: "Pass AWS Solutions Architect Associate",            rationale: "This credential alone unlocks 73% of target roles and raises your average salary offer by RM 1k/mo.",                 effort: "40 hrs",  impact: "Critical", category: "Certification" },
       { id: "t7",  label: "Build ML portfolio project #1 — fraud detection",  rationale: "Demonstrates ML engineering depth beyond your analyst background. One project changes how interviewers see you.", effort: "30 hrs",  impact: "Critical", category: "Portfolio"     },
       { id: "t8",  label: "Complete fast.ai Practical Deep Learning course",   rationale: "Bridges the theory-to-practice gap. Fast.ai is how ML engineers actually learn the craft.",                      effort: "20 hrs",  impact: "High",     category: "Skills"        },
       { id: "t9",  label: "Lead one cross-functional project at Stripe",       rationale: "Your promotion is blocked by scope, not performance. One visible leadership contribution changes the calculus.",   effort: "Ongoing", impact: "High",     category: "Leadership"    },
@@ -99,7 +99,7 @@ const treatment: Record<Phase, {
 
 const expectedOutcome = {
   score: 92,
-  salary: "RM 140k–RM 155k",
+  salary: "RM 11.7k–12.9k/mo",
   aiRisk: "Low (28%)",
   promotionReady: "81%",
   summary: "With consistent execution of this plan, you move from moderate risk to strong positioning within 6 months. The Career Health Score of 92 reflects a professional who is not just performing well — but building in a direction that compounds.",
@@ -107,16 +107,16 @@ const expectedOutcome = {
 
 const certifications = [
   { name: "AWS Cloud Practitioner",                priority: 1, effort: "1 week",    salaryImpact: "Gate-opener",  urgency: "This week" },
-  { name: "AWS Solutions Architect Associate",      priority: 2, effort: "6–8 weeks", salaryImpact: "+RM 12k avg",    urgency: "By Day 60" },
-  { name: "GCP Professional Data Engineer",         priority: 3, effort: "8–10 weeks",salaryImpact: "+RM 10k avg",    urgency: "Month 4–5" },
+  { name: "AWS Solutions Architect Associate",      priority: 2, effort: "6–8 weeks", salaryImpact: "+RM 1k/mo avg",    urgency: "By Day 60" },
+  { name: "GCP Professional Data Engineer",         priority: 3, effort: "8–10 weeks",salaryImpact: "+RM 850/mo avg",    urgency: "Month 4–5" },
   { name: "Databricks ML Associate",                priority: 4, effort: "4–5 weeks", salaryImpact: "+RM 8k avg",     urgency: "Month 5–6" },
 ];
 
 const recommendedRoles = [
-  { title: "Analytics Engineer",           salary: "RM 130k–RM 155k", fit: 91, match: "Best immediate fit — minimal gap, AWS cert closes the remaining blocker"       },
-  { title: "ML Engineer",                  salary: "RM 145k–RM 175k", fit: 82, match: "Best 12-month target — 2 ML projects + AWS cert makes you credible"            },
-  { title: "Data Science Manager",         salary: "RM 155k–RM 190k", fit: 68, match: "Strong ceiling — requires 12–18 months of leadership positioning first"        },
-  { title: "Staff Data Scientist",         salary: "RM 180k–RM 240k", fit: 54, match: "Aspirational — plan for 18–24 months of deliberate preparation"                },
+  { title: "Analytics Engineer",           salary: "RM 10.8k–12.9k/mo", fit: 91, match: "Best immediate fit — minimal gap, AWS cert closes the remaining blocker"       },
+  { title: "ML Engineer",                  salary: "RM 12.1k–14.6k/mo", fit: 82, match: "Best 12-month target — 2 ML projects + AWS cert makes you credible"            },
+  { title: "Data Science Manager",         salary: "RM 12.9k–15.8k/mo", fit: 68, match: "Strong ceiling — requires 12–18 months of leadership positioning first"        },
+  { title: "Staff Data Scientist",         salary: "RM 15k–20k/mo", fit: 54, match: "Aspirational — plan for 18–24 months of deliberate preparation"                },
 ];
 
 const impactColors: Record<string, string> = {

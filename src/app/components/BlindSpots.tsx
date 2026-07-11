@@ -106,7 +106,7 @@ const blindSpots: BlindSpot[] = [
     headline: "Your +3% increment felt like progress. The market paid your peers 12% more. The gap is growing.",
     humanContext: "Your salary only moves at the annual increment (+3%), but the KL data market moved 12% in the same period. You didn't lose ground in absolute terms, but you lost ground in relative terms, and that gap compounds.",
     whyItMatters: "Compensation isn't just about right now. It's your base for future raises, equity refreshes, and offers. Every year you're below market, you're negotiating from a weaker anchor point. Companies rarely volunteer a correction — you have to create the moment.",
-    ifIgnored: "At current trajectory, you'll be RM 30k+ below market by end of year. After 3 years of compounding, the cumulative deficit reaches RM 58k+ — money you will never recover without a deliberate salary reset (usually requiring a new offer or a confrontational negotiation).",
+    ifIgnored: "At current trajectory, you'll be RM 1.6k/mo below market by end of year (RM 19k+ a year). After 3 years of compounding, the cumulative deficit reaches RM 58k+ — money you will never recover without a deliberate salary reset (usually requiring a new offer or a confrontational negotiation).",
     recommendedAction: "Request a compensation review now. You don't need a new job to get a market correction — but you do need to come with market data and a competing signal. Even a preliminary offer in your pocket changes the conversation.",
     actionSteps: [
       "Pull current market data from Levels.fyi and LinkedIn Salary for your exact role + YoE",
