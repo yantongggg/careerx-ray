@@ -428,12 +428,30 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                 rows={9}
                 className="w-full flex-1 text-xs leading-relaxed text-foreground bg-white border border-border rounded-lg p-3 font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
-              <button
-                onClick={() => { setDoc("resume", undefined); demoToast("Resume reset to AI draft ✓"); }}
-                className="self-start text-[11px] font-semibold text-primary hover:underline mt-2"
-              >
-                Reset to AI draft
-              </button>
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                <button
+                  onClick={() => {
+                    setDoc("resume", `TAILORED FOR ${job.company.toUpperCase()} · ${job.position.toUpperCase()}\n${resumeText.startsWith("TAILORED FOR") ? resumeText.split("\n").slice(1).join("\n") : resumeText}\n\n+ Re-ranked bullets to lead with: ${job.requirements?.[0] ?? "the role's top requirement"}\n+ Mirrored key phrases from the job description for ATS matching`);
+                    demoToast(`Resume re-tailored to ${job.company}'s job description ✓`);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-colors hover:bg-accent"
+                  style={{ borderColor: "rgba(138,112,56,0.3)", color: "#8A7038" }}
+                >
+                  <Sparkles size={11} /> Tailor with AI to this job description
+                </button>
+                <button
+                  onClick={() => { setDoc("resume", undefined); demoToast("Resume reset to AI draft ✓"); }}
+                  className="text-[11px] font-semibold text-primary hover:underline"
+                >
+                  Reset to AI draft
+                </button>
+                <button
+                  onClick={() => demoToast("Your own resume uploaded — it will be sent instead of the AI draft ✓")}
+                  className="text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  ↑ Upload my own resume instead
+                </button>
+              </div>
             </div>
 
             {/* Cover Letter */}
@@ -456,13 +474,35 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                 rows={9}
                 className="w-full flex-1 text-xs leading-relaxed text-foreground bg-white border border-border rounded-lg p-3 resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
-              <button
-                onClick={() => { setDoc("cover", undefined); demoToast("Cover letter reset to AI draft ✓"); }}
-                className="self-start text-[11px] font-semibold text-primary hover:underline mt-2"
-              >
-                Reset to AI draft
-              </button>
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                <button
+                  onClick={() => { setDoc("cover", undefined); demoToast("Cover letter reset to AI draft ✓"); }}
+                  className="text-[11px] font-semibold text-primary hover:underline"
+                >
+                  Reset to AI draft
+                </button>
+                <button
+                  onClick={() => demoToast("Your own cover letter uploaded — it will be sent instead of the AI draft ✓")}
+                  className="text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  ↑ Upload my own cover letter instead
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Supporting documents */}
+          <div className="mt-4 p-4 rounded-xl border border-dashed border-border bg-accent/30 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">Supporting documents <span className="text-xs font-normal text-muted-foreground">(optional)</span></p>
+              <p className="text-xs text-muted-foreground mt-0.5">Portfolio, certificates, transcripts, or your own version of any document — attach anything that strengthens this application.</p>
+            </div>
+            <button
+              onClick={() => demoToast("Supporting document attached to this application ✓")}
+              className="flex-shrink-0 inline-flex items-center gap-2 border border-border bg-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-muted transition-colors text-foreground"
+            >
+              <FileText size={13} /> Upload document
+            </button>
           </div>
         </section>
 

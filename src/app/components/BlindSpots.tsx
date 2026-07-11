@@ -4,6 +4,7 @@ import {
   ArrowRight, Clock, TrendingDown, Zap, Users, Cloud, BookOpen, BarChart3,
   Radar, Bot, TrendingUp, Globe
 } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface BlindSpot {
   id: number;
@@ -102,8 +103,8 @@ const blindSpots: BlindSpot[] = [
     icon: TrendingDown,
     category: "Salary Drift",
     severity: "medium",
-    headline: "You earned an 8% raise last year. The market paid your peers 12%. The gap is growing.",
-    humanContext: "Your last salary review was 14 months ago. You got an 8% increase — which felt like progress. But the SF data market grew 12% over the same period. You didn't lose ground in absolute terms, but you lost ground in relative terms, and that gap compounds.",
+    headline: "Your +3% increment felt like progress. The market paid your peers 12% more. The gap is growing.",
+    humanContext: "Your salary only moves at the annual increment (+3%), but the KL data market moved 12% in the same period. You didn't lose ground in absolute terms, but you lost ground in relative terms, and that gap compounds.",
     whyItMatters: "Compensation isn't just about right now. It's your base for future raises, equity refreshes, and offers. Every year you're below market, you're negotiating from a weaker anchor point. Companies rarely volunteer a correction — you have to create the moment.",
     ifIgnored: "At current trajectory, you'll be RM 30k+ below market by end of year. After 3 years of compounding, the cumulative deficit reaches RM 58k+ — money you will never recover without a deliberate salary reset (usually requiring a new offer or a confrontational negotiation).",
     recommendedAction: "Request a compensation review now. You don't need a new job to get a market correction — but you do need to come with market data and a competing signal. Even a preliminary offer in your pocket changes the conversation.",
@@ -150,7 +151,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
     trends: [
       {
         kind: "displacement",
-        tag: "AI displacement",
+        tag: "Routine work shrinking",
         headline: "Automation now handles 40–60% of routine reporting tasks.",
         detail: "Junior data-analyst postings in Malaysia are down 18% YoY as AI copilots absorb dashboard-building and ad-hoc SQL work. Roles that survive are shifting up the stack — from producing reports to owning the decisions behind them.",
         stat: "-18%",
@@ -158,7 +159,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "demand-shift",
-        tag: "Demand signal",
+        tag: "Hiring pattern changing",
         headline: "Analytics teams are consolidating — and re-hiring differently.",
         detail: "Two regional tech employers reduced analytics headcount this quarter. But the same firms opened analytics-engineering and AI-literate analyst reqs within weeks — the demand didn't vanish, it moved. Candidates who reposition early inherit those seats.",
         stat: "2",
@@ -166,7 +167,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "rising",
-        tag: "Rising demand",
+        tag: "Growth lanes",
         headline: "AI engineering, data platform, and risk analytics are your growth lanes.",
         detail: "Postings for AI engineering, data platform, and risk analytics roles in KL and Penang are up 31% YoY — median offers RM 9–14k/mo. These are your fastest adjacent moves: 70%+ skill overlap with what you already do.",
         stat: "+31%",
@@ -179,7 +180,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
     trends: [
       {
         kind: "displacement",
-        tag: "AI displacement",
+        tag: "Routine work shrinking",
         headline: "Generative tools now draft 50–70% of production design assets.",
         detail: "Entry-level graphic and production design postings in Malaysia are down 22% YoY as AI tooling handles first-draft visuals and asset resizing. The roles holding value are research-led product design and design systems ownership.",
         stat: "-22%",
@@ -187,7 +188,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "demand-shift",
-        tag: "Demand signal",
+        tag: "Hiring pattern changing",
         headline: "Agencies are trimming execution roles, hiring strategy roles.",
         detail: "Two regional agencies restructured creative teams this quarter; briefs now ask for AI-fluent designers who direct tools rather than compete with them. Portfolios showing process and decision-making now outperform pure visual craft.",
         stat: "2",
@@ -195,7 +196,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "rising",
-        tag: "Rising demand",
+        tag: "Growth lanes",
         headline: "Product design, design systems, and UX research are expanding fast.",
         detail: "Product design and UX research openings across KL fintech and e-commerce are up 27% YoY — median offers RM 7–11k/mo. Design-systems specialists are the scarcest profile in the local market right now.",
         stat: "+27%",
@@ -208,7 +209,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
     trends: [
       {
         kind: "displacement",
-        tag: "AI displacement",
+        tag: "Routine work shrinking",
         headline: "AI coding assistants now write 40–55% of routine implementation code.",
         detail: "Junior developer postings in Malaysia are down 15% YoY as teams expect AI-assisted output from smaller headcounts. The premium is moving to system design, code review judgment, and AI tool orchestration — not raw line-writing speed.",
         stat: "-15%",
@@ -216,7 +217,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "demand-shift",
-        tag: "Demand signal",
+        tag: "Hiring pattern changing",
         headline: "Hiring bars are rising even as total openings hold steady.",
         detail: "Two regional tech employers slowed engineering hiring this quarter, but reqs for AI-integration and platform engineers at the same firms grew. Interview loops increasingly test AI-augmented workflows — engineers who show that fluency clear the bar.",
         stat: "2",
@@ -224,7 +225,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "rising",
-        tag: "Rising demand",
+        tag: "Growth lanes",
         headline: "AI engineering, platform, and DevSecOps roles are the growth engine.",
         detail: "AI engineering, cloud platform, and DevSecOps postings in Malaysia are up 34% YoY — median offers RM 10–16k/mo. These sit one deliberate upskill away from a mid-level engineering base.",
         stat: "+34%",
@@ -237,7 +238,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
     trends: [
       {
         kind: "displacement",
-        tag: "AI displacement",
+        tag: "Routine work shrinking",
         headline: "AI now produces 50–65% of routine campaign copy and creative variants.",
         detail: "Content-executive and campaign-coordinator postings in Malaysia are down 20% YoY as AI handles first-draft copy, A/B variants, and scheduling. Value is consolidating around strategy, brand judgment, and performance analytics.",
         stat: "-20%",
@@ -245,7 +246,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "demand-shift",
-        tag: "Demand signal",
+        tag: "Hiring pattern changing",
         headline: "Marketing teams are getting smaller — and more technical.",
         detail: "Two regional consumer brands consolidated marketing teams this quarter; replacement hires skew toward growth marketers who can read data, run experiments, and direct AI tooling. Generalist coordinator roles are the most exposed.",
         stat: "2",
@@ -253,7 +254,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "rising",
-        tag: "Rising demand",
+        tag: "Growth lanes",
         headline: "Growth marketing, marketing analytics, and lifecycle/CRM are surging.",
         detail: "Growth and marketing-analytics postings across KL and Selangor are up 29% YoY — median offers RM 6.5–10k/mo. Marketers who pair creative instinct with measurement fluency are commanding the premium.",
         stat: "+29%",
@@ -266,7 +267,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
     trends: [
       {
         kind: "displacement",
-        tag: "AI displacement",
+        tag: "Routine work shrinking",
         headline: "Automation now absorbs 35–50% of routine administrative and reporting work.",
         detail: "Across Malaysian white-collar roles, postings emphasizing routine coordination and reporting are down 16% YoY. Roles anchored in judgment, stakeholder management, and domain expertise remain the most resilient.",
         stat: "-16%",
@@ -274,7 +275,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "demand-shift",
-        tag: "Demand signal",
+        tag: "Hiring pattern changing",
         headline: "Employers are restructuring around AI-literate teams.",
         detail: "Two regional employers restructured operations teams this quarter; new reqs consistently list AI-tool fluency as a baseline expectation rather than a bonus. Early movers on that skill are absorbing the redistributed headcount.",
         stat: "2",
@@ -282,7 +283,7 @@ const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTren
       },
       {
         kind: "rising",
-        tag: "Rising demand",
+        tag: "Growth lanes",
         headline: "Hybrid roles that pair domain depth with AI fluency are growing fastest.",
         detail: "Postings that blend domain expertise with AI or data literacy are up 26% YoY across Malaysia — typically offering an RM 1.5–3k/mo premium over traditional equivalents. That combination is your fastest repositioning lane.",
         stat: "+26%",
@@ -300,6 +301,138 @@ function detectRoleFamily(...roles: (string | undefined)[]): RoleFamily {
   if (/marketing|growth|brand|content|seo|social media/.test(text)) return "marketing";
   return "generic";
 }
+
+/* ── Role shift map + reposition paths + 12-month trend lines ── */
+
+interface ShiftEntry { role: string; change: string }
+interface RepositionPath { role: string; demand: string; overlap: number; missing: string[]; time: string }
+interface TrendSeries { name: string; color: string; start: number; slope: number }
+
+const marketMoves: Record<RoleFamily, { declining: ShiftEntry[]; growing: ShiftEntry[]; paths: RepositionPath[]; series: TrendSeries[] }> = {
+  data: {
+    declining: [
+      { role: "Junior Data Analyst", change: "-18%" },
+      { role: "Report Analyst", change: "-24%" },
+      { role: "Manual QA", change: "-15%" },
+    ],
+    growing: [
+      { role: "AI Analyst", change: "+31%" },
+      { role: "Data Platform Analyst", change: "+28%" },
+      { role: "ML Engineer", change: "+22%" },
+    ],
+    paths: [
+      { role: "Risk Analytics Specialist", demand: "+31%", overlap: 74, missing: ["Credit risk domain", "Model governance"], time: "~3 months" },
+      { role: "Data Platform Analyst", demand: "+28%", overlap: 72, missing: ["dbt at scale", "Airflow"], time: "~3 months" },
+      { role: "AI Product Analyst", demand: "+24%", overlap: 68, missing: ["LLM fundamentals", "Prompt evaluation"], time: "~4 months" },
+    ],
+    series: [
+      { name: "Junior Data Analyst", color: "#DC2626", start: 100, slope: -1.7 },
+      { name: "BI Analyst", color: "#1B5CA3", start: 100, slope: -0.1 },
+      { name: "Data Engineer", color: "#15803D", start: 100, slope: 1.9 },
+      { name: "AI Engineer", color: "#115E50", start: 100, slope: 2.6 },
+    ],
+  },
+  design: {
+    declining: [
+      { role: "Production Designer", change: "-22%" },
+      { role: "Graphic Artist", change: "-19%" },
+      { role: "Asset Retoucher", change: "-25%" },
+    ],
+    growing: [
+      { role: "Product Designer", change: "+27%" },
+      { role: "Design Systems Lead", change: "+30%" },
+      { role: "UX Researcher", change: "+21%" },
+    ],
+    paths: [
+      { role: "Design Systems Specialist", demand: "+30%", overlap: 74, missing: ["Tokens & theming", "Figma libraries at scale"], time: "~3 months" },
+      { role: "Product Designer", demand: "+27%", overlap: 78, missing: ["Research ops", "Journey mapping"], time: "~2 months" },
+      { role: "UX Researcher", demand: "+21%", overlap: 65, missing: ["Research methods", "Usability testing"], time: "~4 months" },
+    ],
+    series: [
+      { name: "Production Designer", color: "#DC2626", start: 100, slope: -1.9 },
+      { name: "Visual Designer", color: "#1B5CA3", start: 100, slope: -0.2 },
+      { name: "Product Designer", color: "#15803D", start: 100, slope: 1.8 },
+      { name: "Design Systems", color: "#115E50", start: 100, slope: 2.3 },
+    ],
+  },
+  software: {
+    declining: [
+      { role: "Junior Developer", change: "-15%" },
+      { role: "Manual QA Engineer", change: "-21%" },
+      { role: "CRUD Maintainer", change: "-12%" },
+    ],
+    growing: [
+      { role: "AI Engineer", change: "+34%" },
+      { role: "Platform Engineer", change: "+28%" },
+      { role: "DevSecOps Engineer", change: "+25%" },
+    ],
+    paths: [
+      { role: "AI Engineer", demand: "+34%", overlap: 70, missing: ["LLM APIs & agents", "Eval pipelines"], time: "~4 months" },
+      { role: "Platform Engineer", demand: "+28%", overlap: 75, missing: ["Kubernetes", "IaC (Terraform)"], time: "~3 months" },
+      { role: "DevSecOps Engineer", demand: "+25%", overlap: 68, missing: ["Security scanning", "Zero-trust basics"], time: "~4 months" },
+    ],
+    series: [
+      { name: "Junior Developer", color: "#DC2626", start: 100, slope: -1.4 },
+      { name: "Full-stack Developer", color: "#1B5CA3", start: 100, slope: 0.1 },
+      { name: "Platform Engineer", color: "#15803D", start: 100, slope: 2.0 },
+      { name: "AI Engineer", color: "#115E50", start: 100, slope: 2.8 },
+    ],
+  },
+  marketing: {
+    declining: [
+      { role: "Content Executive", change: "-20%" },
+      { role: "Campaign Coordinator", change: "-17%" },
+      { role: "Social Media Exec", change: "-14%" },
+    ],
+    growing: [
+      { role: "Growth Marketer", change: "+29%" },
+      { role: "Marketing Analyst", change: "+26%" },
+      { role: "Lifecycle / CRM Specialist", change: "+23%" },
+    ],
+    paths: [
+      { role: "Growth Marketer", demand: "+29%", overlap: 76, missing: ["Experiment design", "GA4 / attribution"], time: "~2 months" },
+      { role: "Marketing Analyst", demand: "+26%", overlap: 70, missing: ["SQL basics", "Dashboarding"], time: "~3 months" },
+      { role: "Lifecycle / CRM Specialist", demand: "+23%", overlap: 72, missing: ["CRM automation", "Segmentation strategy"], time: "~3 months" },
+    ],
+    series: [
+      { name: "Content Executive", color: "#DC2626", start: 100, slope: -1.6 },
+      { name: "Brand Executive", color: "#1B5CA3", start: 100, slope: 0.0 },
+      { name: "Growth Marketer", color: "#15803D", start: 100, slope: 1.9 },
+      { name: "Marketing Analyst", color: "#115E50", start: 100, slope: 2.2 },
+    ],
+  },
+  generic: {
+    declining: [
+      { role: "Admin Coordinator", change: "-16%" },
+      { role: "Reporting Officer", change: "-19%" },
+      { role: "Data Entry Clerk", change: "-28%" },
+    ],
+    growing: [
+      { role: "AI-literate Ops Analyst", change: "+26%" },
+      { role: "Process Automation Lead", change: "+24%" },
+      { role: "Domain Specialist", change: "+18%" },
+    ],
+    paths: [
+      { role: "AI-literate Ops Analyst", demand: "+26%", overlap: 71, missing: ["AI tool fluency", "Basic data literacy"], time: "~2 months" },
+      { role: "Process Automation Lead", demand: "+24%", overlap: 66, missing: ["Workflow automation", "Change management"], time: "~4 months" },
+      { role: "Domain Specialist", demand: "+18%", overlap: 80, missing: ["Certification in your domain"], time: "~3 months" },
+    ],
+    series: [
+      { name: "Routine Coordinator", color: "#DC2626", start: 100, slope: -1.5 },
+      { name: "Generalist Officer", color: "#1B5CA3", start: 100, slope: -0.1 },
+      { name: "Ops Analyst", color: "#15803D", start: 100, slope: 1.6 },
+      { name: "Automation Lead", color: "#115E50", start: 100, slope: 2.1 },
+    ],
+  },
+};
+
+const TREND_MONTHS = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+const buildTrendData = (series: TrendSeries[]) =>
+  TREND_MONTHS.map((month, i) => {
+    const row: Record<string, number | string> = { month };
+    series.forEach(sr => { row[sr.name] = Math.round((sr.start + sr.slope * i + Math.sin(i * 1.7) * 1.2) * 10) / 10; });
+    return row;
+  });
 
 const severityStyles = {
   critical: { badge: "bg-red-500 text-white",    card: "border-red-200",   header: "bg-red-50",   icon: "text-red-500",   label: "Critical" },
@@ -319,6 +452,8 @@ export function BlindSpots({
   const [open, setOpen] = useState<number | null>(1);
   const family = detectRoleFamily(currentRole, targetRole);
   const market = marketTrends[family];
+  const moves = marketMoves[family];
+  const trendData = buildTrendData(moves.series);
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -455,28 +590,124 @@ export function BlindSpots({
             What the market is doing around {targetRole ? `${currentRole} → ${targetRole}` : `your role as a ${currentRole}`} — the shifts most candidates only notice once it's already cost them. None of this is destiny; all of it is actionable.
           </p>
 
-          <div className="grid lg:grid-cols-3 gap-3 mb-5">
+          {/* 1 · Market movement snapshot — small cards, not walls of text */}
+          <div className="grid sm:grid-cols-3 gap-3 mb-6">
             {market.trends.map(trend => {
               const t = trendKindStyles[trend.kind];
               return (
-                <div key={trend.kind} className={`border rounded-xl overflow-hidden ${t.card}`}>
-                  <div className={`px-4 py-3 flex items-center justify-between gap-2 ${t.header}`}>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <t.icon size={14} className={`${t.iconColor} flex-shrink-0`} />
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${t.tag}`}>{trend.tag}</span>
-                    </div>
+                <div key={trend.kind} className={`border rounded-xl px-4 py-3.5 ${t.card}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <t.icon size={13} className={`${t.iconColor} flex-shrink-0`} />
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${t.tag}`}>{trend.tag}</span>
                   </div>
-                  <div className="px-4 py-4">
-                    <div className="mb-3">
-                      <p className={`text-2xl font-bold ${t.stat}`}>{trend.stat}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{trend.statLabel}</p>
-                    </div>
-                    <p className="text-sm font-semibold text-foreground leading-snug mb-2">{trend.headline}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{trend.detail}</p>
-                  </div>
+                  <p className={`text-2xl font-bold ${t.stat}`}>{trend.stat}</p>
+                  <p className="text-[11px] text-muted-foreground">{trend.statLabel}</p>
+                  <p className="text-xs font-medium text-foreground leading-snug mt-2">{trend.headline}</p>
                 </div>
               );
             })}
+          </div>
+
+          {/* 2 · Role shift map */}
+          <div className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">Role shift map</p>
+            <div className="grid md:grid-cols-[1fr_auto_1.1fr_auto_1fr] gap-3 items-stretch">
+              <div className="rounded-xl border border-red-200 bg-red-50/40 p-3.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-red-600 mb-2.5">Routine work shrinking</p>
+                <div className="space-y-2">
+                  {moves.declining.map(r => (
+                    <div key={r.role} className="flex items-center justify-between gap-2 bg-white border border-red-100 rounded-lg px-3 py-2">
+                      <span className="text-xs font-medium text-foreground truncate">{r.role}</span>
+                      <span className="text-xs font-bold text-red-600 flex-shrink-0">{r.change}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="hidden md:flex items-center text-muted-foreground/40"><ArrowRight size={16} /></div>
+              <div className="rounded-xl border-2 p-4 flex flex-col items-center justify-center text-center" style={{ borderColor: "#1B5CA3", backgroundColor: "rgba(27,92,163,0.05)" }}>
+                <span className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "#1B5CA3" }}>You are here</span>
+                <p className="text-base font-bold text-foreground leading-snug">{currentRole}</p>
+                <span className="mt-2 text-[10px] font-semibold px-2.5 py-1 rounded-full border bg-white" style={{ color: "#1B5CA3", borderColor: "rgba(27,92,163,0.3)" }}>
+                  Stable core · routine parts shrinking
+                </span>
+                <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">Your skills transfer to every role on the right.</p>
+              </div>
+              <div className="hidden md:flex items-center text-muted-foreground/40"><ArrowRight size={16} /></div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#115E50] mb-2.5">Growth lanes</p>
+                <div className="space-y-2">
+                  {moves.growing.map(r => (
+                    <div key={r.role} className="flex items-center justify-between gap-2 bg-white border border-emerald-100 rounded-lg px-3 py-2">
+                      <span className="text-xs font-medium text-foreground truncate">{r.role}</span>
+                      <span className="text-xs font-bold text-[#115E50] flex-shrink-0">{r.change}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 · Reposition paths */}
+          <div className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">Reposition paths — where you can move with the skills you already have</p>
+            <div className="space-y-2">
+              {moves.paths.map((path, i) => (
+                <button
+                  key={path.role}
+                  onClick={() => onNavigate?.("decisionlab")}
+                  className="w-full flex flex-col lg:flex-row lg:items-center gap-3 border border-border rounded-xl px-4 py-3 text-left hover:border-[#115E50]/40 hover:shadow-sm transition-all bg-white"
+                >
+                  <div className="flex items-center gap-3 lg:w-[28%] min-w-0">
+                    <span className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-200 text-[#115E50] flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
+                    <span className="text-sm font-semibold text-foreground truncate">{path.role}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 lg:w-[14%]">
+                    <TrendingUp size={12} className="text-[#115E50] flex-shrink-0" />
+                    <span className="text-xs font-bold text-[#115E50] whitespace-nowrap">{path.demand} demand</span>
+                  </div>
+                  <div className="flex items-center gap-2 lg:w-[19%]">
+                    <div className="w-14 h-1.5 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                      <div className="h-full rounded-full" style={{ width: `${path.overlap}%`, backgroundColor: "#1B5CA3" }} />
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap"><strong className="text-foreground">{path.overlap}%</strong> overlap</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap lg:flex-1 min-w-0">
+                    {path.missing.map(m => (
+                      <span key={m} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">+ {m}</span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{path.time}</span>
+                    <ArrowRight size={13} className="text-muted-foreground" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 4 · 12-month demand trend */}
+          <div className="mb-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">12-month hiring demand — key roles compared</p>
+            <p className="text-[11px] text-muted-foreground mb-2">Demand index, 12 months ago = 100 · Malaysian job postings</p>
+            <div className="flex items-center gap-4 flex-wrap mb-1">
+              {moves.series.map(sr => (
+                <span key={sr.name} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="w-3 h-0.5 rounded-full inline-block" style={{ backgroundColor: sr.color }} /> {sr.name}
+                </span>
+              ))}
+            </div>
+            <div style={{ width: "100%", height: 190 }}>
+              <ResponsiveContainer width="100%" height={190}>
+                <LineChart data={trendData}>
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94A3B8" }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94A3B8" }} domain={[75, 135]} />
+                  <Tooltip />
+                  {moves.series.map(sr => (
+                    <Line key={sr.name} type="monotone" dataKey={sr.name} stroke={sr.color} strokeWidth={2} dot={false} isAnimationActive={false} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           <div className="flex items-center justify-between gap-4 flex-wrap pt-4 border-t border-border">

@@ -283,3 +283,67 @@ export function HiringOutcomeSignals() {
     </section>
   );
 }
+
+/* ── AI Impact Heatmap — how AI is reshaping demand per role family ── */
+
+const HEATMAP_ROWS = [
+  { role: "Junior Analyst",   demand: "↓",  demandTone: "red",   ai: "High",    aiTone: "red",   salary: "Low",    salaryTone: "red",   ease: "Medium", easeTone: "amber" },
+  { role: "BI Analyst",       demand: "→",  demandTone: "blue",  ai: "Medium",  aiTone: "amber", salary: "Medium", salaryTone: "amber", ease: "High",   easeTone: "green" },
+  { role: "Data Engineer",    demand: "↑",  demandTone: "green", ai: "Low-Med", aiTone: "green", salary: "High",   salaryTone: "green", ease: "Medium", easeTone: "amber" },
+  { role: "AI Engineer",      demand: "↑↑", demandTone: "green", ai: "Medium",  aiTone: "amber", salary: "High",   salaryTone: "green", ease: "Low",    easeTone: "red"   },
+  { role: "Product Analyst",  demand: "↑",  demandTone: "green", ai: "Medium",  aiTone: "amber", salary: "High",   salaryTone: "green", ease: "High",   easeTone: "green" },
+  { role: "UX / Product Design", demand: "↑", demandTone: "green", ai: "Medium", aiTone: "amber", salary: "Medium", salaryTone: "amber", ease: "High", easeTone: "green" },
+] as const;
+
+const HEAT_TONES: Record<string, string> = {
+  red:   "bg-red-50 text-red-700 border-red-200",
+  amber: "bg-amber-50 text-amber-700 border-amber-200",
+  green: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  blue:  "bg-blue-50 text-blue-700 border-blue-200",
+};
+
+const HeatChip = ({ value, tone }: { value: string; tone: string }) => (
+  <span className={`inline-block min-w-[60px] text-center text-[11px] font-bold px-2 py-1 rounded-md border ${HEAT_TONES[tone]}`}>{value}</span>
+);
+
+export function AiImpactHeatmap() {
+  return (
+    <section className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="font-semibold text-foreground">AI Impact Heatmap — where your graduates' roles are heading</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Demand, AI exposure, salary growth, and transition ease per role family · guides curriculum and advising priorities</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {[["red", "Risk"], ["amber", "Changing"], ["green", "Growth"], ["blue", "Stable"]].map(([tone, label]) => (
+            <span key={tone} className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <span className={`w-2 h-2 rounded-full ${tone === "red" ? "bg-red-500" : tone === "amber" ? "bg-amber-500" : tone === "green" ? "bg-emerald-500" : "bg-blue-500"}`} /> {label}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-border">
+              {["Role family", "Demand", "AI exposure", "Salary growth", "Transition ease"].map(h => (
+                <th key={h} className="px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {HEATMAP_ROWS.map(row => (
+              <tr key={row.role} className="hover:bg-muted/40">
+                <td className="px-5 py-2.5 text-sm font-medium text-foreground whitespace-nowrap">{row.role}</td>
+                <td className="px-5 py-2.5"><HeatChip value={row.demand} tone={row.demandTone} /></td>
+                <td className="px-5 py-2.5"><HeatChip value={row.ai} tone={row.aiTone} /></td>
+                <td className="px-5 py-2.5"><HeatChip value={row.salary} tone={row.salaryTone} /></td>
+                <td className="px-5 py-2.5"><HeatChip value={row.ease} tone={row.easeTone} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}

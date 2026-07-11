@@ -4,7 +4,7 @@ import {
   HeartPulse, MapPin, ShieldCheck, TrendingUp, Users, WalletCards
 } from "lucide-react";
 import { demoToast } from "./toast";
-import { PatternAlert, HiringOutcomeSignals } from "./universitySignals";
+import { PatternAlert, HiringOutcomeSignals, AiImpactHeatmap } from "./universitySignals";
 
 const faculties = [
   { name: "Computer Science", ready: 84, gap: "Cloud architecture" },
@@ -84,6 +84,8 @@ export function EcosystemInsights({ onNavigate }: EcosystemInsightsProps) {
         <PatternAlert onAction={onNavigate ? () => onNavigate("uni-curriculum") : undefined} />
 
         <HiringOutcomeSignals />
+
+        <AiImpactHeatmap />
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
