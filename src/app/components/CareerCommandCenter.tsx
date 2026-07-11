@@ -3,11 +3,12 @@ import {
   GraduationCap, MessageSquareText, Shield, Sparkles, Target, TrendingUp,
   Video, Zap
 } from "lucide-react";
-import { SignalBanner } from "./intelligence";
+import { SignalBanner, explainRoleGap } from "./intelligence";
 import { JourneyTracker } from "./stages";
 
 interface CareerCommandCenterProps {
   onNavigate: (page: string) => void;
+  profile?: { currentRole: string; targetRole: string } | null;
 }
 
 const nextActions = [
@@ -50,7 +51,11 @@ const evidenceStrength = [
   { skill: "Cloud deployment", level: "missing" as const, note: "No evidence yet" },
 ];
 
-export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
+export function CareerCommandCenter({ onNavigate, profile }: CareerCommandCenterProps) {
+  const currentRole = profile?.currentRole ?? "Senior Data Analyst";
+  const targetRole = profile?.targetRole ?? "ML Engineer";
+  const roleGap = explainRoleGap(currentRole, targetRole);
+
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1240px] mx-auto space-y-6">
@@ -91,7 +96,40 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
 
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Why this matters · powered by Talentbank intelligence</p>
-          <SignalBanner audience="candidate" onAction={() => onNavigate("prescription")} />
+          <div className="space-y-3">
+            <SignalBanner
+              audience="candidate"
+              onAction={() => onNavigate("prescription")}
+              currentRole={currentRole}
+              targetRole={targetRole}
+            />
+
+            {/* Role gap — what typically blocks this exact move */}
+            <section className="bg-white border border-border rounded-xl shadow-sm px-5 py-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    Your role gap · {currentRole} <span className="text-muted-foreground">→</span> {targetRole}
+                  </p>
+                  <ul className="mt-2.5 grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                    {roleGap.gaps.map(gap => (
+                      <li key={gap} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+                        <span className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: "#8A7038" }} />
+                        {gap}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <button
+                  onClick={() => onNavigate("prescription")}
+                  className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg border transition-colors hover:bg-accent"
+                  style={{ borderColor: "rgba(138,112,56,0.3)", color: "#8A7038" }}
+                >
+                  Close these gaps <ArrowRight size={12} />
+                </button>
+              </div>
+            </section>
+          </div>
         </div>
 
         {/* Application Readiness Section */}

@@ -2,23 +2,142 @@ import { useState, useEffect } from "react";
 import {
   Upload, Linkedin, Github, ChevronRight, ChevronLeft,
   BarChart3, Check, Loader2, Briefcase, Target, DollarSign,
-  Sparkles, FileText, Globe, Zap, Brain
+  Sparkles, FileText, Globe, Zap, Brain, GraduationCap,
+  Trophy, FolderOpen, Palette, Dribbble
 } from "lucide-react";
 import { dimensions, getArchetypeForScoresSafe } from "../careerDna.js";
+import { demoToast } from "./toast";
 
 interface OnboardingProps {
-  onComplete: (dnaScores: Record<string, number>) => void;
+  onComplete: (
+    dnaScores: Record<string, number>,
+    profile: { userType: string; currentRole: string; targetRole: string; salaryRange: string }
+  ) => void;
 }
 
 /* Each calibration option contributes to one or two Career DNA dimensions
-   (indexed to match the option order in calibrationQuestions below). */
+   (indexed to match the option order in calibrationQuestions below).
+   Columns are balanced so no single archetype dominates positional answering:
+   all-1st → Technical+Execution (Forge Beaver), all-2nd → Strategic+Leadership
+   (Crown Eagle), all-3rd → Communication+Leadership (Bridge Dolphin),
+   all-4th → Innovation+Execution (Nova Otter). */
 const OPTION_DIMS: Record<string, string[][]> = {
   ambiguity:     [["Technical", "Execution"], ["Strategic"], ["Communication"], ["Innovation"]],
-  team:          [["Leadership"], ["Technical", "Execution"], ["Communication"], ["Innovation"]],
-  problem:       [["Technical", "Strategic"], ["Execution", "Innovation"], ["Communication"], ["Strategic", "Innovation"]],
-  motivation:    [["Execution", "Technical"], ["Communication", "Strategic"], ["Innovation"], ["Leadership"]],
+  team:          [["Technical", "Execution"], ["Leadership", "Strategic"], ["Communication", "Leadership"], ["Innovation"]],
+  problem:       [["Technical"], ["Strategic"], ["Communication"], ["Innovation", "Execution"]],
+  motivation:    [["Execution", "Technical"], ["Leadership"], ["Communication", "Strategic"], ["Innovation"]],
   communication: [["Technical"], ["Strategic"], ["Communication", "Innovation"], ["Execution", "Leadership"]],
-  environment:   [["Execution"], ["Innovation", "Execution"], ["Communication", "Leadership"], ["Technical"]],
+  environment:   [["Execution"], ["Technical"], ["Communication", "Leadership"], ["Innovation", "Execution"]],
+};
+
+const USER_TYPES = [
+  "University student",
+  "Fresh graduate",
+  "Working professional",
+  "Designer / creative",
+  "Career switcher",
+];
+
+type EvidenceGroup = "student" | "creative" | "professional";
+
+const evidenceGroupFor = (userType: string): EvidenceGroup => {
+  if (userType === "University student" || userType === "Fresh graduate") return "student";
+  if (userType === "Designer / creative") return "creative";
+  return "professional";
+};
+
+interface EvidenceSource {
+  id: string;
+  name: string;
+  optional?: boolean;
+  icon: typeof Upload;
+  brand: string; // Tailwind bg class for icon tile + connect button
+  hover: string;
+  desc: string;
+  connectedDesc: string;
+  action: string;
+}
+
+const EVIDENCE_SOURCES: Record<EvidenceGroup, EvidenceSource[]> = {
+  student: [
+    {
+      id: "transcript", name: "Academic transcript", icon: GraduationCap,
+      brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]", action: "Upload",
+      desc: "CGPA, coursework, and dean's list awards become verifiable skill evidence",
+      connectedDesc: "Uploaded · Extracting coursework, CGPA, and academic strengths",
+    },
+    {
+      id: "competitions", name: "Competition & hackathon certificates", icon: Trophy,
+      brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]", action: "Upload",
+      desc: "Hackathons, case competitions, and contest wins are strong proof of skill",
+      connectedDesc: "Uploaded · Verifying certificates and competition placements",
+    },
+    {
+      id: "projects", name: "Project files", icon: FolderOpen,
+      brand: "bg-[#16284B]", hover: "hover:bg-[#1e3560]", action: "Upload",
+      desc: "Assignments, final-year projects, side builds — anything you made yourself",
+      connectedDesc: "Uploaded · Analyzing project scope, tools, and outcomes",
+    },
+    {
+      id: "linkedin", name: "LinkedIn", optional: true, icon: Linkedin,
+      brand: "bg-[#0077B5]", hover: "hover:bg-[#006097]", action: "Connect",
+      desc: "Import internships, activities, and endorsements — skip if you don't have one yet",
+      connectedDesc: "Connected · Syncing internships, activities, endorsements",
+    },
+  ],
+  creative: [
+    {
+      id: "behance", name: "Behance", icon: Palette,
+      brand: "bg-[#1769FF]", hover: "hover:bg-[#0f56d8]", action: "Connect",
+      desc: "Import your Behance projects, appreciations, and creative fields",
+      connectedDesc: "Connected · Syncing projects, appreciations, creative fields",
+    },
+    {
+      id: "dribbble", name: "Dribbble", icon: Dribbble,
+      brand: "bg-[#EA4C89]", hover: "hover:bg-[#d63c78]", action: "Connect",
+      desc: "Sync shots, likes, and design specialities from your Dribbble profile",
+      connectedDesc: "Connected · Analyzing shots, likes, design specialities",
+    },
+    {
+      id: "portfolio", name: "Portfolio website", icon: Globe,
+      brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]", action: "Add link",
+      desc: "Paste your portfolio URL — we'll scan case studies and visual work",
+      connectedDesc: "Added · Scanning case studies and visual work",
+    },
+    {
+      id: "resume", name: "Resume", optional: true, icon: FileText,
+      brand: "bg-[#16284B]", hover: "hover:bg-[#1e3560]", action: "Upload",
+      desc: "A resume helps, but your portfolio already speaks for your craft",
+      connectedDesc: "Uploaded · Parsing experience and skills",
+    },
+  ],
+  professional: [
+    {
+      id: "resume", name: "Resume", icon: FileText,
+      brand: "bg-[#16284B]", hover: "hover:bg-[#1e3560]", action: "Upload",
+      desc: "Parse roles, skills, achievements, and career trajectory in seconds",
+      connectedDesc: "Uploaded · Parsing roles, skills, achievements",
+    },
+    {
+      id: "linkedin", name: "LinkedIn", icon: Linkedin,
+      brand: "bg-[#0077B5]", hover: "hover:bg-[#006097]", action: "Connect",
+      desc: "Import work history, skills, endorsements, and network data",
+      connectedDesc: "Connected · Syncing work history, endorsements, network",
+    },
+    {
+      id: "github", name: "GitHub", icon: Github,
+      brand: "bg-slate-900", hover: "hover:bg-slate-700", action: "Connect",
+      desc: "Analyze repos, commit patterns, languages, and OSS contributions",
+      connectedDesc: "Connected · Analyzing repos, languages, contribution activity",
+    },
+  ],
+};
+
+const SOMETHING_ELSE: EvidenceSource = {
+  id: "other", name: "Something else", icon: Upload,
+  brand: "bg-slate-500", hover: "hover:bg-slate-600", action: "Upload",
+  desc: "Upload anything that proves your skills — certificates, slides, videos, code, or artwork",
+  connectedDesc: "Received · Extracting skill signals from your evidence",
 };
 
 const roles = [
@@ -67,8 +186,8 @@ const calibrationQuestions = [
     id: "team",
     question: "In a group project, which role do you naturally take?",
     options: [
-      "Organize everyone and set direction",
       "Build the main solution",
+      "Organize everyone and set direction",
       "Explain, present, or align the team",
       "Bring new ideas when the team is stuck",
     ],
@@ -78,9 +197,9 @@ const calibrationQuestions = [
     question: "When solving a difficult problem, what feels most natural?",
     options: [
       "Research deeply until I understand the system",
-      "Try a quick prototype and improve from there",
-      "Discuss with others to find a practical answer",
       "Step back and rethink the whole approach",
+      "Discuss with others to find a practical answer",
+      "Try a quick prototype and improve from there",
     ],
   },
   {
@@ -88,9 +207,9 @@ const calibrationQuestions = [
     question: "Which outcome makes work feel most meaningful to you?",
     options: [
       "Building something that actually works",
+      "Leading a team toward a bigger goal",
       "Helping people make better decisions",
       "Creating something new",
-      "Leading a team toward a bigger goal",
     ],
   },
   {
@@ -108,9 +227,9 @@ const calibrationQuestions = [
     question: "Which work environment would you prefer?",
     options: [
       "A stable team with clear tasks and systems",
-      "A fast-moving startup where things change often",
-      "A people-facing role with lots of collaboration",
       "A deep technical role with complex problems",
+      "A people-facing role with lots of collaboration",
+      "A fast-moving startup where things change often",
     ],
   },
 ];
@@ -119,13 +238,16 @@ type Step = "upload" | "connect" | "profile" | "calibration" | "scan" | "done";
 
 export function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState<Step>("upload");
+  const [userType, setUserType] = useState("Working professional");
   const [resumeUploaded, setResumeUploaded] = useState(false);
-  const [linkedinConnected, setLinkedinConnected] = useState(false);
-  const [githubConnected, setGithubConnected] = useState(false);
+  const [connectedSources, setConnectedSources] = useState<Record<string, boolean>>({});
   const [currentRole, setCurrentRole] = useState("Senior Data Analyst");
+  const [customCurrentRole, setCustomCurrentRole] = useState("");
   const [targetRole, setTargetRole] = useState("ML Engineer");
+  const [customTargetRole, setCustomTargetRole] = useState("");
   const [experience, setExperience] = useState("5-7");
   const [salaryRange, setSalaryRange] = useState("RM 100k-150k");
+  const [customSalary, setCustomSalary] = useState("");
   const [selectedGoals, setSelectedGoals] = useState<string[]>(["salary", "pivot"]);
   /* No preset answers — the archetype must reflect the user's own calibration */
   const [calibrationAnswers, setCalibrationAnswers] = useState<Record<string, string>>({});
@@ -230,7 +352,30 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   <FileText size={24} className="text-primary" />
                 </div>
                 <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Start your Career X-Ray Scan</h1>
-                <p className="text-muted-foreground text-sm max-w-sm mx-auto">Upload your resume to extract your Career DNA. We'll analyze skills, experience, and career trajectory in seconds.</p>
+                <p className="text-muted-foreground text-sm max-w-sm mx-auto">Tell us who you are, then add any evidence you have. Everything here is optional — your calibration answers alone can generate a starting Career DNA.</p>
+              </div>
+
+              {/* User type */}
+              <div className="mb-6">
+                <p className="text-sm font-medium text-foreground mb-2.5 text-center">What best describes you?</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {USER_TYPES.map(t => {
+                    const active = userType === t;
+                    return (
+                      <button
+                        key={t}
+                        onClick={() => setUserType(t)}
+                        className={`px-3.5 py-2 rounded-full border text-xs font-medium transition-all ${
+                          active
+                            ? "bg-primary text-white border-primary shadow-sm"
+                            : "bg-white text-foreground border-border hover:border-primary/40 hover:bg-blue-50/50"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Drop zone */}
@@ -296,57 +441,51 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Globe size={24} className="text-primary" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Connect your accounts</h1>
-                <p className="text-muted-foreground text-sm max-w-sm mx-auto">Connect LinkedIn or GitHub for richer career signal. The more context we have, the more accurate your X-Ray.</p>
+                <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Add your career evidence</h1>
+                <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                  Based on your profile as a <strong className="text-foreground">{userType.toLowerCase()}</strong>, here's the evidence that matters most. All of it is optional — the calibration questions alone can generate a starting Career DNA.
+                </p>
               </div>
 
-              <div className="space-y-4 mb-8">
-                {/* LinkedIn */}
-                <div className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${linkedinConnected ? "bg-blue-50 border-blue-200" : "bg-white border-border"}`}>
-                  <div className="w-12 h-12 bg-[#0077B5] rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Linkedin size={22} className="text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-foreground">LinkedIn</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {linkedinConnected ? "Connected · Syncing work history, endorsements, network" : "Import work history, skills, endorsements, and network data"}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setLinkedinConnected(!linkedinConnected)}
-                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
-                      linkedinConnected
-                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                        : "bg-[#0077B5] text-white hover:bg-[#006097]"
-                    }`}
-                  >
-                    {linkedinConnected ? <span className="flex items-center gap-1.5"><Check size={13} /> Connected</span> : "Connect"}
-                  </button>
-                </div>
-
-                {/* GitHub */}
-                <div className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${githubConnected ? "bg-slate-50 border-slate-200" : "bg-white border-border"}`}>
-                  <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Github size={22} className="text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-foreground">GitHub</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {githubConnected ? "Connected · Analyzing repos, languages, contribution activity" : "Analyze repos, commit patterns, languages, and OSS contributions"}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setGithubConnected(!githubConnected)}
-                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
-                      githubConnected
-                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                        : "bg-slate-900 text-white hover:bg-slate-700"
-                    }`}
-                  >
-                    {githubConnected ? <span className="flex items-center gap-1.5"><Check size={13} /> Connected</span> : "Connect"}
-                  </button>
-                </div>
+              <div className="space-y-4 mb-4">
+                {[...EVIDENCE_SOURCES[evidenceGroupFor(userType)], SOMETHING_ELSE].map(src => {
+                  const connected = !!connectedSources[src.id];
+                  const Icon = src.icon;
+                  return (
+                    <div key={src.id} className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${connected ? "bg-emerald-50/60 border-emerald-200" : "bg-white border-border"}`}>
+                      <div className={`w-12 h-12 ${src.brand} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                        <Icon size={22} className="text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">
+                          {src.name}
+                          {src.optional && <span className="ml-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground bg-muted border border-border rounded-full px-2 py-0.5 align-middle">Optional</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {connected ? src.connectedDesc : src.desc}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (src.id === "other" && !connected) demoToast("Evidence received — extracting skill signals ✓");
+                          setConnectedSources(prev => ({ ...prev, [src.id]: !connected }));
+                        }}
+                        className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
+                          connected
+                            ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                            : `${src.brand} ${src.hover} text-white`
+                        }`}
+                      >
+                        {connected ? <span className="flex items-center gap-1.5"><Check size={13} /> Added</span> : src.action}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
+
+              <p className="text-center text-xs text-muted-foreground mb-8">
+                No GitHub, LinkedIn, or resume? No problem — nobody gets blocked here. Evidence only sharpens the scan.
+              </p>
 
               <div className="mb-8 bg-slate-950 text-white rounded-2xl p-5">
                 <div className="flex items-start gap-3">
@@ -354,7 +493,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   <div>
                     <p className="font-semibold">AI Signal Scan preview</p>
                     <p className="text-xs text-slate-300 leading-relaxed mt-1">
-                      GitHub and LinkedIn show what you have done. Next, Career Calibration captures how you think, work, communicate, and grow before we assign your animal archetype.
+                      Your evidence shows what you have done. Next, Career Calibration captures how you think, work, communicate, and grow before we assign your animal archetype.
                     </p>
                   </div>
                 </div>
@@ -406,8 +545,18 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                       onChange={e => setCurrentRole(e.target.value)}
                       className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
-                      {roles.map(r => <option key={r}>{r}</option>)}
+                      {[...roles, "Student", "Other…"].map(r => <option key={r}>{r}</option>)}
                     </select>
+                    {currentRole === "Other…" && (
+                      <input
+                        type="text"
+                        value={customCurrentRole}
+                        onChange={e => setCustomCurrentRole(e.target.value)}
+                        placeholder="Type your current role"
+                        autoFocus
+                        className="mt-2 w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1.5">Target Role</label>
@@ -416,8 +565,18 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                       onChange={e => setTargetRole(e.target.value)}
                       className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
-                      {targetRoles.map(r => <option key={r}>{r}</option>)}
+                      {[...targetRoles, "Other…"].map(r => <option key={r}>{r}</option>)}
                     </select>
+                    {targetRole === "Other…" && (
+                      <input
+                        type="text"
+                        value={customTargetRole}
+                        onChange={e => setCustomTargetRole(e.target.value)}
+                        placeholder="Type your target role"
+                        autoFocus
+                        className="mt-2 w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -439,8 +598,18 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                       onChange={e => setSalaryRange(e.target.value)}
                       className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
-                      {["<RM 60k", "RM 60k-80k", "RM 80k-100k", "RM 100k-150k", "RM 150k-200k", "RM 200k+"].map(v => <option key={v}>{v}</option>)}
+                      {["<RM 60k", "RM 60k-80k", "RM 80k-100k", "RM 100k-150k", "RM 150k-200k", "RM 200k+", "Other…"].map(v => <option key={v}>{v}</option>)}
                     </select>
+                    {salaryRange === "Other…" && (
+                      <input
+                        type="text"
+                        value={customSalary}
+                        onChange={e => setCustomSalary(e.target.value)}
+                        placeholder="e.g. RM 3.5k/mo"
+                        autoFocus
+                        className="mt-2 w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -641,7 +810,12 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <button
-                onClick={() => onComplete(dnaScores)}
+                onClick={() => onComplete(dnaScores, {
+                  userType,
+                  currentRole: currentRole === "Other…" ? (customCurrentRole.trim() || "Other") : currentRole,
+                  targetRole: targetRole === "Other…" ? (customTargetRole.trim() || "Other") : targetRole,
+                  salaryRange: salaryRange === "Other…" ? (customSalary.trim() || "Other") : salaryRange,
+                })}
                 className="w-full flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold text-sm shadow-lg shadow-blue-200"
               >
                 View My Career Dashboard <ChevronRight size={16} />

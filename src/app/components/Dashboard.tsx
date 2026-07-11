@@ -8,6 +8,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis
 } from "recharts";
+import { dimensions, getArchetypeForScoresSafe } from "../careerDna.js";
 
 // ─── Score explanation modals ───────────────────────────────────────────────
 
@@ -136,14 +137,15 @@ const salaryData = [
   { month: "Jan", salary: 10.1, market: 11.7 },
 ];
 
-const dnaData = [
-  { subject: "Technical",     A: 82 },
-  { subject: "Leadership",    A: 62 },
-  { subject: "Communication", A: 88 },
-  { subject: "Strategic",     A: 61 },
-  { subject: "Innovation",    A: 55 },
-  { subject: "Execution",     A: 79 },
-];
+/* Fallback Career DNA scores — used when no scan scores are passed in */
+const FALLBACK_DNA_SCORES: Record<string, number> = {
+  Technical:     82,
+  Leadership:    62,
+  Communication: 88,
+  Strategic:     61,
+  Innovation:    55,
+  Execution:     79,
+};
 
 const metricCards = [
   { key: "health"   as MetricKey, label: "Career Health",     value: "74",   unit: "/100", color: "text-amber-500",  bg: "bg-amber-50",   icon: Shield    },
@@ -179,10 +181,23 @@ const evidenceUsed = [
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
+  scores?: Record<string, number>;
 }
 
-export function Dashboard({ onNavigate }: DashboardProps) {
+export function Dashboard({ onNavigate, scores }: DashboardProps) {
   const [modal, setModal] = useState<MetricKey | null>(null);
+
+  // Career DNA — dynamic from scan scores, falling back to the seed profile
+  const dnaScores: Record<string, number> = { ...FALLBACK_DNA_SCORES, ...(scores ?? {}) };
+  const dnaData = (dimensions as string[]).map(subject => ({
+    subject,
+    A: dnaScores[subject] ?? 0,
+  }));
+  const archetype = getArchetypeForScoresSafe(dnaScores);
+  const lowestTwo = Object.entries(dnaScores)
+    .sort(([, a], [, b]) => a - b)
+    .slice(0, 2)
+    .map(([dimension]) => dimension);
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -315,7 +330,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               </ResponsiveContainer>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-1">
-              Primary type: <strong className="text-foreground">Technical Executor</strong> · Low: Strategic, Innovation
+              Primary type: <strong className="text-foreground">{archetype.careerStyle}</strong> ({archetype.name}) · Low: {lowestTwo.join(", ")}
             </p>
           </div>
 

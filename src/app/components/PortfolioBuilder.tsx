@@ -30,6 +30,10 @@ import {
   File,
   X,
   ArrowRight,
+  Dribbble,
+  Trophy,
+  Video,
+  Plus,
 } from "lucide-react";
 
 const templates = [
@@ -39,6 +43,15 @@ const templates = [
   { id: "developer", name: "Developer", desc: "Dark theme, code-inspired", colors: ["#0f172a", "#22d3ee", "#a78bfa"] },
   { id: "academic", name: "Academic", desc: "Research & publication focused", colors: ["#fefce8", "#854d0e", "#365314"] },
   { id: "startup", name: "Startup", desc: "Modern, gradient-heavy", colors: ["#6366f1", "#8b5cf6", "#ec4899"] },
+];
+
+const altEvidenceSources = [
+  { id: "behance", name: "Behance", desc: "Design case studies", icon: Palette, iconBg: "bg-blue-100", iconColor: "text-blue-600", action: "Connect", done: "Connected", toast: "Behance connected — 6 case studies imported as project evidence ✓" },
+  { id: "dribbble", name: "Dribbble", desc: "UI shots & visual work", icon: Dribbble, iconBg: "bg-pink-100", iconColor: "text-pink-500", action: "Connect", done: "Connected", toast: "Dribbble connected — 14 shots added as visual evidence ✓" },
+  { id: "transcript", name: "Academic Transcript", desc: "PDF from your university", icon: GraduationCap, iconBg: "bg-emerald-100", iconColor: "text-emerald-700", action: "Upload", done: "Uploaded", toast: "Transcript uploaded — CGPA 3.72 & 8 relevant courses parsed ✓" },
+  { id: "certificates", name: "Competition Certificates", desc: "Hackathons, contests, awards", icon: Trophy, iconBg: "bg-amber-100", iconColor: "text-amber-600", action: "Upload", done: "Uploaded", toast: "3 certificates added — PayNet Hackathon & Varsity Datathon verified ✓" },
+  { id: "projectfiles", name: "Project Files", desc: "Slides, reports, design files", icon: File, iconBg: "bg-sky-100", iconColor: "text-sky-600", action: "Upload", done: "Uploaded", toast: "5 project files uploaded — FYP report & pitch deck added ✓" },
+  { id: "videointro", name: "Video Intro", desc: "60-sec self introduction", icon: Video, iconBg: "bg-rose-100", iconColor: "text-rose-500", action: "Upload", done: "Uploaded", toast: "Video intro uploaded — added to your portfolio hero ✓" },
 ];
 
 const defaultSections = [
@@ -67,6 +80,23 @@ export function PortfolioBuilder() {
   const [resumeFormat, setResumeFormat] = useState<"pdf" | "word">("pdf");
   const [resumeTemplate, setResumeTemplate] = useState("professional");
   const [resumeGenerated, setResumeGenerated] = useState(false);
+  const [altAdded, setAltAdded] = useState<Record<string, boolean>>({});
+  const [portfolioUrl, setPortfolioUrl] = useState("");
+
+  const toggleAltEvidence = (id: string, toast: string) => {
+    const adding = !altAdded[id];
+    setAltAdded((prev) => ({ ...prev, [id]: adding }));
+    if (adding) demoToast(toast);
+  };
+
+  const handleAddPortfolioUrl = () => {
+    if (!portfolioUrl.trim()) {
+      demoToast("Enter your portfolio URL first, then add it");
+      return;
+    }
+    setAltAdded((prev) => ({ ...prev, website: true }));
+    demoToast(`${portfolioUrl.trim()} linked — pages crawled for project evidence ✓`);
+  };
 
   const toggleSection = (id: string) => {
     setSections((prev) =>
@@ -197,6 +227,97 @@ export function PortfolioBuilder() {
               <button onClick={() => { setDnaImported(true); demoToast("Career DNA imported — archetype and strengths added \u2713"); }} className="mt-3 text-sm font-medium text-violet-600 hover:underline">
                 {dnaImported ? "Imported" : "Import"}
               </button>
+            </div>
+          </div>
+
+          {/* Alternative evidence picker */}
+          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+            <div>
+              <h3 className="font-semibold text-foreground">No LinkedIn or GitHub? Build from what you have.</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your portfolio builds from <span className="font-semibold text-[#8A7038]">ANY</span> evidence — pick what you have, skip what you don't.
+              </p>
+            </div>
+
+            {/* Portfolio website URL */}
+            <div
+              className={`flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border-2 p-3 transition-all ${
+                altAdded.website ? "border-green-400 bg-green-50" : "border-border bg-muted"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 sm:w-56 shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
+                  <Globe className="w-4 h-4 text-[#115E50]" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    Portfolio Website
+                    {altAdded.website && (
+                      <span className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-white" />
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Link your own site or blog</p>
+                </div>
+              </div>
+              <input
+                type="text"
+                value={portfolioUrl}
+                onChange={(e) => setPortfolioUrl(e.target.value)}
+                placeholder="e.g. aisyah-designs.my"
+                className="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#115E50]/30"
+              />
+              <button
+                onClick={handleAddPortfolioUrl}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  altAdded.website
+                    ? "bg-green-100 text-green-700"
+                    : "bg-[#115E50] text-white hover:bg-[#0d4a3f]"
+                }`}
+              >
+                {altAdded.website ? "Linked" : "Add Site"}
+              </button>
+            </div>
+
+            {/* Evidence chips */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {altEvidenceSources.map((s) => {
+                const added = !!altAdded[s.id];
+                const Icon = s.icon;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => toggleAltEvidence(s.id, s.toast)}
+                    className={`relative flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all hover:shadow-sm ${
+                      added ? "border-green-400 bg-green-50" : "border-border bg-card hover:border-[#8A7038]/40"
+                    }`}
+                  >
+                    {added && (
+                      <span className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-white" />
+                      </span>
+                    )}
+                    <span className={`w-9 h-9 rounded-lg ${s.iconBg} flex items-center justify-center shrink-0`}>
+                      <Icon className={`w-4 h-4 ${s.iconColor}`} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-foreground">{s.name}</span>
+                      <span className="block text-xs text-muted-foreground mt-0.5">{s.desc}</span>
+                      <span className={`mt-1.5 inline-flex items-center gap-1 text-xs font-medium ${added ? "text-green-700" : "text-[#8A7038]"}`}>
+                        {added ? (
+                          <>{s.done}</>
+                        ) : (
+                          <>
+                            <Plus className="w-3 h-3" />
+                            {s.action}
+                          </>
+                        )}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

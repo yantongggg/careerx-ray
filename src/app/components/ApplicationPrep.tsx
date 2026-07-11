@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, FileText, GraduationCap, Link2, MapPin, Send, Shield, Upload, User } from "lucide-react";
+import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, FileText, GraduationCap, Link2, MapPin, PenLine, Send, Shield, Sparkles, Upload, User } from "lucide-react";
 import { PositionSkillGraph } from "./PositionSkillGraph";
+import { demoToast } from "./toast";
 
 export interface JobData {
   id: string;
@@ -89,6 +90,62 @@ const CANDIDATE_DATA = {
   resumeFile: "Jordan_Kim_Resume_2024.pdf",
 };
 
+const JOB_ANGLE: Record<string, { focus: string; proof: string; hook: string; body: string }> = {
+  "maybank-da": {
+    focus: "fraud analytics, customer segmentation, and digital banking KPIs",
+    proof: "At Maybank (internship), automated weekly KPI reporting in Python + Tableau and shipped segmentation dashboards used by the digital banking team.",
+    hook: "Having interned with Maybank's data team, I've seen first-hand how digital banking decisions ride on trustworthy dashboards — and I want to build them at full scale.",
+    body: "My SQL depth and fintech domain exposure map directly to this role: I've built automated KPI pipelines, segmented customer behavior across digital channels, and told data stories that product and engineering teams actually acted on. I'm also closing my cloud gap with a structured GCP learning plan.",
+  },
+  "grab-ae": {
+    focus: "dbt model development, pipeline testing, and analytics engineering at scale",
+    proof: "At Grab (internship), contributed production dbt models and built data-quality monitoring that cut silent pipeline failures.",
+    hook: "My analytics internship at Grab showed me how much real-time marketplace decisions depend on tested, reliable data models — exactly what this Analytics Engineer role owns.",
+    body: "I bring hands-on dbt and Python experience, Git-based workflows, and BigQuery exposure. I've written tested data models, monitored data quality in production, and collaborated with engineers on CI for analytics code — the modern-data-stack fundamentals this role requires.",
+  },
+  "petronas-pm": {
+    focus: "ML model evaluation and translating AI metrics for business stakeholders",
+    proof: "Bridged analytics and product teams across two internships — defined metrics, evaluated model outputs, and presented recommendations to non-technical stakeholders.",
+    hook: "Petronas Digital's push to digitalize energy operations with AI is exactly the kind of high-impact, stakeholder-heavy analytics work I want to do.",
+    body: "I pair Python/SQL proficiency with strong storytelling: I've defined product metrics, evaluated model performance, and turned complex data patterns into recommendations leadership could act on. My stakeholder communication is my sharpest edge — and this role lives at that intersection.",
+  },
+};
+
+const DEFAULT_ANGLE = {
+  focus: "SQL, Python, and dashboard storytelling",
+  proof: "Delivered analytics projects across banking and e-commerce internships in Malaysia.",
+  hook: "This role aligns closely with my analytics background and career direction.",
+  body: "I bring SQL, Python, Tableau, and dbt experience, plus a track record of turning complex data into clear business narratives for stakeholders.",
+};
+
+function buildResumeDraft(job: JobData): string {
+  const angle = JOB_ANGLE[job.id] ?? DEFAULT_ANGLE;
+  return [
+    `JORDAN KIM — tailored for ${job.title} @ ${job.company}`,
+    ``,
+    `• Data analyst (3+ yrs across banking & e-commerce) focused on ${angle.focus}.`,
+    `• Direct match to ${job.company}'s requirements: ${job.requirements.slice(0, 3).join("; ")}.`,
+    `• ${angle.proof}`,
+    `• Certified: Google Data Analytics Professional · dbt Fundamentals · BSc CS (Data Analytics), University of Malaya, GPA 3.72.`,
+  ].join("\n");
+}
+
+function buildCoverDraft(job: JobData): string {
+  const angle = JOB_ANGLE[job.id] ?? DEFAULT_ANGLE;
+  return [
+    `Dear ${job.company} Hiring Team,`,
+    ``,
+    `I'm writing to apply for the ${job.title} position (${job.location}). ${angle.hook}`,
+    ``,
+    `${angle.body}`,
+    ``,
+    `I'd welcome the chance to discuss how I can contribute to ${job.company}'s team. Thank you for your time and consideration.`,
+    ``,
+    `Warm regards,`,
+    `Jordan Kim · +60 12-345 6789 · jordan.kim@email.com`,
+  ].join("\n");
+}
+
 interface ApplicationPrepProps {
   jobId: string;
   onBack: () => void;
@@ -98,11 +155,22 @@ interface ApplicationPrepProps {
 
 export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: ApplicationPrepProps) {
   const [submitted, setSubmitted] = useState(false);
+  // Per-job edits: undefined = still on the AI draft
+  const [docEdits, setDocEdits] = useState<Record<string, { resume?: string; cover?: string }>>({});
   const job = ALL_JOBS.find(j => j.id === jobId);
 
   if (!job) return null;
 
+  const aiResume = buildResumeDraft(job);
+  const aiCover = buildCoverDraft(job);
+  const resumeText = docEdits[jobId]?.resume ?? aiResume;
+  const coverText = docEdits[jobId]?.cover ?? aiCover;
+  const setDoc = (field: "resume" | "cover", value: string | undefined) =>
+    setDocEdits(prev => ({ ...prev, [jobId]: { ...prev[jobId], [field]: value } }));
+
   const handleApply = () => {
+    // resumeText / coverText (including any candidate edits) are what get submitted
+    demoToast("Application submitted with your customized resume + cover letter ✓");
     setSubmitted(true);
     onApply(jobId);
   };
@@ -202,7 +270,7 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
           </div>
         </section>
 
-        {/* Skill Solar System */}
+        {/* Skill System */}
         <PositionSkillGraph
           companyId={job.companyId}
           position={job.position}
@@ -327,11 +395,82 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
           </div>
         </section>
 
+        {/* Tailored Documents — editable */}
+        <section className="bg-white border border-border rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-lg font-bold text-foreground">Your Submission Documents</h2>
+            <span className="inline-flex items-center gap-1 text-xs bg-[#8A7038]/10 text-[#8A7038] border border-[#8A7038]/30 px-2.5 py-1 rounded-full font-semibold">
+              <Sparkles size={11} /> AI-tailored for {job.company}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-5">
+            Both documents were drafted by AI from your profile and this job's requirements — edit them freely before submitting.
+          </p>
+
+          <div className="grid lg:grid-cols-2 gap-4">
+            {/* Tailored Resume */}
+            <div className="p-4 rounded-xl bg-accent/50 border border-border flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <FileText size={14} className="text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Tailored Resume Summary</h3>
+                </div>
+                {docEdits[jobId]?.resume !== undefined && docEdits[jobId]?.resume !== aiResume && (
+                  <span className="text-[10px] font-semibold text-[#8A7038] inline-flex items-center gap-1"><PenLine size={10} /> Edited</span>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-2 inline-flex items-center gap-1">
+                <Sparkles size={10} className="text-[#8A7038]" /> AI rewrote your headline and bullets around this role's top requirements.
+              </p>
+              <textarea
+                value={resumeText}
+                onChange={e => setDoc("resume", e.target.value)}
+                rows={9}
+                className="w-full flex-1 text-xs leading-relaxed text-foreground bg-white border border-border rounded-lg p-3 font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <button
+                onClick={() => { setDoc("resume", undefined); demoToast("Resume reset to AI draft ✓"); }}
+                className="self-start text-[11px] font-semibold text-primary hover:underline mt-2"
+              >
+                Reset to AI draft
+              </button>
+            </div>
+
+            {/* Cover Letter */}
+            <div className="p-4 rounded-xl bg-accent/50 border border-border flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Send size={14} className="text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Cover Letter</h3>
+                </div>
+                {docEdits[jobId]?.cover !== undefined && docEdits[jobId]?.cover !== aiCover && (
+                  <span className="text-[10px] font-semibold text-[#8A7038] inline-flex items-center gap-1"><PenLine size={10} /> Edited</span>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-2 inline-flex items-center gap-1">
+                <Sparkles size={10} className="text-[#8A7038]" /> AI drafted this letter to address {job.company}'s {job.position} team directly.
+              </p>
+              <textarea
+                value={coverText}
+                onChange={e => setDoc("cover", e.target.value)}
+                rows={9}
+                className="w-full flex-1 text-xs leading-relaxed text-foreground bg-white border border-border rounded-lg p-3 resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <button
+                onClick={() => { setDoc("cover", undefined); demoToast("Cover letter reset to AI draft ✓"); }}
+                className="self-start text-[11px] font-semibold text-primary hover:underline mt-2"
+              >
+                Reset to AI draft
+              </button>
+            </div>
+          </div>
+        </section>
+
         {/* Submit */}
         <div className="bg-white border border-border rounded-xl shadow-sm p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Ready to apply?</p>
-            <p className="text-xs text-muted-foreground mt-0.5">All details will be sent to {job.company}'s hiring team</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Your edited resume + cover letter will be sent to {job.company}'s hiring team</p>
           </div>
           <button
             onClick={handleApply}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, MapPin, MessageCircle, Send, Shield, Sparkles, TrendingUp, X, XCircle, Zap } from "lucide-react";
+import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, ExternalLink, Globe, MapPin, MessageCircle, Send, Shield, Sparkles, TrendingUp, X, XCircle, Zap } from "lucide-react";
 
 interface JobMatchTrackerProps {
   onPrepareApp?: (jobId: string) => void;
@@ -120,6 +120,37 @@ const HR_CHAT_HISTORY: Record<string, ChatMessage[]> = {
   ],
   "petronas-pm": [],
 };
+
+const externalJobs = [
+  {
+    title: "Business Intelligence Analyst",
+    company: "AirAsia MOVE",
+    location: "Sepang, Selangor",
+    salary: "RM 7k-9k/mo",
+    fit: 84,
+  },
+  {
+    title: "Data Analyst, E-Commerce",
+    company: "Shopee Malaysia",
+    location: "Kuala Lumpur",
+    salary: "RM 6.5k-8.5k/mo",
+    fit: 81,
+  },
+  {
+    title: "Product Data Analyst",
+    company: "Touch 'n Go Digital",
+    location: "Bangsar South, KL",
+    salary: "RM 7.5k-9.5k/mo",
+    fit: 77,
+  },
+  {
+    title: "Senior Data Analyst",
+    company: "CIMB Bank",
+    location: "Kuala Lumpur / Hybrid",
+    salary: "RM 8k-10k/mo",
+    fit: 74,
+  },
+];
 
 const stageCounts = [
   { label: "Saved", count: 4 },
@@ -299,6 +330,49 @@ export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatch
                 </div>
               );
             })}
+
+            {/* From the open web */}
+            <div className="bg-white border border-border rounded-xl shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Globe size={15} className="text-[#0A66C2]" />
+                <h2 className="font-semibold text-foreground">From the open web</h2>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                CareerX-Ray also scans public job boards so you never miss a match — external applications are submitted on the employer's site.
+              </p>
+              <div className="space-y-3">
+                {externalJobs.map(ej => (
+                  <a
+                    key={ej.title}
+                    href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(ej.title)}%20Malaysia`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-border rounded-xl p-4 hover:border-[#0A66C2]/40 hover:bg-blue-50/40 transition-colors group"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-foreground group-hover:text-[#0A66C2] transition-colors">{ej.title}</p>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-white bg-[#0A66C2] px-2 py-0.5 rounded-full">
+                          LinkedIn · Easy Apply
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
+                        <span className="inline-flex items-center gap-1"><Building2 size={11} /> {ej.company}</span>
+                        <span className="inline-flex items-center gap-1"><MapPin size={11} /> {ej.location}</span>
+                        <span className="inline-flex items-center gap-1"><TrendingUp size={11} /> {ej.salary}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="text-left sm:text-right">
+                        <p className="text-lg font-bold text-primary leading-none">~{ej.fit}%</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">fit estimate</p>
+                      </div>
+                      <ExternalLink size={14} className="text-muted-foreground group-hover:text-[#0A66C2] transition-colors" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
           </section>
 
           <aside className="bg-slate-950 text-white rounded-xl p-5 h-fit">

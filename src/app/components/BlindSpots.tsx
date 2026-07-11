@@ -1,7 +1,8 @@
 import { useState } from "react";
 import {
   AlertTriangle, CheckCircle, RefreshCw, ChevronDown, ChevronUp,
-  ArrowRight, Clock, TrendingDown, Zap, Users, Cloud, BookOpen, BarChart3
+  ArrowRight, Clock, TrendingDown, Zap, Users, Cloud, BookOpen, BarChart3,
+  Radar, Bot, TrendingUp, Globe
 } from "lucide-react";
 
 interface BlindSpot {
@@ -124,14 +125,200 @@ const cleared = [
   { label: "Open source contribution",             detail: "dbt package with 89 stars — signals software engineering mindset"      },
 ];
 
+/* ── Market reality check ─────────────────────────────────────────────── */
+
+type RoleFamily = "data" | "design" | "software" | "marketing" | "generic";
+
+interface MarketTrend {
+  kind: "displacement" | "demand-shift" | "rising";
+  tag: string;
+  headline: string;
+  detail: string;
+  stat: string;
+  statLabel: string;
+}
+
+const trendKindStyles = {
+  displacement: { icon: Bot,           card: "border-red-200",     header: "bg-red-50",     iconColor: "text-red-500",     stat: "text-red-600",     tag: "bg-red-100 text-red-700"         },
+  "demand-shift": { icon: TrendingDown, card: "border-amber-200",   header: "bg-amber-50",   iconColor: "text-amber-500",   stat: "text-amber-600",   tag: "bg-amber-100 text-amber-700"     },
+  rising:       { icon: TrendingUp,    card: "border-emerald-200", header: "bg-emerald-50", iconColor: "text-[#115E50]",   stat: "text-[#115E50]",   tag: "bg-emerald-100 text-emerald-800" },
+} as const;
+
+const marketTrends: Record<RoleFamily, { familyLabel: string; trends: MarketTrend[] }> = {
+  data: {
+    familyLabel: "Data & Analytics — Malaysia",
+    trends: [
+      {
+        kind: "displacement",
+        tag: "AI displacement",
+        headline: "Automation now handles 40–60% of routine reporting tasks.",
+        detail: "Junior data-analyst postings in Malaysia are down 18% YoY as AI copilots absorb dashboard-building and ad-hoc SQL work. Roles that survive are shifting up the stack — from producing reports to owning the decisions behind them.",
+        stat: "-18%",
+        statLabel: "junior analyst postings, MY, YoY",
+      },
+      {
+        kind: "demand-shift",
+        tag: "Demand signal",
+        headline: "Analytics teams are consolidating — and re-hiring differently.",
+        detail: "Two regional tech employers reduced analytics headcount this quarter. But the same firms opened analytics-engineering and AI-literate analyst reqs within weeks — the demand didn't vanish, it moved. Candidates who reposition early inherit those seats.",
+        stat: "2",
+        statLabel: "regional team reductions this quarter",
+      },
+      {
+        kind: "rising",
+        tag: "Rising demand",
+        headline: "AI engineering, data platform, and risk analytics are your growth lanes.",
+        detail: "Postings for AI engineering, data platform, and risk analytics roles in KL and Penang are up 31% YoY — median offers RM 9–14k/mo. These are your fastest adjacent moves: 70%+ skill overlap with what you already do.",
+        stat: "+31%",
+        statLabel: "adjacent role postings, YoY",
+      },
+    ],
+  },
+  design: {
+    familyLabel: "Design & UX — Malaysia",
+    trends: [
+      {
+        kind: "displacement",
+        tag: "AI displacement",
+        headline: "Generative tools now draft 50–70% of production design assets.",
+        detail: "Entry-level graphic and production design postings in Malaysia are down 22% YoY as AI tooling handles first-draft visuals and asset resizing. The roles holding value are research-led product design and design systems ownership.",
+        stat: "-22%",
+        statLabel: "production design postings, MY, YoY",
+      },
+      {
+        kind: "demand-shift",
+        tag: "Demand signal",
+        headline: "Agencies are trimming execution roles, hiring strategy roles.",
+        detail: "Two regional agencies restructured creative teams this quarter; briefs now ask for AI-fluent designers who direct tools rather than compete with them. Portfolios showing process and decision-making now outperform pure visual craft.",
+        stat: "2",
+        statLabel: "regional team restructures this quarter",
+      },
+      {
+        kind: "rising",
+        tag: "Rising demand",
+        headline: "Product design, design systems, and UX research are expanding fast.",
+        detail: "Product design and UX research openings across KL fintech and e-commerce are up 27% YoY — median offers RM 7–11k/mo. Design-systems specialists are the scarcest profile in the local market right now.",
+        stat: "+27%",
+        statLabel: "product design postings, YoY",
+      },
+    ],
+  },
+  software: {
+    familyLabel: "Software Engineering — Malaysia",
+    trends: [
+      {
+        kind: "displacement",
+        tag: "AI displacement",
+        headline: "AI coding assistants now write 40–55% of routine implementation code.",
+        detail: "Junior developer postings in Malaysia are down 15% YoY as teams expect AI-assisted output from smaller headcounts. The premium is moving to system design, code review judgment, and AI tool orchestration — not raw line-writing speed.",
+        stat: "-15%",
+        statLabel: "junior developer postings, MY, YoY",
+      },
+      {
+        kind: "demand-shift",
+        tag: "Demand signal",
+        headline: "Hiring bars are rising even as total openings hold steady.",
+        detail: "Two regional tech employers slowed engineering hiring this quarter, but reqs for AI-integration and platform engineers at the same firms grew. Interview loops increasingly test AI-augmented workflows — engineers who show that fluency clear the bar.",
+        stat: "2",
+        statLabel: "regional hiring slowdowns this quarter",
+      },
+      {
+        kind: "rising",
+        tag: "Rising demand",
+        headline: "AI engineering, platform, and DevSecOps roles are the growth engine.",
+        detail: "AI engineering, cloud platform, and DevSecOps postings in Malaysia are up 34% YoY — median offers RM 10–16k/mo. These sit one deliberate upskill away from a mid-level engineering base.",
+        stat: "+34%",
+        statLabel: "AI/platform postings, YoY",
+      },
+    ],
+  },
+  marketing: {
+    familyLabel: "Marketing & Growth — Malaysia",
+    trends: [
+      {
+        kind: "displacement",
+        tag: "AI displacement",
+        headline: "AI now produces 50–65% of routine campaign copy and creative variants.",
+        detail: "Content-executive and campaign-coordinator postings in Malaysia are down 20% YoY as AI handles first-draft copy, A/B variants, and scheduling. Value is consolidating around strategy, brand judgment, and performance analytics.",
+        stat: "-20%",
+        statLabel: "content exec postings, MY, YoY",
+      },
+      {
+        kind: "demand-shift",
+        tag: "Demand signal",
+        headline: "Marketing teams are getting smaller — and more technical.",
+        detail: "Two regional consumer brands consolidated marketing teams this quarter; replacement hires skew toward growth marketers who can read data, run experiments, and direct AI tooling. Generalist coordinator roles are the most exposed.",
+        stat: "2",
+        statLabel: "regional team consolidations this quarter",
+      },
+      {
+        kind: "rising",
+        tag: "Rising demand",
+        headline: "Growth marketing, marketing analytics, and lifecycle/CRM are surging.",
+        detail: "Growth and marketing-analytics postings across KL and Selangor are up 29% YoY — median offers RM 6.5–10k/mo. Marketers who pair creative instinct with measurement fluency are commanding the premium.",
+        stat: "+29%",
+        statLabel: "growth marketing postings, YoY",
+      },
+    ],
+  },
+  generic: {
+    familyLabel: "Professional roles — Malaysia",
+    trends: [
+      {
+        kind: "displacement",
+        tag: "AI displacement",
+        headline: "Automation now absorbs 35–50% of routine administrative and reporting work.",
+        detail: "Across Malaysian white-collar roles, postings emphasizing routine coordination and reporting are down 16% YoY. Roles anchored in judgment, stakeholder management, and domain expertise remain the most resilient.",
+        stat: "-16%",
+        statLabel: "routine-task postings, MY, YoY",
+      },
+      {
+        kind: "demand-shift",
+        tag: "Demand signal",
+        headline: "Employers are restructuring around AI-literate teams.",
+        detail: "Two regional employers restructured operations teams this quarter; new reqs consistently list AI-tool fluency as a baseline expectation rather than a bonus. Early movers on that skill are absorbing the redistributed headcount.",
+        stat: "2",
+        statLabel: "regional restructures this quarter",
+      },
+      {
+        kind: "rising",
+        tag: "Rising demand",
+        headline: "Hybrid roles that pair domain depth with AI fluency are growing fastest.",
+        detail: "Postings that blend domain expertise with AI or data literacy are up 26% YoY across Malaysia — typically offering an RM 1.5–3k/mo premium over traditional equivalents. That combination is your fastest repositioning lane.",
+        stat: "+26%",
+        statLabel: "hybrid-skill postings, YoY",
+      },
+    ],
+  },
+};
+
+function detectRoleFamily(...roles: (string | undefined)[]): RoleFamily {
+  const text = roles.filter(Boolean).join(" ").toLowerCase();
+  if (/data|analyst|analytics|bi\b|scientist|machine learning|\bml\b/.test(text)) return "data";
+  if (/design|ux|ui\b|product design|creative/.test(text)) return "design";
+  if (/software|developer|engineer|programmer|full.?stack|backend|frontend|devops/.test(text)) return "software";
+  if (/marketing|growth|brand|content|seo|social media/.test(text)) return "marketing";
+  return "generic";
+}
+
 const severityStyles = {
   critical: { badge: "bg-red-500 text-white",    card: "border-red-200",   header: "bg-red-50",   icon: "text-red-500",   label: "Critical" },
   high:     { badge: "bg-amber-500 text-white",  card: "border-amber-200", header: "bg-amber-50", icon: "text-amber-500", label: "High"     },
   medium:   { badge: "bg-yellow-400 text-white", card: "border-yellow-200",header: "bg-yellow-50",icon: "text-yellow-600",label: "Medium"   },
 };
 
-export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void }) {
+export function BlindSpots({
+  onNavigate,
+  currentRole = "Data Analyst",
+  targetRole,
+}: {
+  onNavigate?: (page: string) => void;
+  currentRole?: string;
+  targetRole?: string;
+}) {
   const [open, setOpen] = useState<number | null>(1);
+  const family = detectRoleFamily(currentRole, targetRole);
+  const market = marketTrends[family];
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -253,6 +440,57 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
               </div>
             );
           })}
+        </div>
+
+        {/* Market Reality Check */}
+        <div className="bg-white border border-border rounded-xl p-6 mb-8">
+          <div className="flex items-start justify-between gap-4 mb-1.5 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Radar size={16} className="text-[#8A7038]" />
+              <h3 className="font-semibold text-foreground">Market reality check — your role vs the market</h3>
+            </div>
+            <span className="text-xs font-semibold text-[#8A7038] bg-[#8A7038]/10 px-2.5 py-1 rounded-full">{market.familyLabel}</span>
+          </div>
+          <p className="text-sm text-muted-foreground mb-5 max-w-2xl leading-relaxed">
+            What the market is doing around {targetRole ? `${currentRole} → ${targetRole}` : `your role as a ${currentRole}`} — the shifts most candidates only notice once it's already cost them. None of this is destiny; all of it is actionable.
+          </p>
+
+          <div className="grid lg:grid-cols-3 gap-3 mb-5">
+            {market.trends.map(trend => {
+              const t = trendKindStyles[trend.kind];
+              return (
+                <div key={trend.kind} className={`border rounded-xl overflow-hidden ${t.card}`}>
+                  <div className={`px-4 py-3 flex items-center justify-between gap-2 ${t.header}`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <t.icon size={14} className={`${t.iconColor} flex-shrink-0`} />
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${t.tag}`}>{trend.tag}</span>
+                    </div>
+                  </div>
+                  <div className="px-4 py-4">
+                    <div className="mb-3">
+                      <p className={`text-2xl font-bold ${t.stat}`}>{trend.stat}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{trend.statLabel}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-foreground leading-snug mb-2">{trend.headline}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{trend.detail}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center justify-between gap-4 flex-wrap pt-4 border-t border-border">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Globe size={12} className="flex-shrink-0" />
+              <span>Aggregated from public job boards, LinkedIn hiring data, and news signals · refreshed weekly</span>
+            </div>
+            <button
+              onClick={() => onNavigate?.("decisionlab")}
+              className="flex-shrink-0 flex items-center gap-2 bg-[#115E50] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#0d4a3f] transition-colors font-semibold"
+            >
+              See how to reposition <ArrowRight size={14} />
+            </button>
+          </div>
         </div>
 
         {/* Strengths */}

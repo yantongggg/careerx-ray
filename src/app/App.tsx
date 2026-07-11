@@ -31,10 +31,19 @@ import { RoleSelect } from "./components/RoleSelect";
 import { JOURNEY, StageHub } from "./components/stages";
 import { SkillGraph } from "./components/SkillGraph";
 import { ToastHost } from "./components/toast";
+import { AuthPage } from "./components/Auth";
+import { ChevronLeft, LogOut } from "lucide-react";
 
 /* MARKER-MAKE-KIT-INVOKED */
 
-type AppState = "landing" | "role-select" | "onboarding" | "app";
+type AppState = "landing" | "auth" | "role-select" | "onboarding" | "app";
+
+interface UserProfileData {
+  userType: string;
+  currentRole: string;
+  targetRole: string;
+  salaryRange: string;
+}
 type Role = "candidate" | "employer" | "university";
 type Page =
   | "command"
@@ -152,15 +161,30 @@ const roleLabels: Record<Role, string> = {
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>("landing");
+  const [authMode, setAuthMode] = useState<"login" | "register">("register");
+  const [authed, setAuthed]     = useState(false);
+  const [user, setUser]         = useState<{ name: string; email: string } | null>(null);
+  const [pendingTarget, setPendingTarget] = useState<string | null>(null);
   const [page, setPage]         = useState<Page>("command");
   const [role, setRole]         = useState<Role>("candidate");
+  const [history, setHistory]   = useState<Page[]>([]);
   const [hasScanned, setHasScanned] = useState(false);
   const [dnaScores, setDnaScores] = useState<Record<string, number> | null>(null);
+  const [profile, setProfile]   = useState<UserProfileData | null>(null);
   const [prepJobId, setPrepJobId] = useState<string | null>(null);
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set(["maybank-da", "grab-ae"]));
 
   const navigate = (target: string) => {
     if (target === "landing")     { setAppState("landing");     return; }
+    if (target === "login")       { setAuthMode("login");    setAppState("auth"); return; }
+    if (target === "register")    { setAuthMode("register"); setAppState("auth"); return; }
+    // Everything past the landing page requires an account first.
+    if (!authed) {
+      setPendingTarget(target);
+      setAuthMode("register");
+      setAppState("auth");
+      return;
+    }
     if (target === "role-select") { setAppState("role-select"); return; }
     if (target === "onboarding")  { setAppState("onboarding");  return; }
     if ((allPages as string[]).includes(target)) {
@@ -170,10 +194,26 @@ export default function App() {
         setAppState("onboarding");
         return;
       }
+      if (appState === "app" && nextPage !== page) setHistory(prev => [...prev.slice(-30), page]);
       setPage(nextPage);
       setRole(pageRole[nextPage]);
       setAppState("app");
     }
+  };
+
+  const goBack = () => {
+    setHistory(prev => {
+      const next = [...prev];
+      const last = next.pop();
+      if (last) { setPage(last); setRole(pageRole[last]); }
+      return next;
+    });
+  };
+
+  const signOut = () => {
+    setAuthed(false); setUser(null); setHasScanned(false); setDnaScores(null);
+    setProfile(null); setHistory([]); setPage("command"); setRole("candidate");
+    setAppState("landing");
   };
 
   const handlePrepareApp = (jobId: string) => {
@@ -202,6 +242,35 @@ export default function App() {
       </IntelligenceProvider>
     );
   }
+  if (appState === "auth") {
+    return (
+      <IntelligenceProvider key="ix">
+        <AuthPage
+          mode={authMode}
+          onBack={() => setAppState("landing")}
+          onSwitchMode={() => setAuthMode(m => (m === "login" ? "register" : "login"))}
+          onAuthed={u => {
+            setAuthed(true);
+            setUser({ name: u.name, email: u.email });
+            const scanned = u.isNew ? false : hasScanned;
+            if (u.isNew) { setHasScanned(false); setDnaScores(null); setProfile(null); }
+            const target = pendingTarget;
+            setPendingTarget(null);
+            if (target && target !== "role-select") {
+              // Re-run routing now that we're authed
+              if (target === "onboarding") { setAppState("onboarding"); return; }
+              if ((allPages as string[]).includes(target)) {
+                const nextPage = target as Page;
+                if (pageRole[nextPage] === "candidate" && !scanned) { setAppState("onboarding"); return; }
+                setPage(nextPage); setRole(pageRole[nextPage]); setAppState("app"); return;
+              }
+            }
+            setAppState("role-select");
+          }}
+        />
+      </IntelligenceProvider>
+    );
+  }
   if (appState === "role-select") {
     return (
       <IntelligenceProvider key="ix">
@@ -222,7 +291,7 @@ export default function App() {
   if (appState === "onboarding") {
     return (
       <IntelligenceProvider key="ix">
-        <Onboarding onComplete={scores => { setDnaScores(scores); setHasScanned(true); setRole("candidate"); setPage("command"); setAppState("app"); }} />
+        <Onboarding onComplete={(scores, prof) => { setDnaScores(scores); setProfile(prof); setHasScanned(true); setRole("candidate"); setPage("command"); setHistory([]); setAppState("app"); }} />
       </IntelligenceProvider>
     );
   }
@@ -236,6 +305,14 @@ export default function App() {
         {/* Top bar */}
         <header className="h-16 bg-white border-b border-border flex items-center justify-between px-4 sm:px-6 flex-shrink-0">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {history.length > 0 && (
+              <button
+                onClick={goBack}
+                className="flex items-center gap-1 text-xs font-semibold border border-border rounded-lg px-2 py-1.5 hover:bg-muted hover:text-foreground transition-colors mr-1"
+              >
+                <ChevronLeft size={13} /> Back
+              </button>
+            )}
             <button onClick={() => navigate("landing")} className="hover:text-foreground transition-colors">Home</button>
             <span>/</span>
             <span className="text-foreground font-medium">{pageLabels[page]}</span>
@@ -277,20 +354,28 @@ export default function App() {
             )}
             <button
               onClick={() => navigate("profile")}
+              title={user?.name ?? "Profile"}
               className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D9C18A] to-[#8A7038] flex items-center justify-center text-white text-xs font-bold"
             >
-              JK
+              {(user?.name ?? "Jordan Kim").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
+            </button>
+            <button
+              onClick={signOut}
+              title="Sign out"
+              className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <LogOut size={13} />
             </button>
           </div>
         </header>
 
         {/* Page */}
         <div className="flex-1 overflow-hidden flex flex-col">
-          {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
-          {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
+          {page === "dashboard"       && <Dashboard onNavigate={navigate} scores={dnaScores ?? undefined} />}
+          {page === "command"         && <CareerCommandCenter onNavigate={navigate} profile={profile} />}
           {page === "stage-diagnose"  && <StageHub stage={JOURNEY[0]} onNavigate={navigate} />}
           {page === "stage-decide"    && <StageHub stage={JOURNEY[1]} onNavigate={navigate} />}
-          {page === "stage-prepare"   && <StageHub stage={JOURNEY[2]} onNavigate={navigate}><SkillGraph /></StageHub>}
+          {page === "stage-prepare"   && <StageHub stage={JOURNEY[2]} onNavigate={navigate}><SkillGraph targetRole={profile?.targetRole} /></StageHub>}
           {page === "stage-apply"     && <StageHub stage={JOURNEY[3]} onNavigate={navigate} />}
           {page === "stage-prove"     && <StageHub stage={JOURNEY[4]} onNavigate={navigate} />}
           {page === "dna"             && <CareerDna scores={dnaScores ?? undefined} onNavigate={navigate} />}
@@ -300,7 +385,7 @@ export default function App() {
           {page === "offers"          && <OfferDecisionDashboard />}
           {page === "portfolio"       && <PortfolioBuilder />}
           {page === "decisionlab"     && <DecisionLab onNavigate={navigate} />}
-          {page === "blindspots"      && <BlindSpots onNavigate={navigate} />}
+          {page === "blindspots"      && <BlindSpots onNavigate={navigate} currentRole={profile?.currentRole} targetRole={profile?.targetRole} />}
           {page === "prescription"    && <CareerPrescription />}
           {page === "evidence"        && <CareerEvidence />}
           {page === "profile"         && <UserProfile onNavigate={navigate} scores={dnaScores ?? undefined} />}
