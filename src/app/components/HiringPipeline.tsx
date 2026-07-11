@@ -5,6 +5,7 @@ import {
   Plus, Radio, Send, Shield, Sparkles, Star, TrendingDown, TrendingUp,
   User, UserCheck, X, XCircle, Zap
 } from "lucide-react";
+import { demoToast } from "./toast";
 import { useIntelligence, normalizeSkill } from "./intelligence";
 
 /* ─── Types ─── */
@@ -336,10 +337,10 @@ export function HiringPipeline() {
                 </select>
                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#8A7038" }} />
               </div>
-              <button className="inline-flex items-center gap-1.5 border border-[rgba(22,40,75,0.14)] px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors" style={{ color: "#16284B" }}>
+              <button onClick={() => demoToast("Filters: stage, fit score, readiness, university — coming to this demo soon")} className="inline-flex items-center gap-1.5 border border-[rgba(22,40,75,0.14)] px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors" style={{ color: "#16284B" }}>
                 <Filter size={13} /> Filter
               </button>
-              <button className="inline-flex items-center gap-1.5 text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:opacity-90" style={{ backgroundColor: "#8A7038" }}>
+              <button onClick={() => demoToast("Candidate import: paste a Talentbank profile link or upload a resume")} className="inline-flex items-center gap-1.5 text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:opacity-90" style={{ backgroundColor: "#8A7038" }}>
                 <Plus size={13} /> Add Candidate
               </button>
             </div>
@@ -756,11 +757,11 @@ export function HiringPipeline() {
                         style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
                         <MessageCircle size={12} /> Chat
                       </button>
-                      <button className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
+                      <button onClick={() => demoToast(`Interview invite sent to ${selectedCandidate.name.split(" ")[0]} \u2713`)} className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
                         style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
                         <Calendar size={12} /> Schedule
                       </button>
-                      <button className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
+                      <button onClick={() => demoToast(`Opening ${selectedCandidate.resumeFile}\u2026`)} className="inline-flex items-center justify-center gap-1.5 border px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#EFEDE6] transition-colors"
                         style={{ borderColor: "rgba(22,40,75,0.14)", color: "#16284B" }}>
                         <FileText size={12} /> Resume
                       </button>

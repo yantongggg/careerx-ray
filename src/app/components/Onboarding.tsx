@@ -127,11 +127,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const [experience, setExperience] = useState("5-7");
   const [salaryRange, setSalaryRange] = useState("RM 100k-150k");
   const [selectedGoals, setSelectedGoals] = useState<string[]>(["salary", "pivot"]);
-  const [calibrationAnswers, setCalibrationAnswers] = useState<Record<string, string>>({
-    ambiguity: "Break it into technical steps and start building",
-    team: "Build the main solution",
-    problem: "Try a quick prototype and improve from there",
-  });
+  /* No preset answers — the archetype must reflect the user's own calibration */
+  const [calibrationAnswers, setCalibrationAnswers] = useState<Record<string, string>>({});
   const [scanProgress, setScanProgress] = useState<Record<string, "pending" | "running" | "done">>({});
   const [currentScanStep, setCurrentScanStep] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -142,14 +139,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     );
   };
 
-  /* Career DNA scores derived from calibration answers */
+  /* Career DNA scores derived from calibration answers.
+     Every answer contributes 2 points total, so single-dimension options
+     weigh the same as dual-dimension ones. */
   const dnaCounts: Record<string, number> = Object.fromEntries(dimensions.map((d: string) => [d, 0]));
   calibrationQuestions.forEach(q => {
     const idx = q.options.indexOf(calibrationAnswers[q.id]);
-    if (idx >= 0) OPTION_DIMS[q.id][idx].forEach(d => { dnaCounts[d] += 1; });
+    if (idx >= 0) {
+      const dims = OPTION_DIMS[q.id][idx];
+      dims.forEach(d => { dnaCounts[d] += 2 / dims.length; });
+    }
   });
   const dnaScores: Record<string, number> = Object.fromEntries(
-    Object.entries(dnaCounts).map(([d, n]) => [d, Math.min(95, 42 + n * 12)])
+    Object.entries(dnaCounts).map(([d, n]) => [d, Math.min(95, 42 + Math.round(n * 6))])
   );
   const archetype = getArchetypeForScoresSafe(dnaScores);
 

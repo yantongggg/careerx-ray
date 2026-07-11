@@ -1,3 +1,5 @@
+import { demoToast } from "./toast";
+import { getArchetypeForScoresSafe } from "../careerDna.js";
 import { MapPin, Briefcase, GraduationCap, Award, Code, Star, ExternalLink, Edit3, Plus, ArrowRight } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 
@@ -77,7 +79,8 @@ const achievements = [
   { label: "Hackathon Winner", issuer: "Stripe ML Summit 2023", icon: Award },
 ];
 
-export function UserProfile() {
+export function UserProfile({ onNavigate, scores }: { onNavigate?: (page: string) => void; scores?: Record<string, number> }) {
+  const primary = getArchetypeForScoresSafe(scores ?? { Technical: 88, Execution: 92, Communication: 76, Strategic: 60, Innovation: 52, Leadership: 64 });
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
@@ -101,7 +104,7 @@ export function UserProfile() {
                     </div>
                   </div>
                 </div>
-                <button className="flex items-center gap-2 border border-border text-foreground text-sm px-4 py-2 rounded-lg hover:bg-muted transition-colors font-medium">
+                <button onClick={() => demoToast("Profile editing coming soon — connected evidence sources keep it updated automatically")} className="flex items-center gap-2 border border-border text-foreground text-sm px-4 py-2 rounded-lg hover:bg-muted transition-colors font-medium">
                   <Edit3 size={14} /> Edit Profile
                 </button>
               </div>
@@ -123,7 +126,7 @@ export function UserProfile() {
                 <h2 className="font-semibold text-foreground flex items-center gap-2">
                   <Briefcase size={16} className="text-muted-foreground" /> Experience
                 </h2>
-                <button className="text-xs text-primary hover:underline flex items-center gap-1">
+                <button onClick={() => demoToast("Add experience manually — or connect LinkedIn to auto-import")} className="text-xs text-primary hover:underline flex items-center gap-1">
                   <Plus size={12} /> Add
                 </button>
               </div>
@@ -206,7 +209,7 @@ export function UserProfile() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="font-semibold text-foreground">Career DNA</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Primary type: Forge Beaver</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Primary type: {primary.name}</p>
                 </div>
                 <span className="text-xs bg-blue-50 text-primary border border-blue-100 px-2 py-1 rounded-full font-semibold">82%</span>
               </div>
@@ -220,9 +223,9 @@ export function UserProfile() {
                 </ResponsiveContainer>
               </div>
               <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
-                <p className="text-sm font-semibold text-foreground">Forge Beaver</p>
-                <p className="text-xs text-muted-foreground mt-1">A practical builder who turns complex ideas into working solutions.</p>
-                <button className="mt-3 text-xs text-primary font-semibold inline-flex items-center gap-1">
+                <p className="text-sm font-semibold text-foreground">{primary.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">{primary.oneLiner}</p>
+                <button onClick={() => onNavigate?.("dna")} className="mt-3 text-xs text-primary font-semibold inline-flex items-center gap-1">
                   Open full DNA map <ArrowRight size={12} />
                 </button>
               </div>

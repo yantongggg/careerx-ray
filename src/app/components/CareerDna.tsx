@@ -106,7 +106,7 @@ const confidenceRows = [
   { dimension: "Innovation", source: "Project variety, hackathon signals", confidence: "Medium" },
 ];
 
-export function CareerDna({ scores }: { scores?: Record<string, number> }) {
+export function CareerDna({ scores, onNavigate }: { scores?: Record<string, number>; onNavigate?: (page: string) => void }) {
   /* Live scan scores from onboarding calibration; falls back to the demo profile */
   const dnaScores = { ...defaultDnaScores, ...(scores ?? {}) };
   const radarData = Object.entries(dnaScores).map(([subject, A]) => ({ subject, A }));
@@ -420,7 +420,7 @@ export function CareerDna({ scores }: { scores?: Record<string, number> }) {
               <p className="text-sm text-slate-300 mt-0.5">We do not treat this as a fixed identity. It updates every 6 months as evidence, work style, and market fit change.</p>
             </div>
           </div>
-          <button className="inline-flex items-center justify-center gap-2 bg-white text-slate-950 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
+          <button onClick={() => onNavigate?.("prescription")} className="inline-flex items-center justify-center gap-2 bg-white text-slate-950 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
             Use DNA in career plan <ArrowRight size={14} />
           </button>
         </div>

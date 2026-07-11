@@ -30,6 +30,7 @@ import { IntelligenceProvider } from "./components/intelligence";
 import { RoleSelect } from "./components/RoleSelect";
 import { JOURNEY, StageHub } from "./components/stages";
 import { SkillGraph } from "./components/SkillGraph";
+import { ToastHost } from "./components/toast";
 
 /* MARKER-MAKE-KIT-INVOKED */
 
@@ -292,17 +293,17 @@ export default function App() {
           {page === "stage-prepare"   && <StageHub stage={JOURNEY[2]} onNavigate={navigate}><SkillGraph /></StageHub>}
           {page === "stage-apply"     && <StageHub stage={JOURNEY[3]} onNavigate={navigate} />}
           {page === "stage-prove"     && <StageHub stage={JOURNEY[4]} onNavigate={navigate} />}
-          {page === "dna"             && <CareerDna scores={dnaScores ?? undefined} />}
+          {page === "dna"             && <CareerDna scores={dnaScores ?? undefined} onNavigate={navigate} />}
           {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
           {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
           {page === "coach"           && <InterviewCoach jobId={prepJobId} />}
           {page === "offers"          && <OfferDecisionDashboard />}
           {page === "portfolio"       && <PortfolioBuilder />}
-          {page === "decisionlab"     && <DecisionLab />}
-          {page === "blindspots"      && <BlindSpots />}
+          {page === "decisionlab"     && <DecisionLab onNavigate={navigate} />}
+          {page === "blindspots"      && <BlindSpots onNavigate={navigate} />}
           {page === "prescription"    && <CareerPrescription />}
           {page === "evidence"        && <CareerEvidence />}
-          {page === "profile"         && <UserProfile />}
+          {page === "profile"         && <UserProfile onNavigate={navigate} scores={dnaScores ?? undefined} />}
           {page === "employer"        && <EmployerDashboard />}
           {page === "emp-matching"    && <SmartTalentMatching />}
           {page === "emp-sla"         && <ReplySlaMonitor />}
@@ -316,6 +317,7 @@ export default function App() {
           {page === "uni-wallet"      && <LearningWallet />}
         </div>
       </main>
+      <ToastHost />
     </div>
     </IntelligenceProvider>
   );

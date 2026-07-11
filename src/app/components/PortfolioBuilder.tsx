@@ -1,3 +1,4 @@
+import { demoToast } from "./toast";
 import { useState } from "react";
 import {
   Globe,
@@ -127,7 +128,7 @@ export function PortfolioBuilder() {
               </div>
               <h3 className="font-semibold text-foreground">Connect LinkedIn</h3>
               <p className="text-sm text-muted-foreground mt-1">Import experience & skills</p>
-              <button className="mt-3 text-sm font-medium text-[#0A66C2] hover:underline">
+              <button onClick={() => { setLinkedinConnected(true); demoToast("LinkedIn connected — experience & skills imported \u2713"); }} className="mt-3 text-sm font-medium text-[#0A66C2] hover:underline">
                 {linkedinConnected ? "Connected" : "Connect"}
               </button>
             </div>
@@ -149,7 +150,7 @@ export function PortfolioBuilder() {
               </div>
               <h3 className="font-semibold text-foreground">Connect GitHub</h3>
               <p className="text-sm text-muted-foreground mt-1">Showcase your projects</p>
-              <button className="mt-3 text-sm font-medium text-[#24292e] hover:underline">
+              <button onClick={() => { setGithubConnected(true); demoToast("GitHub connected — 12 repos scanned for project evidence \u2713"); }} className="mt-3 text-sm font-medium text-[#24292e] hover:underline">
                 {githubConnected ? "Connected" : "Connect"}
               </button>
             </div>
@@ -171,7 +172,7 @@ export function PortfolioBuilder() {
               </div>
               <h3 className="font-semibold text-foreground">Upload Resume</h3>
               <p className="text-sm text-muted-foreground mt-1">Drag & drop PDF or DOCX</p>
-              <button className="mt-3 text-sm font-medium text-orange-600 hover:underline">
+              <button onClick={() => { setResumeUploaded(true); demoToast("Resume uploaded and parsed \u2713"); }} className="mt-3 text-sm font-medium text-orange-600 hover:underline">
                 {resumeUploaded ? "Uploaded" : "Upload"}
               </button>
             </div>
@@ -193,7 +194,7 @@ export function PortfolioBuilder() {
               </div>
               <h3 className="font-semibold text-foreground">CareerX-Ray DNA</h3>
               <p className="text-sm text-muted-foreground mt-1">Auto-pull from your profile</p>
-              <button className="mt-3 text-sm font-medium text-violet-600 hover:underline">
+              <button onClick={() => { setDnaImported(true); demoToast("Career DNA imported — archetype and strengths added \u2713"); }} className="mt-3 text-sm font-medium text-violet-600 hover:underline">
                 {dnaImported ? "Imported" : "Import"}
               </button>
             </div>
@@ -232,7 +233,7 @@ export function PortfolioBuilder() {
                     <h3 className="font-semibold text-foreground">{t.name}</h3>
                     <p className="text-xs text-muted-foreground">{t.desc}</p>
                   </div>
-                  <button
+                  <button onClick={() => setSelectedTemplate(t.id)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                       selectedTemplate === t.id
                         ? "bg-blue-600 text-white"
@@ -266,7 +267,7 @@ export function PortfolioBuilder() {
                     <h4 className="font-medium text-foreground">{section.name}</h4>
                     <p className="text-xs text-muted-foreground">{section.desc}</p>
                   </div>
-                  <button className="px-3 py-1.5 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
+                  <button onClick={() => demoToast(`Editing \u201c${section.name}\u201d \u2014 inline editor opens in the full version`)} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
                     Edit
                   </button>
                   {/* Toggle */}
@@ -583,11 +584,11 @@ export function PortfolioBuilder() {
               <Eye className="w-4 h-4" />
               Preview Full Site
             </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-card border border-border text-foreground font-medium text-sm hover:bg-muted transition-colors">
+            <button onClick={() => demoToast("Portfolio exported as PDF \u2713")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-card border border-border text-foreground font-medium text-sm hover:bg-muted transition-colors">
               <Download className="w-4 h-4" />
               Download as PDF
             </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 text-white font-medium text-sm hover:bg-violet-700 transition-colors">
+            <button onClick={() => demoToast("Published to careerxray.me/jordankim \u2713 \u2014 link is live")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 text-white font-medium text-sm hover:bg-violet-700 transition-colors">
               <ExternalLink className="w-4 h-4" />
               Publish to careerxray.me/username
             </button>
@@ -612,7 +613,7 @@ export function PortfolioBuilder() {
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-card text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            <button className="px-4 py-2.5 rounded-lg bg-card border border-border text-foreground font-medium text-sm hover:bg-muted transition-colors whitespace-nowrap">
+            <button onClick={() => demoToast(customDomain ? `${customDomain} connected \u2713` : "Enter a domain first, then connect")} className="px-4 py-2.5 rounded-lg bg-card border border-border text-foreground font-medium text-sm hover:bg-muted transition-colors whitespace-nowrap">
               Connect Domain
             </button>
           </div>
@@ -673,7 +674,7 @@ export function PortfolioBuilder() {
                       </span>
                     ))}
                   </div>
-                  <button className="px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-500 transition-colors">
+                  <button onClick={() => demoToast("Preview only \u2014 this button is live on your published site")} className="px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-500 transition-colors">
                     Hire Me
                   </button>
                 </div>
@@ -706,11 +707,11 @@ export function PortfolioBuilder() {
                       visualization.
                     </p>
                     <div className="flex flex-wrap gap-4">
-                      <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-500 transition-all shadow-lg shadow-violet-600/25">
+                      <button onClick={() => demoToast("Preview only \u2014 this button is live on your published site")} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-500 transition-all shadow-lg shadow-violet-600/25">
                         <FolderGit2 className="w-4 h-4" />
                         View Projects
                       </button>
-                      <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 transition-all">
+                      <button onClick={() => demoToast("Preview only \u2014 this button is live on your published site")} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 transition-all">
                         <Mail className="w-4 h-4" />
                         Contact Me
                       </button>

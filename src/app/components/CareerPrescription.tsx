@@ -1,3 +1,4 @@
+import { demoToast } from "./toast";
 import { useState } from "react";
 import {
   CheckCircle, Clock, TrendingUp, Award, Code2, Briefcase,
@@ -20,7 +21,7 @@ const diagnosis = {
     { label: "Cloud credential gap",   severity: "high",     impact: "Filters you out of 73% of target roles at screening" },
     { label: "Skill stagnation",       severity: "high",     impact: "Python skills plateau — market has moved to modern stack" },
     { label: "Leadership gap",         severity: "medium",   impact: "Promotion blocker for L5 without cross-functional scope" },
-    { label: "Salary drift",           severity: "medium",   impact: "Earning RM 20k below market — gap compounds each year"     },
+    { label: "Salary drift",           severity: "medium",   impact: "Earning RM 1.6k/mo below market — gap compounds each year"     },
   ],
   detectedStrengths: [
     "FinTech domain expertise — top 20% of peers",
@@ -57,7 +58,7 @@ const treatment: Record<Phase, {
     bg: "bg-blue-50",
     border: "border-blue-200",
     tasks: [
-      { id: "t1", label: "Request salary review with your manager", rationale: "You're RM 20k below market. Every month you wait, you lose leverage and compound the deficit.", effort: "1 hr",  impact: "Critical", category: "Salary"      },
+      { id: "t1", label: "Request salary review with your manager", rationale: "You're RM 1.6k/mo below market. Every month you wait, you lose leverage and compound the deficit.", effort: "1 hr",  impact: "Critical", category: "Salary"      },
       { id: "t2", label: "Complete AWS Cloud Practitioner exam",    rationale: "8 hours. Free. Immediately changes your ATS screening outcome for 73% of target roles.",          effort: "8 hrs", impact: "Critical", category: "Certification"},
       { id: "t3", label: "Rewrite your LinkedIn summary",           rationale: "Your current summary describes what you do. It should describe the decisions you enable.",          effort: "2 hrs", impact: "High",     category: "Visibility"   },
       { id: "t4", label: "Reconnect with 5 dormant network contacts",rationale: "80% of senior roles are filled through networks. Your reach has declined 22% in 6 months.",       effort: "2 hrs", impact: "Medium",   category: "Network"      },
@@ -88,7 +89,7 @@ const treatment: Record<Phase, {
     border: "border-emerald-200",
     tasks: [
       { id: "t11", label: "Land ML Engineer role or earn promotion",              rationale: "This is the goal. Everything in the 30 and 90-day plan is designed to make this moment achievable.",        effort: "Ongoing", impact: "Critical", category: "Career Move"   },
-      { id: "t12", label: "Achieve RM 140k+ salary",                               rationale: "Market rate for your profile with AWS cert + ML projects. This is not aspirational — it's attainable.",      effort: "Ongoing", impact: "Critical", category: "Salary"       },
+      { id: "t12", label: "Achieve RM 11.7k+/mo salary",                               rationale: "Market rate for your profile with AWS cert + ML projects. This is not aspirational — it's attainable.",      effort: "Ongoing", impact: "Critical", category: "Salary"       },
       { id: "t13", label: "Build ML portfolio project #2 — recommendation system",rationale: "Two ML projects in your portfolio creates a pattern, not a fluke. Pattern is what gets you hired.",          effort: "40 hrs",  impact: "High",     category: "Portfolio"    },
       { id: "t14", label: "Complete GCP Professional Data Engineer cert",         rationale: "Multi-cloud credentialing differentiates you from the 80% of candidates with only AWS.",                     effort: "50 hrs",  impact: "High",     category: "Certification"},
       { id: "t15", label: "Speak or present at one industry event",              rationale: "Thought leadership is a force multiplier. One talk generates inbound connections and interview requests.",     effort: "10 hrs",  impact: "Medium",   category: "Visibility"   },
@@ -431,7 +432,7 @@ function ResumeFromPortfolio() {
             <p className="text-sm font-semibold text-foreground">Resume ready for {target}</p>
             <p className="text-xs text-muted-foreground mt-0.5">8 entries reordered · 3 impact statements rewritten · role-specific summary generated</p>
           </div>
-          <button className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
+          <button onClick={() => demoToast(`Tailored resume for ${target} downloaded ✓`)} className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
             <FileText size={12} /> Download PDF
           </button>
         </div>

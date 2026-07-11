@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { demoToast } from "./toast";
 import { Brain, CheckCircle, MessageSquareText, Mic, Play, Sparkles, Star, Video, Wand2 } from "lucide-react";
 
 interface RoleCoachData {
@@ -85,6 +87,7 @@ interface InterviewCoachProps {
 }
 
 export function InterviewCoach({ jobId }: InterviewCoachProps) {
+  const [pickedQ, setPickedQ] = useState<number | null>(null);
   const data = (jobId && ROLE_DATA[jobId]) || DEFAULT_DATA;
 
   return (
@@ -117,7 +120,7 @@ export function InterviewCoach({ jobId }: InterviewCoachProps) {
             </div>
             <div className="divide-y divide-border">
               {data.questions.map((q, i) => (
-                <button key={q} className={`w-full flex gap-3 px-5 py-4 text-left hover:bg-muted/50 ${i === data.activeQ ? "bg-blue-50/70" : ""}`}>
+                <button key={q} onClick={() => setPickedQ(i)} className={`w-full flex gap-3 px-5 py-4 text-left hover:bg-muted/50 ${i === (pickedQ ?? data.activeQ) ? "bg-blue-50/70" : ""}`}>
                   <span className="w-6 h-6 rounded-full bg-white border border-border flex items-center justify-center text-xs font-bold text-muted-foreground">{i + 1}</span>
                   <span className="text-sm font-medium text-foreground">{q}</span>
                 </button>
@@ -131,7 +134,7 @@ export function InterviewCoach({ jobId }: InterviewCoachProps) {
                 <h2 className="font-semibold text-foreground">Rehearsal room</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">{data.promptLabel}</p>
               </div>
-              <button className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
+              <button onClick={() => demoToast("Recording… answer aloud — AI scores structure, clarity, and confidence")} className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
                 <Mic size={14} /> Record answer
               </button>
             </div>
@@ -143,10 +146,10 @@ export function InterviewCoach({ jobId }: InterviewCoachProps) {
                 </div>
                 <div>
                   <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Prompt</p>
-                  <p className="text-sm text-slate-100 leading-relaxed mt-1">{data.questions[data.activeQ]}</p>
+                  <p className="text-sm text-slate-100 leading-relaxed mt-1">{data.questions[pickedQ ?? data.activeQ]}</p>
                 </div>
               </div>
-              <button className="mt-5 inline-flex items-center gap-2 bg-white text-slate-950 px-4 py-2 rounded-lg text-sm font-semibold">
+              <button onClick={() => demoToast("Playing a top-scoring sample answer for this question\u2026")} className="mt-5 inline-flex items-center gap-2 bg-white text-slate-950 px-4 py-2 rounded-lg text-sm font-semibold">
                 <Play size={14} /> Play sample answer
               </button>
             </div>

@@ -19,7 +19,7 @@ const scoreExplanations = {
     summary: "Three structural problems are holding your score below 80 — and without action, they compound. The good news: all three are fixable within 90 days.",
     confidence: 91,
     evidence: [
-      { label: "Salary 14% below peer median (RM 120k vs RM 140k)",         positive: false },
+      { label: "Salary 14% below peer median (RM 10.1k/mo vs RM 11.7k/mo)",         positive: false },
       { label: "No cloud certification — 73% of target roles require one", positive: false },
       { label: "Core Python skills untouched for 14 months",             positive: false },
       { label: "Strong FinTech domain expertise — top 20%",              positive: true  },
@@ -45,14 +45,14 @@ const scoreExplanations = {
   salary: {
     title: "Salary vs Market",
     value: "–14%", unit: "",
-    verdict: "You are earning RM 20k below what the market would pay you today.",
+    verdict: "You are earning RM 1.6k/mo below what the market would pay you today.",
     summary: "Your 8% raise last year felt like progress — but the market for your peer cohort grew 12%. Every year this gap compounds, and it gets harder to close without a role change.",
     confidence: 88,
     evidence: [
-      { label: "Your current salary: RM 120k",                        positive: false },
-      { label: "Market median for 5–7yr data professionals: RM 140k", positive: false },
+      { label: "Your current salary: RM 10.1k/mo",                        positive: false },
+      { label: "Market median for 5–7yr data professionals: RM 11.7k/mo", positive: false },
       { label: "Last negotiation: 14 months ago — overdue",         positive: false },
-      { label: "Top performers at your level: RM 155–170k via switch", positive: false },
+      { label: "Top performers at your level: RM 13–14k/mo via switch", positive: false },
     ],
     impact: "Compounding 3 years of underperformance means a RM 58k+ cumulative deficit. This is money you are leaving on the table right now.",
   },
@@ -125,14 +125,15 @@ function ScoreModal({ k, onClose }: { k: MetricKey; onClose: () => void }) {
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 
+/* Monthly salary (RM '000/mo) — your pay vs the market median for the same cohort */
 const salaryData = [
-  { month: "Jul", salary: 110 },
-  { month: "Aug", salary: 112 },
-  { month: "Sep", salary: 112 },
-  { month: "Oct", salary: 115 },
-  { month: "Nov", salary: 115 },
-  { month: "Dec", salary: 118 },
-  { month: "Jan", salary: 120 },
+  { month: "Jul", salary: 9.8,  market: 10.4 },
+  { month: "Aug", salary: 9.9,  market: 10.6 },
+  { month: "Sep", salary: 9.9,  market: 10.8 },
+  { month: "Oct", salary: 10.0, market: 11.0 },
+  { month: "Nov", salary: 10.0, market: 11.2 },
+  { month: "Dec", salary: 10.1, market: 11.5 },
+  { month: "Jan", salary: 10.1, market: 11.7 },
 ];
 
 const dnaData = [
@@ -160,7 +161,7 @@ const strengthsAndRisks = {
   ],
   risks: [
     "62% of daily tasks are automatable within 24 months",
-    "Salary RM 20k below what the market would pay you today",
+    "Salary RM 1.6k/mo below what the market would pay you today",
     "Core skills haven't evolved in 14 months",
     "No cross-functional leadership record — promotion blocker",
   ],
@@ -323,7 +324,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               <h3 className="font-semibold text-foreground">Salary vs Market Trend</h3>
               <span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-1 rounded-full font-medium">–14% below market</span>
             </div>
-            <p className="text-xs text-muted-foreground mb-5">Your salary grew 8% — but the market for your role grew 12%. The gap is widening.</p>
+            <p className="text-xs text-muted-foreground mb-3">Monthly salary, RM &apos;000. Your pay grew 4% — the market for your role grew 12%. The gap is widening.</p>
+            <div className="flex items-center gap-4 mb-2">
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><span className="w-3 h-0.5 rounded-full inline-block" style={{ backgroundColor: "#2563EB" }} /> Your salary</span>
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><span className="w-3 h-0.5 rounded-full inline-block border-b border-dashed" style={{ borderColor: "#B45309" }} /> Market median (KL)</span>
+            </div>
             <div style={{ width: "100%", height: 180 }}>
               <ResponsiveContainer width="100%" height={180}>
                 <AreaChart data={salaryData}>
@@ -334,15 +339,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM${v}k`} domain={[105, 125]} />
-                  <Tooltip formatter={(v: number) => [`RM ${v}k`, "Your salary"]} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM${v}k`} domain={[9.5, 12]} />
+                  <Tooltip formatter={(v: number, name: string) => [`RM ${v}k/mo`, name === "market" ? "Market median" : "Your salary"]} />
+                  <Area key="area-db-market" type="monotone" dataKey="market" stroke="#B45309" strokeWidth={2} strokeDasharray="5 4" fill="none" isAnimationActive={false} />
                   <Area key="area-db-sal" type="monotone" dataKey="salary" stroke="#2563EB" strokeWidth={2} fill="url(#db-salGrad)" isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Market median for your cohort (5–7yr, FinTech, KL): <strong className="text-foreground">RM 140k</strong>.
-              Without action, this gap reaches RM 30k+ by end of year.
+              Market median for your cohort (5–7yr, FinTech, KL): <strong className="text-foreground">RM 11.7k/mo</strong> vs your <strong className="text-foreground">RM 10.1k/mo</strong>.
+              That&apos;s a RM 1.6k/mo gap — RM 19k+ per year left on the table if nothing changes.
             </p>
           </div>
         </div>

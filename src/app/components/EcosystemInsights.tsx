@@ -3,6 +3,7 @@ import {
   BarChart3, BookOpenCheck, Building2, GraduationCap, Handshake,
   HeartPulse, MapPin, ShieldCheck, TrendingUp, Users, WalletCards
 } from "lucide-react";
+import { demoToast } from "./toast";
 import { PatternAlert, HiringOutcomeSignals } from "./universitySignals";
 
 const faculties = [
@@ -185,7 +186,7 @@ export function EcosystemInsights({ onNavigate }: EcosystemInsightsProps) {
           </div>
           <div className="grid lg:grid-cols-3 gap-3">
             {atRiskStudents.map(student => (
-              <button key={student.name} className="bg-white border border-amber-100 rounded-xl p-4 text-left hover:border-amber-300 transition-colors">
+              <button key={student.name} onClick={() => demoToast(`${student.action} — assigned to ${student.name}\u2019s career advisor \u2713`)} className="bg-white border border-amber-100 rounded-xl p-4 text-left hover:border-amber-300 transition-colors">
                 <p className="text-sm font-semibold text-foreground">{student.name}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{student.faculty}</p>
                 <p className="text-xs text-amber-700 font-semibold mt-3">Gap: {student.gap}</p>

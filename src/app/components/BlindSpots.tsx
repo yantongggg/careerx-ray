@@ -130,7 +130,7 @@ const severityStyles = {
   medium:   { badge: "bg-yellow-400 text-white", card: "border-yellow-200",header: "bg-yellow-50",icon: "text-yellow-600",label: "Medium"   },
 };
 
-export function BlindSpots() {
+export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const [open, setOpen] = useState<number | null>(1);
 
   return (
@@ -280,13 +280,12 @@ export function BlindSpots() {
             <p className="font-semibold text-foreground">Now that you can see the risks — what do you do?</p>
             <p className="text-sm text-muted-foreground mt-1">The Decision Lab simulates your future so you can act with confidence, not guesswork.</p>
           </div>
-          <a
-            href="#"
-            onClick={e => { e.preventDefault(); }}
+          <button
+            onClick={() => onNavigate?.("decisionlab")}
             className="flex-shrink-0 flex items-center gap-2 bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold"
           >
             Open Decision Lab <ArrowRight size={14} />
-          </a>
+          </button>
         </div>
 
       </div>

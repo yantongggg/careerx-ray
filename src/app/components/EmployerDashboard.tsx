@@ -1,3 +1,4 @@
+import { demoToast } from "./toast";
 import { useState } from "react";
 import {
   Award, BarChart3, Briefcase, Building2, CheckCircle, Clock,
@@ -84,7 +85,7 @@ export function EmployerDashboard() {
                 </p>
               </div>
             </div>
-            <button className="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700">
+            <button onClick={() => demoToast("Verified role published to Talentbank Jobs \u2713")} className="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700">
               <Briefcase size={14} /> Post verified role
             </button>
           </div>
@@ -246,7 +247,7 @@ export function EmployerDashboard() {
           </div>
           <div className="grid lg:grid-cols-3 gap-3">
             {delayedReplies.map(item => (
-              <button key={item.candidate} className="bg-white border border-red-100 rounded-xl p-4 text-left hover:border-red-300 transition-colors">
+              <button key={item.candidate} onClick={() => demoToast(`Reply reminder opened for ${item.candidate} — SLA protected \u2713`)} className="bg-white border border-red-100 rounded-xl p-4 text-left hover:border-red-300 transition-colors">
                 <p className="text-sm font-semibold text-foreground">{item.candidate}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{item.role}</p>
                 <p className="text-xs text-red-600 font-semibold mt-3">{item.due}</p>

@@ -168,7 +168,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <span className="font-semibold text-foreground tracking-tight">CareerX-Ray</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2">Sign in</button>
+            <button onClick={() => onNavigate("role-select")} className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2">Sign in</button>
             <button
               onClick={() => onNavigate("onboarding")}
               className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-colors font-medium"

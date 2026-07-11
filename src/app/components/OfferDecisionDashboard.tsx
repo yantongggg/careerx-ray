@@ -1,3 +1,4 @@
+import { demoToast } from "./toast";
 import { useState } from "react";
 import {
   ArrowRight, Award, BarChart3, Building2, CheckCircle, MapPin, Scale,
@@ -156,7 +157,7 @@ export function OfferDecisionDashboard() {
               <p className="text-sm text-muted-foreground mt-0.5">Normal job sites stop at offers. CareerX-Ray helps candidates decide which offer compounds their future.</p>
             </div>
           </div>
-          <button className="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700">
+          <button onClick={() => demoToast("Acceptance plan generated: negotiation script + start-date checklist \u2713")} className="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700">
             Generate acceptance plan <ArrowRight size={14} />
           </button>
         </div>

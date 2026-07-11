@@ -1,3 +1,4 @@
+import { demoToast } from "./toast";
 import { useState } from "react";
 import {
   Clock, Github, Linkedin, Award, CheckCircle, AlertCircle,
@@ -208,7 +209,7 @@ function DetectedTab() {
           <p className="text-sm font-semibold text-foreground">AI Detection Engine</p>
           <p className="text-xs text-muted-foreground mt-0.5">Scans GitHub, LinkedIn, AWS, dbt Labs, Medium every 24 hours. New achievements are surfaced for your approval before being added to your evidence record.</p>
         </div>
-        <button className="ml-auto flex-shrink-0 flex items-center gap-1.5 text-xs text-primary border border-blue-200 bg-white px-3 py-1.5 rounded-lg hover:bg-blue-50 font-medium">
+        <button onClick={() => demoToast("Scanning GitHub, LinkedIn, AWS, dbt Labs… 2 new achievements found for your review")} className="ml-auto flex-shrink-0 flex items-center gap-1.5 text-xs text-primary border border-blue-200 bg-white px-3 py-1.5 rounded-lg hover:bg-blue-50 font-medium">
           <RefreshCw size={11} /> Scan
         </button>
       </div>
@@ -319,7 +320,7 @@ export function CareerEvidence() {
               Verified achievements that power your X-Ray scores, blind spot detection, and career simulations.
             </p>
           </div>
-          <button className="flex items-center gap-2 bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+          <button onClick={() => demoToast("Manual entry added to your review queue — or connect a source to auto-import")} className="flex items-center gap-2 bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
             <Plus size={14} /> Add Entry
           </button>
         </div>

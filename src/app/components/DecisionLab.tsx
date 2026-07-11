@@ -118,7 +118,7 @@ const timelineLabels = ["Now", "6mo", "1yr", "18mo", "2yr", "2.5yr", "3yr", "3.5
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function DecisionLab() {
+export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const [selected, setSelected] = useState<string>("ml");
   const [showChart, setShowChart] = useState(false);
 
@@ -347,7 +347,7 @@ export function DecisionLab() {
             <p className="font-semibold text-foreground">You've seen your futures. Now get the treatment plan.</p>
             <p className="text-sm text-muted-foreground mt-1">Career Prescription turns this analysis into a day-by-day action plan.</p>
           </div>
-          <button className="flex-shrink-0 flex items-center gap-2 bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold">
+          <button onClick={() => onNavigate?.("prescription")} className="flex-shrink-0 flex items-center gap-2 bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold">
             View My Prescription <ArrowRight size={14} />
           </button>
         </div>

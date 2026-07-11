@@ -10,6 +10,7 @@ import {
 type Role = "candidate" | "employer" | "university";
 
 import { JOURNEY } from "./stages";
+import { demoToast } from "./toast";
 
 const employerMain = [
   { id: "employer",       label: "Hiring Command Center", icon: Building2 },
@@ -154,6 +155,7 @@ export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) 
           { icon: Settings, label: "Settings"                  },
         ].map(item => (
           <button key={item.label}
+            onClick={() => demoToast(item.label === "Notifications" ? "2 notifications: Maybank interview in 2 days \u00b7 1 new live market signal" : "Settings panel coming to the full version")}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
           >
             <item.icon size={14} />
