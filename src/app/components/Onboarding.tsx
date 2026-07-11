@@ -31,19 +31,18 @@ const OPTION_DIMS: Record<string, string[][]> = {
 };
 
 const USER_TYPES = [
-  "University student",
-  "Fresh graduate",
+  "Student / learner",
+  "Early career",
   "Working professional",
-  "Designer / creative",
-  "Career switcher",
+  "Changing direction",
+  "Exploring / not sure",
 ];
 
-type EvidenceGroup = "student" | "creative" | "professional";
+type EvidenceGroup = "starter" | "professional";
 
 const evidenceGroupFor = (userType: string): EvidenceGroup => {
-  if (userType === "University student" || userType === "Fresh graduate") return "student";
-  if (userType === "Designer / creative") return "creative";
-  return "professional";
+  if (userType === "Working professional" || userType === "Changing direction") return "professional";
+  return "starter"; // students, early career, freelancers, explorers — no CV required
 };
 
 interface EvidenceSource {
@@ -58,79 +57,36 @@ interface EvidenceSource {
   action: string;
 }
 
+/* One inclusive evidence menu — the order shifts by journey stage, but nobody
+   is asked for something they may not have. */
+const CARD_RESUME: EvidenceSource = {
+  id: "resume", name: "Upload resume", icon: FileText,
+  brand: "bg-[#16284B]", hover: "hover:bg-[#1e3560]", action: "Upload",
+  desc: "Have one? Great. Don't? Every other card below works just as well",
+  connectedDesc: "Uploaded · Parsing roles, skills, achievements",
+};
+const CARD_LINKS: EvidenceSource = {
+  id: "links", name: "Add LinkedIn / portfolio", icon: Linkedin,
+  brand: "bg-[#0077B5]", hover: "hover:bg-[#006097]", action: "Add link",
+  desc: "LinkedIn, personal site, Behance, Dribbble — any link that shows your work",
+  connectedDesc: "Added · Scanning your public work and profile",
+};
+const CARD_PROJECT: EvidenceSource = {
+  id: "project", name: "Add a project", icon: FolderOpen,
+  brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]", action: "Upload",
+  desc: "Class assignments, final-year builds, freelance gigs, side projects — anything you made",
+  connectedDesc: "Uploaded · Analyzing project scope, tools, and outcomes",
+};
+const CARD_CERT: EvidenceSource = {
+  id: "certificate", name: "Add a certificate", icon: Trophy,
+  brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]", action: "Upload",
+  desc: "SPM, diploma, TVET, competitions, micro-credentials, professional certs — all count",
+  connectedDesc: "Uploaded · Verifying credentials and skill signals",
+};
+
 const EVIDENCE_SOURCES: Record<EvidenceGroup, EvidenceSource[]> = {
-  student: [
-    {
-      id: "transcript", name: "Academic transcript", icon: GraduationCap,
-      brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]", action: "Upload",
-      desc: "CGPA, coursework, and dean's list awards become verifiable skill evidence",
-      connectedDesc: "Uploaded · Extracting coursework, CGPA, and academic strengths",
-    },
-    {
-      id: "competitions", name: "Competition & hackathon certificates", icon: Trophy,
-      brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]", action: "Upload",
-      desc: "Hackathons, case competitions, and contest wins are strong proof of skill",
-      connectedDesc: "Uploaded · Verifying certificates and competition placements",
-    },
-    {
-      id: "projects", name: "Project files", icon: FolderOpen,
-      brand: "bg-[#16284B]", hover: "hover:bg-[#1e3560]", action: "Upload",
-      desc: "Assignments, final-year projects, side builds — anything you made yourself",
-      connectedDesc: "Uploaded · Analyzing project scope, tools, and outcomes",
-    },
-    {
-      id: "linkedin", name: "LinkedIn", optional: true, icon: Linkedin,
-      brand: "bg-[#0077B5]", hover: "hover:bg-[#006097]", action: "Connect",
-      desc: "Import internships, activities, and endorsements — skip if you don't have one yet",
-      connectedDesc: "Connected · Syncing internships, activities, endorsements",
-    },
-  ],
-  creative: [
-    {
-      id: "behance", name: "Behance", icon: Palette,
-      brand: "bg-[#1769FF]", hover: "hover:bg-[#0f56d8]", action: "Connect",
-      desc: "Import your Behance projects, appreciations, and creative fields",
-      connectedDesc: "Connected · Syncing projects, appreciations, creative fields",
-    },
-    {
-      id: "dribbble", name: "Dribbble", icon: Dribbble,
-      brand: "bg-[#EA4C89]", hover: "hover:bg-[#d63c78]", action: "Connect",
-      desc: "Sync shots, likes, and design specialities from your Dribbble profile",
-      connectedDesc: "Connected · Analyzing shots, likes, design specialities",
-    },
-    {
-      id: "portfolio", name: "Portfolio website", icon: Globe,
-      brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]", action: "Add link",
-      desc: "Paste your portfolio URL — we'll scan case studies and visual work",
-      connectedDesc: "Added · Scanning case studies and visual work",
-    },
-    {
-      id: "resume", name: "Resume", optional: true, icon: FileText,
-      brand: "bg-[#16284B]", hover: "hover:bg-[#1e3560]", action: "Upload",
-      desc: "A resume helps, but your portfolio already speaks for your craft",
-      connectedDesc: "Uploaded · Parsing experience and skills",
-    },
-  ],
-  professional: [
-    {
-      id: "resume", name: "Resume", icon: FileText,
-      brand: "bg-[#16284B]", hover: "hover:bg-[#1e3560]", action: "Upload",
-      desc: "Parse roles, skills, achievements, and career trajectory in seconds",
-      connectedDesc: "Uploaded · Parsing roles, skills, achievements",
-    },
-    {
-      id: "linkedin", name: "LinkedIn", icon: Linkedin,
-      brand: "bg-[#0077B5]", hover: "hover:bg-[#006097]", action: "Connect",
-      desc: "Import work history, skills, endorsements, and network data",
-      connectedDesc: "Connected · Syncing work history, endorsements, network",
-    },
-    {
-      id: "github", name: "GitHub", icon: Github,
-      brand: "bg-slate-900", hover: "hover:bg-slate-700", action: "Connect",
-      desc: "Analyze repos, commit patterns, languages, and OSS contributions",
-      connectedDesc: "Connected · Analyzing repos, languages, contribution activity",
-    },
-  ],
+  starter: [CARD_PROJECT, CARD_CERT, CARD_LINKS, { ...CARD_RESUME, optional: true }],
+  professional: [CARD_RESUME, CARD_LINKS, CARD_PROJECT, CARD_CERT],
 };
 
 const SOMETHING_ELSE: EvidenceSource = {
@@ -238,7 +194,7 @@ type Step = "upload" | "connect" | "profile" | "calibration" | "scan" | "done";
 
 export function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState<Step>("upload");
-  const [userType, setUserType] = useState("Working professional");
+  const [userType, setUserType] = useState("");
   const [resumeUploaded, setResumeUploaded] = useState(false);
   const [connectedSources, setConnectedSources] = useState<Record<string, boolean>>({});
   const [currentRole, setCurrentRole] = useState("Senior Data Analyst");
@@ -365,13 +321,14 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <FileText size={24} className="text-primary" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Start your Career X-Ray Scan</h1>
-                <p className="text-muted-foreground text-sm max-w-sm mx-auto">Tell us who you are, then add any evidence you have. Everything here is optional — your calibration answers alone can generate a starting Career DNA.</p>
+                <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Start with what you have. A resume is optional.</h1>
+                <p className="text-muted-foreground text-sm max-w-sm mx-auto">Everything here is optional — a few quick questions alone can generate your starting Career DNA.</p>
               </div>
 
               {/* User type */}
               <div className="mb-6">
-                <p className="text-sm font-medium text-foreground mb-2.5 text-center">What best describes you?</p>
+                <p className="text-sm font-medium text-foreground mb-1 text-center">Where are you in your career journey?</p>
+                <p className="text-xs text-muted-foreground mb-2.5 text-center">Choose the closest option. You can change this later.</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {USER_TYPES.map(t => {
                     const active = userType === t;
@@ -427,8 +384,13 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 )}
               </div>
 
-              <p className="text-center text-xs text-muted-foreground mb-8">
+              <p className="text-center text-xs text-muted-foreground mb-2">
                 Your resume is processed securely and never shared. <span className="text-primary cursor-pointer hover:underline">Privacy Policy →</span>
+              </p>
+              <p className="text-center text-sm mb-8">
+                <button onClick={() => setStep("profile")} className="text-primary font-semibold hover:underline">
+                  No resume yet? Answer a few questions instead →
+                </button>
               </p>
 
               <div className="flex justify-between">
@@ -457,7 +419,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 </div>
                 <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Add your career evidence</h1>
                 <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                  Based on your profile as a <strong className="text-foreground">{userType.toLowerCase()}</strong>, here's the evidence that matters most. All of it is optional — the calibration questions alone can generate a starting Career DNA.
+                  {userType ? <>For someone <strong className="text-foreground">{userType.toLowerCase()}</strong>, this evidence matters most — pick what you have, skip what you don't.</> : <>Pick what you have, skip what you don't — every card is optional.</>}
                 </p>
               </div>
 
@@ -496,6 +458,13 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   );
                 })}
               </div>
+
+              <button
+                onClick={() => setStep("profile")}
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-primary/40 text-primary rounded-2xl px-5 py-4 text-sm font-semibold hover:bg-blue-50/60 transition-colors mb-4"
+              >
+                <Sparkles size={15} /> Nothing to upload? Answer quick questions instead →
+              </button>
 
               <p className="text-center text-xs text-muted-foreground mb-8">
                 No GitHub, LinkedIn, or resume? No problem — nobody gets blocked here. Evidence only sharpens the scan.
@@ -825,7 +794,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
               <button
                 onClick={() => onComplete(dnaScores, {
-                  userType,
+                  userType: userType || "Exploring / not sure",
                   currentRole: currentRole === "Other…" ? (customCurrentRole.trim() || "Other") : currentRole,
                   targetRole: targetRole === "Other…" ? (customTargetRole.trim() || "Other") : targetRole,
                   salaryRange: salaryRange === "Other…" ? (customSalary.trim() || "Other") : salaryRange,
