@@ -253,6 +253,20 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const [calibrationAnswers, setCalibrationAnswers] = useState<Record<string, string>>({});
   const [scanProgress, setScanProgress] = useState<Record<string, "pending" | "running" | "done">>({});
   const [currentScanStep, setCurrentScanStep] = useState(0);
+  /* Shuffle option display order once per session so straight-line clicking
+     doesn't always land on the same dimensions (scoring matches by text). */
+  const [optionOrders] = useState<Record<string, number[]>>(() =>
+    Object.fromEntries(
+      calibrationQuestions.map(q => {
+        const idx = q.options.map((_, i) => i);
+        for (let i = idx.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [idx[i], idx[j]] = [idx[j], idx[i]];
+        }
+        return [q.id, idx];
+      })
+    )
+  );
   const [isDragging, setIsDragging] = useState(false);
 
   const toggleGoal = (id: string) => {
@@ -689,7 +703,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                       </div>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-2">
-                      {item.options.map(option => {
+                      {(optionOrders[item.id] ?? item.options.map((_, i) => i)).map(oi => item.options[oi]).map(option => {
                         const active = calibrationAnswers[item.id] === option;
                         return (
                           <button

@@ -1,4 +1,5 @@
 import { demoToast } from "./toast";
+import { getArchetypeForScoresSafe } from "../careerDna.js";
 import { useState } from "react";
 import {
   ArrowRight, Award, BarChart3, Building2, CheckCircle, MapPin, Scale,
@@ -12,7 +13,7 @@ const offers = [
     location: "Kuala Lumpur",
     salary: "RM 8.8k",
     score: 91,
-    dnaFit: "Forge Beaver fit: high execution + technical ownership",
+    dnaFit: "DNA_FIT_PLACEHOLDER",
     upside: "Best structured growth path and strongest employer trust score.",
     risk: "Less innovation freedom than startup track.",
   },
@@ -46,7 +47,9 @@ const factors = [
   ["Life fit", "10%", "Location, commute, stability, flexibility, personal preference."],
 ];
 
-export function OfferDecisionDashboard() {
+export function OfferDecisionDashboard({ scores }: { scores?: Record<string, number> } = {}) {
+  const archetype = getArchetypeForScoresSafe(scores ?? { Technical: 88, Execution: 92, Communication: 76, Strategic: 60, Innovation: 52, Leadership: 64 });
+  const dnaFitText = `${archetype.name} fit: ${archetype.oneLiner.replace(/\.$/, "").toLowerCase()}`;
   const [selected, setSelected] = useState(offers[0]);
 
   return (

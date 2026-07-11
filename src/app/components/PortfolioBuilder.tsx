@@ -621,7 +621,7 @@ export function PortfolioBuilder() {
                   <div>
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Professional Summary</h4>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Data analyst with 5+ years of experience in digital banking and fintech. Skilled in SQL, Python, and Tableau with a track record of delivering actionable insights that drove 23% revenue growth. Career DNA: Forge Beaver — high execution, technical ownership.
+                      Data analyst with 5+ years of experience in digital banking and fintech. Skilled in SQL, Python, and Tableau with a track record of delivering actionable insights that drove 23% revenue growth. Career DNA verified by CareerX-Ray — evidence-backed strengths, updated automatically.
                     </p>
                   </div>
                   <div>

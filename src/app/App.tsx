@@ -382,7 +382,7 @@ export default function App() {
           {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
           {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
           {page === "coach"           && <InterviewCoach jobId={prepJobId} />}
-          {page === "offers"          && <OfferDecisionDashboard />}
+          {page === "offers"          && <OfferDecisionDashboard scores={dnaScores ?? undefined} />}
           {page === "portfolio"       && <PortfolioBuilder />}
           {page === "decisionlab"     && <DecisionLab onNavigate={navigate} />}
           {page === "blindspots"      && <BlindSpots onNavigate={navigate} currentRole={profile?.currentRole} targetRole={profile?.targetRole} />}
