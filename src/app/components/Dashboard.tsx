@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, ReferenceDot
 } from "recharts";
 import { dimensions, getArchetypeForScoresSafe } from "../careerDna.js";
 
@@ -47,12 +47,12 @@ const scoreExplanations = {
     title: "Salary vs Market",
     value: "–14%", unit: "",
     verdict: "You are earning RM 1.6k/mo below what the market would pay you today.",
-    summary: "Your 8% raise last year felt like progress — but the market for your peer cohort grew 12%. Every year this gap compounds, and it gets harder to close without a role change.",
+    summary: "Your +3% annual increment felt like progress — but the market for your peer cohort grew 12% in the same months. Every year this gap compounds, and it gets harder to close without a role change.",
     confidence: 88,
     evidence: [
       { label: "Your current salary: RM 10.1k/mo",                        positive: false },
       { label: "Market median for 5–7yr data professionals: RM 11.7k/mo", positive: false },
-      { label: "Last negotiation: 14 months ago — overdue",         positive: false },
+      { label: "Salary moves once a year (increment); market moves monthly", positive: false },
       { label: "Top performers at your level: RM 13–14k/mo via switch", positive: false },
     ],
     impact: "Compounding 3 years of underperformance means a RM 58k+ cumulative deficit. This is money you are leaving on the table right now.",
@@ -126,14 +126,15 @@ function ScoreModal({ k, onClose }: { k: MetricKey; onClose: () => void }) {
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 
-/* Monthly salary (RM '000/mo) — your pay vs the market median for the same cohort */
+/* Monthly salary (RM '000/mo). Personal pay is a step function — it only moves
+   at the annual increment — while the market median drifts up every month. */
 const salaryData = [
   { month: "Jul", salary: 9.8,  market: 10.4 },
-  { month: "Aug", salary: 9.9,  market: 10.6 },
-  { month: "Sep", salary: 9.9,  market: 10.8 },
-  { month: "Oct", salary: 10.0, market: 11.0 },
-  { month: "Nov", salary: 10.0, market: 11.2 },
-  { month: "Dec", salary: 10.1, market: 11.5 },
+  { month: "Aug", salary: 9.8,  market: 10.6 },
+  { month: "Sep", salary: 9.8,  market: 10.8 },
+  { month: "Oct", salary: 9.8,  market: 11.0 },
+  { month: "Nov", salary: 9.8,  market: 11.2 },
+  { month: "Dec", salary: 9.8,  market: 11.5 },
   { month: "Jan", salary: 10.1, market: 11.7 },
 ];
 
@@ -337,9 +338,11 @@ export function Dashboard({ onNavigate, scores }: DashboardProps) {
           <div className="lg:col-span-2 bg-white border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-semibold text-foreground">Salary vs Market Trend</h3>
-              <span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-1 rounded-full font-medium">–14% below market</span>
+              <button onClick={() => setModal("salary")} className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-1 rounded-full font-medium hover:bg-red-100 transition-colors inline-flex items-center gap-1">
+                –14% below market <Info size={11} /> <span className="underline underline-offset-2">why?</span>
+              </button>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Monthly salary, RM &apos;000. Your pay grew 4% — the market for your role grew 12%. The gap is widening.</p>
+            <p className="text-xs text-muted-foreground mb-3">Monthly salary, RM &apos;000. Your pay only moves at the annual increment (+3% in Jan) — the market median moves every month. That&apos;s how the gap quietly widens.</p>
             <div className="flex items-center gap-4 mb-2">
               <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><span className="w-3 h-0.5 rounded-full inline-block" style={{ backgroundColor: "#2563EB" }} /> Your salary</span>
               <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><span className="w-3 h-0.5 rounded-full inline-block border-b border-dashed" style={{ borderColor: "#B45309" }} /> Market median (KL)</span>
@@ -357,7 +360,8 @@ export function Dashboard({ onNavigate, scores }: DashboardProps) {
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM${v}k`} domain={[9.5, 12]} />
                   <Tooltip formatter={(v: number, name: string) => [`RM ${v}k/mo`, name === "market" ? "Market median" : "Your salary"]} />
                   <Area key="area-db-market" type="monotone" dataKey="market" stroke="#B45309" strokeWidth={2} strokeDasharray="5 4" fill="none" isAnimationActive={false} />
-                  <Area key="area-db-sal" type="monotone" dataKey="salary" stroke="#2563EB" strokeWidth={2} fill="url(#db-salGrad)" isAnimationActive={false} />
+                  <Area key="area-db-sal" type="stepAfter" dataKey="salary" stroke="#2563EB" strokeWidth={2} fill="url(#db-salGrad)" isAnimationActive={false} />
+                  <ReferenceDot x="Jan" y={10.1} r={5} fill="#2563EB" stroke="white" strokeWidth={2} label={{ value: "annual increment +3%", position: "left", fontSize: 10, fill: "#2563EB", fontWeight: 600 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
