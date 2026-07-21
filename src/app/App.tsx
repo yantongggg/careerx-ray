@@ -29,9 +29,9 @@ import { HiringPipeline } from "./components/HiringPipeline";
 import { IntelligenceProvider } from "./components/intelligence";
 import { RoleSelect } from "./components/RoleSelect";
 import { JOURNEY, StageHub } from "./components/stages";
+import { AuthPage } from "./components/Auth";
 import { SkillGraph } from "./components/SkillGraph";
 import { ToastHost } from "./components/toast";
-import { AuthPage } from "./components/Auth";
 import { ChevronLeft, LogOut } from "lucide-react";
 
 /* MARKER-MAKE-KIT-INVOKED */
@@ -161,10 +161,9 @@ const roleLabels: Record<Role, string> = {
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>("landing");
-  const [authMode, setAuthMode] = useState<"login" | "register">("register");
-  const [authed, setAuthed]     = useState(false);
-  const [user, setUser]         = useState<{ name: string; email: string } | null>(null);
-  const [pendingTarget, setPendingTarget] = useState<string | null>(null);
+  // Demo mode: signing in is optional — it's a real screen, but nothing is gated behind it.
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [user, setUser] = useState<{ name: string; email: string }>({ name: "Jordan Kim", email: "jordan.kim@email.com" });
   const [page, setPage]         = useState<Page>("command");
   const [role, setRole]         = useState<Role>("candidate");
   const [history, setHistory]   = useState<Page[]>([]);
@@ -176,15 +175,9 @@ export default function App() {
 
   const navigate = (target: string) => {
     if (target === "landing")     { setAppState("landing");     return; }
+    // Signing in is offered but never required — nothing past here is gated.
     if (target === "login")       { setAuthMode("login");    setAppState("auth"); return; }
     if (target === "register")    { setAuthMode("register"); setAppState("auth"); return; }
-    // Everything past the landing page requires an account first.
-    if (!authed) {
-      setPendingTarget(target);
-      setAuthMode("register");
-      setAppState("auth");
-      return;
-    }
     if (target === "role-select") { setAppState("role-select"); return; }
     if (target === "onboarding")  { setAppState("onboarding");  return; }
     if ((allPages as string[]).includes(target)) {
@@ -210,8 +203,9 @@ export default function App() {
     });
   };
 
+  // Resets the demo back to a clean slate — no scan, no history, back to the landing page.
   const signOut = () => {
-    setAuthed(false); setUser(null); setHasScanned(false); setDnaScores(null);
+    setHasScanned(false); setDnaScores(null);
     setProfile(null); setHistory([]); setPage("command"); setRole("candidate");
     setAppState("landing");
   };
@@ -248,23 +242,11 @@ export default function App() {
         <AuthPage
           mode={authMode}
           onBack={() => setAppState("landing")}
+          onSkip={() => setAppState("role-select")}
           onSwitchMode={() => setAuthMode(m => (m === "login" ? "register" : "login"))}
           onAuthed={u => {
-            setAuthed(true);
             setUser({ name: u.name, email: u.email });
-            const scanned = u.isNew ? false : hasScanned;
             if (u.isNew) { setHasScanned(false); setDnaScores(null); setProfile(null); }
-            const target = pendingTarget;
-            setPendingTarget(null);
-            if (target && target !== "role-select") {
-              // Re-run routing now that we're authed
-              if (target === "onboarding") { setAppState("onboarding"); return; }
-              if ((allPages as string[]).includes(target)) {
-                const nextPage = target as Page;
-                if (pageRole[nextPage] === "candidate" && !scanned) { setAppState("onboarding"); return; }
-                setPage(nextPage); setRole(pageRole[nextPage]); setAppState("app"); return;
-              }
-            }
             setAppState("role-select");
           }}
         />
@@ -361,7 +343,7 @@ export default function App() {
             </button>
             <button
               onClick={signOut}
-              title="Sign out"
+              title="Reset demo"
               className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <LogOut size={13} />
