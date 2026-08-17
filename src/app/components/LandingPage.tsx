@@ -168,9 +168,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <span className="font-semibold text-foreground tracking-tight">CareerX-Ray</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => onNavigate("login")} className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2">Log in</button>
+            <button onClick={() => onNavigate("login")} className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2">Sign in</button>
             <button
-              onClick={() => onNavigate("role-select")}
+              onClick={() => onNavigate("onboarding")}
               className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-colors font-medium"
             >
               Get Your X-Ray
@@ -206,7 +206,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => onNavigate("role-select")}
+                  onClick={() => onNavigate("register")}
                   className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:opacity-90 transition-all font-medium shadow-md shadow-[rgba(138,112,56,0.2)] text-sm"
                 >
                   Get Started <ArrowRight size={15} />
@@ -311,7 +311,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
                     {/* CTA inside card */}
                     <button
-                      onClick={() => onNavigate("role-select")}
+                      onClick={() => onNavigate("onboarding")}
                       className="mt-5 w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground text-xs font-semibold py-2.5 rounded-xl hover:opacity-90 transition-colors"
                     >
                       <Zap size={13} /> Get My Career X-Ray
@@ -420,7 +420,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 CareerX-Ray scans your career profile against 50+ risk models — AI automation exposure, skill stagnation, market demand decay, salary drift, and network decay. Most of these signals are invisible without the data.
               </p>
               <button
-                onClick={() => onNavigate("role-select")}
+                onClick={() => onNavigate("onboarding")}
                 className="flex items-center gap-2 text-sm text-primary font-semibold hover:gap-3 transition-all"
               >
                 Scan my blind spots <ArrowRight size={14} />
@@ -510,7 +510,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <p className="text-slate-300 mb-2">Discover hidden risks. Simulate your next move.</p>
             <p className="text-slate-300 mb-8">Prevent the career regret you won't see coming.</p>
             <button
-              onClick={() => onNavigate("role-select")}
+              onClick={() => onNavigate("onboarding")}
               className="bg-[#D9C18A] text-[#16284B] px-8 py-3.5 rounded-xl font-semibold hover:bg-[#B89A5E] transition-colors shadow-lg text-sm"
             >
               Start My Free X-Ray Scan

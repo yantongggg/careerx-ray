@@ -7,14 +7,7 @@ interface AuthPageProps {
   onAuthed: (user: { name: string; email: string; isNew: boolean }) => void;
   onBack: () => void;
   onSwitchMode: () => void;
-  onSkip: () => void;
 }
-
-/* Demo build: credentials are pre-filled so the form is one click from done.
-   Signing in is entirely optional — "Skip login" goes straight to role select. */
-const DEMO_NAME = "Jordan Kim";
-const DEMO_EMAIL = "jordan.kim@email.com";
-const DEMO_PASSWORD = "careerxray";
 
 function GoogleLogo() {
   return (
@@ -27,12 +20,12 @@ function GoogleLogo() {
   );
 }
 
-export function AuthPage({ mode, onAuthed, onBack, onSwitchMode, onSkip }: AuthPageProps) {
+export function AuthPage({ mode, onAuthed, onBack, onSwitchMode }: AuthPageProps) {
   const isRegister = mode === "register";
-  const [name, setName] = useState(DEMO_NAME);
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
-  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
 
   const termsBlocked = isRegister && !termsAccepted;
@@ -78,15 +71,7 @@ export function AuthPage({ mode, onAuthed, onBack, onSwitchMode, onSkip }: AuthP
             </div>
             <span className="font-semibold text-foreground tracking-tight">CareerX-Ray</span>
           </button>
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</button>
-            <button
-              onClick={onSkip}
-              className="flex items-center gap-1.5 text-sm font-semibold text-primary border border-border bg-white rounded-lg px-3 py-1.5 hover:bg-muted hover:shadow-sm transition-all"
-            >
-              Skip login <ArrowRight size={13} />
-            </button>
-          </div>
+          <button onClick={onBack} className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</button>
         </div>
       </nav>
 
@@ -110,15 +95,6 @@ export function AuthPage({ mode, onAuthed, onBack, onSwitchMode, onSkip }: AuthP
           </div>
 
           <div className="bg-white border border-border rounded-xl shadow-sm p-6">
-            {/* Demo credentials are already in the fields — one click and you're in. */}
-            <div className="flex items-start gap-2 bg-[rgba(184,154,94,0.12)] border border-[rgba(184,154,94,0.35)] rounded-lg px-3 py-2.5 mb-5">
-              <Sparkles size={13} className="text-[#8A7038] mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-[#6F5A2B] leading-relaxed">
-                <span className="font-semibold">Demo credentials pre-filled.</span>{" "}
-                Just press {isRegister ? "Create account" : "Sign in"} — or skip login entirely.
-              </p>
-            </div>
-
             {/* Google */}
             <button
               onClick={handleGoogle}
@@ -233,13 +209,6 @@ export function AuthPage({ mode, onAuthed, onBack, onSwitchMode, onSkip }: AuthP
               </button>
             </p>
           </div>
-
-          <button
-            onClick={onSkip}
-            className="w-full flex items-center justify-center gap-1.5 mt-4 py-2.5 text-sm font-semibold text-muted-foreground hover:text-primary border border-dashed border-border rounded-lg hover:bg-white transition-colors"
-          >
-            Skip login and choose a role <ArrowRight size={14} />
-          </button>
 
           <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/70 mt-4">
             <ShieldCheck size={12} />

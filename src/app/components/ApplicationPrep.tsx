@@ -76,36 +76,36 @@ const CANDIDATE_DATA = {
   email: "jordan.kim@email.com",
   phone: "+60 12-345 6789",
   location: "Kuala Lumpur, Malaysia",
-  summary: "Senior data analyst with 6 years of experience across fintech and e-commerce. Deep SQL and Python, open-source dbt contributor, and top-20% fintech domain expertise. Currently moving toward machine learning engineering.",
+  summary: "Data-driven analyst with 3+ years of experience in digital banking and e-commerce analytics. Skilled in SQL, Python, Tableau, and dbt. Passionate about turning complex data into clear business narratives.",
   education: [
-    { school: "University of Malaya", degree: "BSc Computer Science (Data Analytics)", year: "2016-2020", gpa: "3.72" },
+    { school: "University of Malaya", degree: "BSc Computer Science (Data Analytics)", year: "2020-2024", gpa: "3.72" },
   ],
   experience: [
-    { company: "Stripe", role: "Senior Data Analyst", period: "Mar 2023 – Present", desc: "Own fraud and payments analytics for the APAC segment — reduced false-positive rate by 23% and built dashboards used daily by 14 ops staff." },
-    { company: "Grab", role: "Data Analyst", period: "Aug 2020 – Feb 2023", desc: "Built production dbt models and data-quality monitoring for marketplace analytics, cutting silent pipeline failures across the supply-demand stack." },
+    { company: "Maybank", role: "Data Analyst Intern", period: "Jun 2023 – Dec 2023", desc: "Built customer segmentation dashboards, automated weekly KPI reports using Python & Tableau." },
+    { company: "Grab", role: "Analytics Intern", period: "Jan 2023 – May 2023", desc: "Supported analytics engineering team with dbt model development and data quality monitoring." },
   ],
   skills: ["SQL", "Python", "Tableau", "Power BI", "dbt", "BigQuery", "Excel", "Storytelling", "Teamwork", "Leadership"],
-  certifications: ["dbt Fundamentals", "Tableau Desktop Specialist", "Google Data Analytics Professional Certificate"],
+  certifications: ["Google Data Analytics Professional Certificate", "dbt Fundamentals"],
   portfolio: ["github.com/jordankim", "linkedin.com/in/jordankim"],
-  resumeFile: "Jordan_Kim_Resume_2026.pdf",
+  resumeFile: "Jordan_Kim_Resume_2024.pdf",
 };
 
 const JOB_ANGLE: Record<string, { focus: string; proof: string; hook: string; body: string }> = {
   "maybank-da": {
     focus: "fraud analytics, customer segmentation, and digital banking KPIs",
-    proof: "At Stripe, I own fraud and payments analytics for APAC — cutting the false-positive rate by 23% and shipping segmentation dashboards the ops team uses daily.",
-    hook: "Six years of payments and marketplace analytics have convinced me that digital banking decisions live or die on trustworthy dashboards — and Maybank is where that work has the widest reach in Malaysia.",
-    body: "My SQL depth and fintech domain exposure map directly to this role: I've built automated KPI pipelines, segmented customer behavior across digital channels, and told data stories that product and engineering teams actually acted on. I'm also closing my cloud gap with a structured AWS learning plan.",
+    proof: "At Maybank (internship), automated weekly KPI reporting in Python + Tableau and shipped segmentation dashboards used by the digital banking team.",
+    hook: "Having interned with Maybank's data team, I've seen first-hand how digital banking decisions ride on trustworthy dashboards — and I want to build them at full scale.",
+    body: "My SQL depth and fintech domain exposure map directly to this role: I've built automated KPI pipelines, segmented customer behavior across digital channels, and told data stories that product and engineering teams actually acted on. I'm also closing my cloud gap with a structured GCP learning plan.",
   },
   "grab-ae": {
     focus: "dbt model development, pipeline testing, and analytics engineering at scale",
-    proof: "At Grab I shipped production dbt models and data-quality monitoring that cut silent pipeline failures; I now maintain an open-source dbt package with 89 GitHub stars.",
-    hook: "Two and a half years inside Grab's marketplace data stack showed me how much real-time decisions depend on tested, reliable models — exactly what this Analytics Engineer role owns.",
+    proof: "At Grab (internship), contributed production dbt models and built data-quality monitoring that cut silent pipeline failures.",
+    hook: "My analytics internship at Grab showed me how much real-time marketplace decisions depend on tested, reliable data models — exactly what this Analytics Engineer role owns.",
     body: "I bring hands-on dbt and Python experience, Git-based workflows, and BigQuery exposure. I've written tested data models, monitored data quality in production, and collaborated with engineers on CI for analytics code — the modern-data-stack fundamentals this role requires.",
   },
   "petronas-pm": {
     focus: "ML model evaluation and translating AI metrics for business stakeholders",
-    proof: "Bridged analytics and product teams at Stripe and Grab — defined metrics, evaluated model outputs, and presented recommendations to non-technical stakeholders.",
+    proof: "Bridged analytics and product teams across two internships — defined metrics, evaluated model outputs, and presented recommendations to non-technical stakeholders.",
     hook: "Petronas Digital's push to digitalize energy operations with AI is exactly the kind of high-impact, stakeholder-heavy analytics work I want to do.",
     body: "I pair Python/SQL proficiency with strong storytelling: I've defined product metrics, evaluated model performance, and turned complex data patterns into recommendations leadership could act on. My stakeholder communication is my sharpest edge — and this role lives at that intersection.",
   },
@@ -113,7 +113,7 @@ const JOB_ANGLE: Record<string, { focus: string; proof: string; hook: string; bo
 
 const DEFAULT_ANGLE = {
   focus: "SQL, Python, and dashboard storytelling",
-  proof: "Six years delivering analytics across payments, banking, and e-commerce in Malaysia and APAC.",
+  proof: "Delivered analytics projects across banking and e-commerce internships in Malaysia.",
   hook: "This role aligns closely with my analytics background and career direction.",
   body: "I bring SQL, Python, Tableau, and dbt experience, plus a track record of turning complex data into clear business narratives for stakeholders.",
 };
@@ -123,10 +123,10 @@ function buildResumeDraft(job: JobData): string {
   return [
     `JORDAN KIM — tailored for ${job.title} @ ${job.company}`,
     ``,
-    `• Senior data analyst (6 yrs across payments, banking & e-commerce) focused on ${angle.focus}.`,
+    `• Data analyst (3+ yrs across banking & e-commerce) focused on ${angle.focus}.`,
     `• Direct match to ${job.company}'s requirements: ${job.requirements.slice(0, 3).join("; ")}.`,
     `• ${angle.proof}`,
-    `• Certified: dbt Fundamentals · Tableau Desktop Specialist · Google Data Analytics Professional · BSc CS (Data Analytics), University of Malaya.`,
+    `• Certified: Google Data Analytics Professional · dbt Fundamentals · BSc CS (Data Analytics), University of Malaya, GPA 3.72.`,
   ].join("\n");
 }
 

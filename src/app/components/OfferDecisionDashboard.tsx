@@ -13,7 +13,7 @@ const offers = [
     location: "Kuala Lumpur",
     salary: "RM 8.8k",
     score: 91,
-    dnaFit: "", // filled at render from the user's live Career DNA archetype
+    dnaFit: "DNA_FIT_PLACEHOLDER",
     upside: "Best structured growth path and strongest employer trust score.",
     risk: "Less innovation freedom than startup track.",
   },
@@ -111,7 +111,7 @@ export function OfferDecisionDashboard({ scores }: { scores?: Record<string, num
             </div>
             <div className="space-y-3">
               {[
-                ["DNA fit", selected.dnaFit || dnaFitText, ShieldCheck],
+                ["DNA fit", selected.dnaFit, ShieldCheck],
                 ["Upside", selected.upside, TrendingUp],
                 ["Risk to watch", selected.risk, BarChart3],
               ].map(([label, text, Icon]) => (
