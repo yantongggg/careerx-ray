@@ -9,8 +9,8 @@ import {
 
 type Role = "candidate" | "employer" | "university";
 
-import { JOURNEY } from "./stages";
-import { demoToast } from "./toast";
+import { JOURNEY } from "../state/stages";
+import { demoToast } from "../state/toast";
 
 const employerMain = [
   { id: "employer",       label: "Hiring Command Center", icon: Building2 },

@@ -3,7 +3,7 @@ import {
   BarChart3, BookOpenCheck, Building2, GraduationCap, Handshake,
   HeartPulse, MapPin, ShieldCheck, TrendingUp, Users, WalletCards
 } from "lucide-react";
-import { demoToast } from "./toast";
+import { demoToast } from "../state/toast";
 import { PatternAlert, HiringOutcomeSignals, AiImpactHeatmap } from "./universitySignals";
 
 const faculties = [

@@ -3,7 +3,7 @@ import {
   ArrowRight, Building2, ChevronDown, GraduationCap, Lightbulb,
   Radio, TrendingDown, TrendingUp, Users,
 } from "lucide-react";
-import { useIntelligence } from "./intelligence";
+import { useIntelligence } from "../state/intelligence";
 
 /* ────────────────────────────────────────────────────────────────
    University view of the Career Intelligence Graph.

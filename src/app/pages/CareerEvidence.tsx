@@ -1,4 +1,4 @@
-import { demoToast } from "./toast";
+import { demoToast } from "../state/toast";
 import { useState } from "react";
 import {
   Clock, Github, Linkedin, Award, CheckCircle, AlertCircle,

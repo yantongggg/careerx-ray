@@ -1,4 +1,4 @@
-import { demoToast } from "./toast";
+import { demoToast } from "../state/toast";
 import { useState } from "react";
 import {
   Award, BarChart3, Briefcase, Building2, CheckCircle, Clock,

@@ -5,8 +5,8 @@ import {
   Sparkles, FileText, Globe, Zap, Brain, GraduationCap,
   Trophy, FolderOpen, Palette, Dribbble
 } from "lucide-react";
-import { dimensions, getArchetypeForScoresSafe } from "../careerDna.js";
-import { demoToast } from "./toast";
+import { dimensions, getArchetypeForScoresSafe } from "../lib/careerDna.js";
+import { demoToast } from "../state/toast";
 
 interface OnboardingProps {
   onComplete: (

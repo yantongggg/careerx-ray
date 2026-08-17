@@ -3,7 +3,7 @@ import {
   archetypes,
   getArchetypeForDimensions,
   getTopDimensions,
-} from "../src/app/careerDna.js";
+} from "../src/app/lib/careerDna.js";
 
 assert.equal(archetypes.length, 12, "Career DNA should expose 12 archetypes");
 

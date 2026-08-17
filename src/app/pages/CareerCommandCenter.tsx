@@ -3,8 +3,8 @@ import {
   GraduationCap, MessageSquareText, Shield, Sparkles, Target, TrendingUp,
   Video, Zap
 } from "lucide-react";
-import { SignalBanner, explainRoleGap } from "./intelligence";
-import { JourneyTracker } from "./stages";
+import { SignalBanner, explainRoleGap } from "../state/intelligence";
+import { JourneyTracker } from "../state/stages";
 
 interface CareerCommandCenterProps {
   onNavigate: (page: string) => void;

@@ -8,7 +8,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ReferenceDot
 } from "recharts";
-import { dimensions, getArchetypeForScoresSafe } from "../careerDna.js";
+import { dimensions, getArchetypeForScoresSafe } from "../lib/careerDna.js";
 
 // ─── Score explanation modals ───────────────────────────────────────────────
 

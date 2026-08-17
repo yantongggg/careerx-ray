@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { demoToast } from "./toast";
+import { demoToast } from "../state/toast";
 import { Brain, CheckCircle, MessageSquareText, Mic, Play, Sparkles, Star, Video, Wand2 } from "lucide-react";
 
 interface RoleCoachData {

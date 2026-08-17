@@ -1,5 +1,5 @@
-import { demoToast } from "./toast";
-import { getArchetypeForScoresSafe } from "../careerDna.js";
+import { demoToast } from "../state/toast";
+import { getArchetypeForScoresSafe } from "../lib/careerDna.js";
 import { useState } from "react";
 import {
   ArrowRight, Award, BarChart3, Building2, CheckCircle, MapPin, Scale,

@@ -10,7 +10,7 @@ import {
   getArchetypeForScores,
   getArchetypeForScoresSafe,
   getTopDimensions,
-} from "../careerDna.js";
+} from "../lib/careerDna.js";
 
 const defaultDnaScores = {
   Technical: 88,

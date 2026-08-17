@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, BarChart3, Lock, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
-import { demoToast } from "./toast";
+import { demoToast } from "../state/toast";
 
 interface AuthPageProps {
   mode: "login" | "register";

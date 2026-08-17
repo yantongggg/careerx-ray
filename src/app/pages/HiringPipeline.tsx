@@ -5,8 +5,8 @@ import {
   Plus, Radio, Send, Shield, Sparkles, Star, TrendingDown, TrendingUp,
   User, UserCheck, X, XCircle, Zap
 } from "lucide-react";
-import { demoToast } from "./toast";
-import { useIntelligence, normalizeSkill } from "./intelligence";
+import { demoToast } from "../state/toast";
+import { useIntelligence, normalizeSkill } from "../state/intelligence";
 
 /* ─── Types ─── */
 interface Candidate {

@@ -1,5 +1,5 @@
-import { demoToast } from "./toast";
-import { getArchetypeForScoresSafe } from "../careerDna.js";
+import { demoToast } from "../state/toast";
+import { getArchetypeForScoresSafe } from "../lib/careerDna.js";
 import { MapPin, Briefcase, GraduationCap, Award, Code, Star, ExternalLink, Edit3, Plus, ArrowRight } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 

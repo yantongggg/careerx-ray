@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, FileText, GraduationCap, Link2, MapPin, PenLine, Send, Shield, Sparkles, Upload, User } from "lucide-react";
 import { PositionSkillGraph } from "./PositionSkillGraph";
-import { demoToast } from "./toast";
+import { demoToast } from "../state/toast";
 
 export interface JobData {
   id: string;

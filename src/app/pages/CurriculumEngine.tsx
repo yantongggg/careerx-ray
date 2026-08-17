@@ -3,7 +3,7 @@ import {
   BookOpenCheck, Brain, CalendarClock, CheckCircle2, ChevronRight,
   Cpu, Layers, Lightbulb, Sparkles, TrendingUp, Zap, AlertTriangle
 } from "lucide-react";
-import { useIntelligence } from "./intelligence";
+import { useIntelligence } from "../state/intelligence";
 import { PatternAlert } from "./universitySignals";
 
 const kpis = [
