@@ -23,10 +23,93 @@ const FINDINGS = [
 /* The record underneath, before anything has been read into it. */
 const BONES = [88, 62, 74, 46, 80, 55];
 
+/* The skill system, as it appears inside the product: the target role is
+   the sun, proven skills orbit close in, and what you're missing burns
+   on the outer ring. Radius is readiness, size is proficiency.
+
+   `spin` is the orbital period in seconds and `phase` its starting angle,
+   fed in as a negative animation start so every planet begins somewhere
+   different. */
+const ORBITS = [
+  { r: 112, spin: 26, planets: [
+    { label: "SQL",          size: 13, phase: -3,  from: "#7CC4FF", to: "#1565C0" },
+    { label: "Python",       size: 12, phase: -15, from: "#5FD4C6", to: "#00796B" },
+  ]},
+  { r: 168, spin: 40, planets: [
+    { label: "Storytelling", size: 11, phase: -8,  from: "#D9A6E8", to: "#7B1FA2" },
+    { label: "Tableau",      size: 10, phase: -27, from: "#FFA07A", to: "#D84315" },
+  ]},
+  { r: 226, spin: 58, planets: [
+    { label: "Power BI",     size: 9,  phase: -6,  from: "#FFE082", to: "#F9A825" },
+    { label: "Excel",        size: 8,  phase: -34, from: "#C5E1A5", to: "#558B2F" },
+  ]},
+];
+
+/* Two things standing between this person and the role. */
+const GAPS = [
+  { label: "Cloud deployment", size: 10, phase: -4,  spin: 74 },
+  { label: "Team leadership",  size: 9,  phase: -40, spin: 74 },
+];
+const GAP_RING = 284;
+
+/* The orbits are drawn in perspective, so a circular path has to be
+   flattened. A planet is put on a rotating arm, counter-rotated so it
+   stays upright, then pre-stretched by the inverse of the flattening —
+   which leaves it a circle travelling an ellipse. */
+const FLATTEN = 0.42;
+
+function Planet({
+  r, spin, phase, size, from, to, label, dashed = false,
+}: {
+  r: number; spin: number; phase: number; size: number;
+  from?: string; to?: string; label: string; dashed?: boolean;
+}) {
+  const id = `p-${label.replace(/\W+/g, "")}`;
+  return (
+    <g>
+      <animateTransform attributeName="transform" type="rotate"
+        from="0 0 0" to="360 0 0" dur={`${spin}s`} begin={`${phase}s`} repeatCount="indefinite" />
+      <g transform={`translate(${r},0)`}>
+        <g>
+          <animateTransform attributeName="transform" type="rotate"
+            from="0 0 0" to="-360 0 0" dur={`${spin}s`} begin={`${phase}s`} repeatCount="indefinite" />
+          <g transform={`scale(1, ${1 / FLATTEN})`}>
+            {!dashed && (
+              <>
+                <defs>
+                  <radialGradient id={id} cx="35%" cy="30%">
+                    <stop offset="0%" stopColor={from} />
+                    <stop offset="100%" stopColor={to} />
+                  </radialGradient>
+                </defs>
+                <circle r={size + 7} fill={from} opacity={0.16} />
+                <circle r={size} fill={`url(#${id})`} />
+              </>
+            )}
+            {dashed && (
+              <>
+                <circle r={size + 8} fill="#FF6B6B" opacity={0.14} />
+                <circle r={size} fill="none" stroke="#FF8A8A" strokeWidth="1.6" strokeDasharray="3 3" />
+              </>
+            )}
+            <text
+              y={size + 15} textAnchor="middle" fontSize="10.5"
+              fill={dashed ? "#FF9E9E" : "#9FB4CE"}
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              {label}
+            </text>
+          </g>
+        </g>
+      </g>
+    </g>
+  );
+}
+
 export function LandingPage({ onNavigate }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* One 9s exposure drives everything: the beam travels, the record
+      {/* One 6s exposure drives everything: the beam travels, the record
           under it lights up, findings ignite behind it, and the word the
           whole product is about comes into focus. */}
       <style>{`
@@ -60,21 +143,23 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           0%, 100% { opacity: 1; }
           50%      { opacity: .25; }
         }
-        .xr-beam  { animation: xr-travel 9s cubic-bezier(.45,0,.25,1) infinite; }
-        .xr-find  { animation: xr-expose 9s ease-out infinite both; }
-        .xr-bone  { animation: xr-bone   9s ease-in-out infinite both; }
-        .xr-arc   { animation: xr-arc    9s cubic-bezier(.3,0,.2,1) infinite both; }
+        .xr-beam  { animation: xr-travel 6s cubic-bezier(.45,0,.25,1) infinite; }
+        .xr-find  { animation: xr-expose 6s ease-out infinite both; }
+        .xr-bone  { animation: xr-bone   6s ease-in-out infinite both; }
+        .xr-arc   { animation: xr-arc    6s cubic-bezier(.3,0,.2,1) infinite both; }
         /* The italic's right sidebearing is tight against the roman that
            follows it, so the word carries its own trailing space. */
-        .xr-word  { animation: xr-focus 9s ease-out infinite both; display: inline-block; padding-right: .1em; }
+        .xr-word  { animation: xr-focus 6s ease-out infinite both; display: inline-block; padding-right: .1em; }
         .xr-dot   { animation: xr-pulse  2.4s ease-in-out infinite; }
+        @keyframes ls-breathe { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+        .ls-breathe { animation: ls-breathe 4s ease-in-out infinite; }
 
         @media (prefers-reduced-motion: reduce) {
           .xr-beam { display: none; }
           .xr-find, .xr-word { animation: none; opacity: 1; filter: none; transform: none; }
           .xr-bone { animation: none; opacity: .5; }
           .xr-arc  { animation: none; stroke-dashoffset: 52; }
-          .xr-dot  { animation: none; }
+          .xr-dot, .ls-breathe { animation: none; }
         }
       `}</style>
 
@@ -201,7 +286,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                       width: `${w}%`,
                       background: "linear-gradient(90deg, #DCE7F5, rgba(220,231,245,0.35))",
                       boxShadow: "0 0 12px rgba(190,215,255,0.35)",
-                      animationDelay: `${i * 0.12}s`,
+                      animationDelay: `${i * 0.08}s`,
                     }}
                   />
                 ))}
@@ -214,7 +299,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     key={f.label}
                     className="xr-find flex items-center justify-between rounded-lg px-3.5 py-2.5"
                     style={{
-                      animationDelay: `${2.6 + i * 0.5}s`,
+                      animationDelay: `${1.7 + i * 0.34}s`,
                       background: f.risk ? "rgba(255,107,107,0.09)" : "rgba(91,227,176,0.09)",
                       border: `1px solid ${f.risk ? "rgba(255,107,107,0.28)" : "rgba(91,227,176,0.28)"}`,
                     }}
@@ -264,6 +349,98 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <p className="mt-5 text-center text-xs text-muted-foreground">
               Every number traces back to something you gave us.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── The skill system ── */}
+      <section
+        className="relative overflow-hidden"
+        style={{ background: "linear-gradient(180deg, #0A1120 0%, #0C1626 55%, #070D18 100%)" }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(50% 55% at 50% 45%, rgba(138,112,56,0.20), transparent 70%)" }}
+        />
+
+        <div className="relative max-w-6xl mx-auto px-6 py-20 lg:py-24 grid lg:grid-cols-[1fr_1.15fr] gap-12 items-center">
+          <div>
+            <p
+              className="text-[11px] uppercase tracking-[0.22em] mb-6"
+              style={{ fontFamily: "var(--font-mono)", color: "#7E93AE" }}
+            >
+              Then · the skill system
+            </p>
+            <h2 className="text-[2.5rem] sm:text-[3.25rem] leading-[1.02] tracking-[-0.03em] text-[#EDF3FA]">
+              The job you want is the{" "}
+              <span className="italic" style={{ color: "#F2C75A" }}>sun</span>.
+            </h2>
+            <p className="mt-6 text-[#9FB4CE] leading-relaxed max-w-md">
+              What you can already prove orbits close in. What you&apos;re missing burns on
+              the outer ring — and that ring is the shortest honest description of the
+              distance between you and the offer.
+            </p>
+            <button
+              onClick={() => onNavigate("register")}
+              className="group mt-9 inline-flex items-center gap-2.5 text-[#F2C75A] font-medium"
+            >
+              See your own system
+              <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </div>
+
+          <div className="relative">
+            <svg viewBox="0 66 660 338" className="w-full h-auto" role="img"
+                 aria-label="Skill system: proven skills orbit the target role, missing skills sit on an outer ring">
+              <defs>
+                <radialGradient id="ls-sun" cx="42%" cy="36%">
+                  <stop offset="0%" stopColor="#FFE9A8" />
+                  <stop offset="55%" stopColor="#F2C75A" />
+                  <stop offset="100%" stopColor="#B8862A" />
+                </radialGradient>
+                <radialGradient id="ls-corona" cx="50%" cy="50%">
+                  <stop offset="0%" stopColor="#F2C75A" stopOpacity="0.42" />
+                  <stop offset="100%" stopColor="#F2C75A" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+
+              <text x="14" y="92" fontSize="10" fill="#7E93AE"
+                    letterSpacing="2" style={{ fontFamily: "var(--font-mono)" }}>
+                TARGET ROLE
+              </text>
+              <text x="14" y="112" fontSize="15" fill="#F2C75A"
+                    style={{ fontFamily: "var(--font-mono)" }}>
+                ML Engineer
+              </text>
+
+              <g transform="translate(330,235)">
+                {/* Orbit rings, drawn flat */}
+                {ORBITS.map(o => (
+                  <ellipse key={o.r} rx={o.r} ry={o.r * FLATTEN} fill="none"
+                           stroke="rgba(159,180,206,0.16)" strokeWidth="1" />
+                ))}
+                <ellipse rx={GAP_RING} ry={GAP_RING * FLATTEN} fill="none"
+                         stroke="rgba(255,138,138,0.34)" strokeWidth="1.2" strokeDasharray="5 6" />
+
+                {/* The role at the centre */}
+                <circle r="86" fill="url(#ls-corona)" className="ls-breathe" />
+<circle r="34" fill="url(#ls-sun)" />
+
+                {/* Everything in orbit is flattened into perspective */}
+                <g transform={`scale(1, ${FLATTEN})`}>
+                  {ORBITS.flatMap(o =>
+                    o.planets.map(p => (
+                      <Planet key={p.label} r={o.r} spin={o.spin} phase={p.phase}
+                              size={p.size} from={p.from} to={p.to} label={p.label} />
+                    )),
+                  )}
+                  {GAPS.map(g => (
+                    <Planet key={g.label} r={GAP_RING} spin={g.spin} phase={g.phase}
+                            size={g.size} label={g.label} dashed />
+                  ))}
+                </g>
+              </g>
+            </svg>
           </div>
         </div>
       </section>
