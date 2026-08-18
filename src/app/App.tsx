@@ -291,6 +291,7 @@ function AppRouter() {
   if (appState === "onboarding") {
     return (
       <Onboarding
+        onBack={() => setAppState(hasScanned ? "app" : "role-select")}
         onComplete={next => {
           setProfile(next);
           setRole("candidate");

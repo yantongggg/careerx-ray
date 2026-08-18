@@ -8,12 +8,14 @@ import {
 import { dimensions, getArchetypeForScoresSafe } from "../lib/careerDna.js";
 import { demoToast } from "../state/toast";
 import { detectRoleFamily, FAMILY_LABEL, type RoleFamily } from "../lib/roleFamily";
-import { analyzeResume, formatBytes, rejectReasonFor } from "../lib/resumeParse";
+import { analyzeResume, formatBytes, rejectReasonFor, type AiStatus } from "../lib/resumeParse";
 import { TRUST_LABEL, type CareerProfile, type EvidenceItem, type ParsedResume, type TrustLevel } from "../lib/profileTypes";
 import { deriveRisks, deriveScorecard } from "../lib/careerRisk";
 
 interface OnboardingProps {
   onComplete: (profile: CareerProfile) => void;
+  /** Leaving the wizard from its first step. */
+  onBack?: () => void;
 }
 
 /* Each calibration option contributes to one or two Career DNA dimensions
@@ -29,6 +31,18 @@ const OPTION_DIMS: Record<string, string[][]> = {
   motivation:    [["Execution", "Technical"], ["Leadership"], ["Communication", "Strategic"], ["Innovation"]],
   communication: [["Technical"], ["Strategic"], ["Communication", "Innovation"], ["Execution", "Leadership"]],
   environment:   [["Execution"], ["Technical"], ["Communication", "Leadership"], ["Innovation", "Execution"]],
+};
+
+/* Reading a file is either a success or a different kind of success —
+   never an error code shown to someone who just uploaded their CV. */
+const AI_STATUS_NOTE: Record<AiStatus, string | null> = {
+  ok: null,
+  "not-configured":
+    "Deep AI analysis isn't switched on for this deployment, so we read your resume on your own device instead. Everything below is real — just extracted by rules rather than by a model.",
+  unavailable:
+    "We couldn't reach the AI service just now, so we read your resume on your own device instead. Everything below is real — just extracted by rules rather than by a model.",
+  "no-text":
+    "This PDF has no text layer, so it's probably a scan or a photo. We couldn't read anything from it — the questions ahead will do the work instead.",
 };
 
 const USER_TYPES = [
@@ -269,7 +283,7 @@ const calibrationQuestions = [
 
 type Step = "upload" | "connect" | "profile" | "calibration" | "scan" | "done";
 
-export function Onboarding({ onComplete }: OnboardingProps) {
+export function Onboarding({ onComplete, onBack }: OnboardingProps) {
   const [step, setStep] = useState<Step>("upload");
   const [userType, setUserType] = useState("");
   const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
@@ -445,10 +459,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     setResumeError(null);
     setResumeNote(null);
     try {
-      const { resume, aiError } = await analyzeResume(file);
+      const { resume, aiStatus } = await analyzeResume(file);
       setParsedResume(resume);
       setResumeState("done");
-      setResumeNote(aiError ?? null);
+      setResumeNote(AI_STATUS_NOTE[aiStatus]);
       addEvidenceItem(DOOR_RESUME, resume.fileName, resume.fileName, resume.skills);
     } catch (err) {
       setResumeState("error");
@@ -480,8 +494,20 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   const answeredCount = calibrationQuestions.filter(q => calibrationAnswers[q.id]).length;
-  const stepIndex = ["upload", "connect", "profile", "calibration"].indexOf(step);
-  const totalSteps = 4;
+  /* Single source for the wizard order, so the progress bar, the Back
+     buttons and the Continue buttons can never disagree about what
+     comes next. */
+  const STEP_ORDER: Step[] = ["upload", "profile", "connect", "calibration"];
+  const STEP_LABELS = ["Resume", "Your career", "Evidence", "Calibration"];
+  const stepIndex = STEP_ORDER.indexOf(step);
+  const totalSteps = STEP_ORDER.length;
+  const goPrev = () => {
+    if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]);
+    else onBack?.();
+  };
+  const goNext = () => {
+    if (stepIndex >= 0 && stepIndex < totalSteps - 1) setStep(STEP_ORDER[stepIndex + 1]);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex flex-col">
@@ -501,7 +527,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           {/* Progress indicator */}
           {step !== "scan" && step !== "done" && (
             <div className="flex items-center gap-2 mb-8 justify-center">
-              {["Upload", "Connect", "Profile", "Calibration"].map((label, i) => (
+              {STEP_LABELS.map((label, i) => (
                 <div key={label} className="flex items-center gap-2">
                   <div className={`flex items-center gap-2 ${i <= stepIndex ? "text-primary" : "text-muted-foreground"}`}>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-colors ${
@@ -643,8 +669,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               {resumeNote && (
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-                  {resumeNote} We used on-device extraction instead.
+                <p className="text-xs text-muted-foreground bg-muted border border-border rounded-lg px-3 py-2.5 mb-3 leading-relaxed">
+                  {resumeNote}
                 </p>
               )}
 
@@ -657,19 +683,24 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 </button>
               </p>
 
-              <div className="flex justify-between">
-                <button
-                  onClick={() => setStep("profile")}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Skip for now
+              <div className="flex items-center justify-between">
+                <button onClick={goPrev} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronLeft size={16} /> Back
                 </button>
-                <button
-                  onClick={() => setStep("profile")}
-                  className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm"
-                >
-                  Continue <ChevronRight size={16} />
-                </button>
+                <div className="flex items-center gap-5">
+                  <button
+                    onClick={goNext}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Skip for now
+                  </button>
+                  <button
+                    onClick={goNext}
+                    className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm"
+                  >
+                    Continue <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -784,11 +815,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </p>
 
               <div className="flex justify-between">
-                <button onClick={() => setStep("profile")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={goPrev} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft size={16} /> Back
                 </button>
                 <button
-                  onClick={() => setStep("calibration")}
+                  onClick={goNext}
                   className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm"
                 >
                   Continue <ChevronRight size={16} />
@@ -910,11 +941,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <div className="flex justify-between">
-                <button onClick={() => setStep("upload")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={goPrev} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft size={16} /> Back
                 </button>
                 <button
-                  onClick={() => setStep("connect")}
+                  onClick={goNext}
                   disabled={selectedGoals.length === 0}
                   className="flex items-center gap-2 bg-primary text-white px-7 py-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm shadow-lg shadow-blue-200"
                 >
@@ -983,7 +1014,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <div className="flex justify-between">
-                <button onClick={() => setStep("connect")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={goPrev} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft size={16} /> Back
                 </button>
                 <button
@@ -1042,6 +1073,16 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Nobody should be stuck watching a progress bar they can't leave. */}
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={() => setStep("calibration")}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronLeft size={16} /> Cancel and change my answers
+                </button>
               </div>
             </div>
           )}
@@ -1113,12 +1154,20 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 </div>
               </details>
 
-              <button
-                onClick={() => onComplete(builtProfile)}
-                className="w-full flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold text-sm shadow-lg shadow-blue-200"
-              >
-                View My Career Dashboard <ChevronRight size={16} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setStep("calibration")}
+                  className="flex items-center justify-center gap-1.5 border border-border text-muted-foreground hover:text-foreground hover:bg-muted px-5 py-3.5 rounded-xl transition-colors font-medium text-sm flex-shrink-0"
+                >
+                  <ChevronLeft size={16} /> Back
+                </button>
+                <button
+                  onClick={() => onComplete(builtProfile)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold text-sm shadow-lg shadow-blue-200"
+                >
+                  View My Career Dashboard <ChevronRight size={16} />
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground mt-4">Re-scan any time — your Career Health moves as the market does.</p>
             </div>
           )}

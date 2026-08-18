@@ -171,10 +171,20 @@ export function parseResumeRuleBased(
 
 /* ── AI path, with the rule engine as the floor ──────────────── */
 
+/**
+ * Which path produced the fields, and why — so the UI can explain
+ * itself in plain language instead of leaking an HTTP status at
+ * someone who just uploaded their CV.
+ */
+export type AiStatus =
+  | "ok"              // the model ran
+  | "not-configured"  // no API key on this deployment
+  | "unavailable"     // offline, rate limited, or the model failed
+  | "no-text";        // the PDF has no text layer, probably a scan
+
 export interface AnalyzeResult {
   resume: ParsedResume;
-  /** Present when the AI path was attempted and did not succeed. */
-  aiError?: string;
+  aiStatus: AiStatus;
 }
 
 /**
@@ -188,10 +198,7 @@ export async function analyzeResume(file: File): Promise<AnalyzeResult> {
   const baseline = parseResumeRuleBased(text, file.name, file.size);
 
   if (!text.trim()) {
-    return {
-      resume: baseline,
-      aiError: "No text layer found in this PDF — it may be a scan. Fields below are blank.",
-    };
+    return { resume: baseline, aiStatus: "no-text" };
   }
 
   try {
@@ -200,11 +207,15 @@ export async function analyzeResume(file: File): Promise<AnalyzeResult> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: text.slice(0, 24000) }),
     });
-    if (!res.ok) throw new Error(`Endpoint returned ${res.status}`);
+    // 503 is the endpoint telling us it has no API key — a configuration
+    // state, not a failure, and worth saying differently.
+    if (res.status === 503) return { resume: baseline, aiStatus: "not-configured" };
+    if (!res.ok) return { resume: baseline, aiStatus: "unavailable" };
     const data = await res.json();
-    if (!data || typeof data !== "object") throw new Error("Malformed response");
+    if (!data || typeof data !== "object") return { resume: baseline, aiStatus: "unavailable" };
 
     return {
+      aiStatus: "ok",
       resume: {
         ...baseline,
         method: "ai",
@@ -222,10 +233,9 @@ export async function analyzeResume(file: File): Promise<AnalyzeResult> {
           : baseline.certifications,
       },
     };
-  } catch (err) {
-    return {
-      resume: baseline,
-      aiError: err instanceof Error ? err.message : "AI analysis unavailable",
-    };
+  } catch {
+    // Offline, blocked, or no endpoint at all (local dev serves the SPA
+    // shell here). The rule engine already has a full result.
+    return { resume: baseline, aiStatus: "unavailable" };
   }
 }
