@@ -5,11 +5,18 @@ import {
 } from "lucide-react";
 import { SignalBanner, explainRoleGap } from "../state/intelligence";
 import { JourneyTracker } from "../state/stages";
+import { useCareerProfile } from "../state/careerProfile";
 
 interface CareerCommandCenterProps {
   onNavigate: (page: string) => void;
-  profile?: { currentRole: string; targetRole: string } | null;
 }
+
+const SEVERITY_TONE = {
+  critical: "red",
+  high: "red",
+  medium: "amber",
+  low: "amber",
+} as const;
 
 const nextActions = [
   { title: "Rehearse SQL case interview", impact: "Interview in 2 days", page: "coach", icon: Video },
@@ -23,27 +30,6 @@ const applications = [
   { company: "Petronas Digital", role: "AI Product Analyst", stage: "Applied", fit: 78, tone: "bg-amber-50 text-amber-700 border-amber-200" },
 ];
 
-const topRisks = [
-  {
-    title: "AI disruption risk: Medium",
-    detail: "42% of your current tasks are automatable within 5 years",
-    evidence: "Based on your verified skill evidence",
-    severity: "amber" as const,
-  },
-  {
-    title: "No cloud deployment evidence",
-    detail: "Blocks 3 of your target roles",
-    evidence: "Flagged by live hiring signals this week",
-    severity: "red" as const,
-  },
-  {
-    title: "Salary below market",
-    detail: "RM 1.2k under the Klang Valley median for your level",
-    evidence: "Benchmarked against real offer outcomes",
-    severity: "amber" as const,
-  },
-];
-
 const evidenceStrength = [
   { skill: "SQL", level: "strong" as const, note: "3 verified projects" },
   { skill: "Data storytelling", level: "strong" as const, note: "Portfolio + interview score" },
@@ -51,10 +37,23 @@ const evidenceStrength = [
   { skill: "Cloud deployment", level: "missing" as const, note: "No evidence yet" },
 ];
 
-export function CareerCommandCenter({ onNavigate, profile }: CareerCommandCenterProps) {
-  const currentRole = profile?.currentRole ?? "Senior Data Analyst";
-  const targetRole = profile?.targetRole ?? "ML Engineer";
+export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
+  const { profile, risks, targetGaps, scorecard } = useCareerProfile();
+  const firstName = profile.resume?.name?.split(" ")[0];
+  const topGap = targetGaps[0]?.skill ?? risks[0]?.category.toLowerCase() ?? "your evidence record";
+  const currentRole = profile.currentRole || "your current role";
+  const targetRole = profile.targetRole || "your target role";
   const roleGap = explainRoleGap(currentRole, targetRole);
+
+  /* Read from the shared derivation rather than a local list. The two
+     used to disagree on the same screen — this page said AI risk was
+     42% over 5 years where the dashboard said 62% over 24 months. */
+  const topRisks = risks.slice(0, 3).map(risk => ({
+    title: risk.category,
+    detail: risk.headline,
+    evidence: risk.evidence,
+    severity: SEVERITY_TONE[risk.severity],
+  }));
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -68,9 +67,11 @@ export function CareerCommandCenter({ onNavigate, profile }: CareerCommandCenter
                   <Sparkles size={12} /> Your next best move
                 </span>
               </div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Jordan, rehearse your Maybank interview.</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
+                {firstName ? `${firstName}, close ` : "Close "}your biggest gap first: {topGap}.
+              </h1>
               <p className="text-sm text-slate-300 leading-relaxed mt-2 max-w-2xl">
-                It's in 2 days. Your SQL evidence is strong — and live hiring signals show the interview stage is where candidates like you drop off most.
+                {topRisks[0]?.detail ?? `You're moving from ${currentRole} to ${targetRole}. Start where the market filters hardest.`}
               </p>
               <div className="flex flex-wrap items-center gap-4 mt-5">
                 <button onClick={() => onNavigate("coach")} className="inline-flex items-center gap-2 bg-white text-slate-950 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
@@ -85,14 +86,14 @@ export function CareerCommandCenter({ onNavigate, profile }: CareerCommandCenter
               </div>
             </div>
             <div className="flex-shrink-0 bg-white/8 border border-white/10 rounded-xl px-6 py-5 text-center">
-              <p className="text-4xl font-bold">82<span className="text-lg text-slate-400">/100</span></p>
-              <p className="text-xs text-slate-400 mt-1">Career Readiness</p>
-              <p className="text-[10px] text-emerald-300 font-semibold mt-1.5">▲ +6 since last scan</p>
+              <p className="text-4xl font-bold">{scorecard.careerHealth}<span className="text-lg text-slate-400">/100</span></p>
+              <p className="text-xs text-slate-400 mt-1">Career Health</p>
+              <p className="text-[10px] text-slate-400 mt-1.5">Scanned {profile.scannedAt || "just now"}</p>
             </div>
           </div>
         </div>
 
-        <JourneyTracker onNavigate={onNavigate} />
+        <JourneyTracker currentPage="command" onNavigate={onNavigate} />
 
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Why this matters · powered by Talentbank intelligence</p>
@@ -194,7 +195,7 @@ export function CareerCommandCenter({ onNavigate, profile }: CareerCommandCenter
                 <h2 className="font-semibold text-foreground">Top 3 risks</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">From your latest X-Ray scan.</p>
               </div>
-              <button onClick={() => onNavigate("blindspots")} className="text-xs font-semibold text-primary hover:underline">All 5 →</button>
+              <button onClick={() => onNavigate("dashboard")} className="text-xs font-semibold text-primary hover:underline">All {risks.length} →</button>
             </div>
             <div className="divide-y divide-border">
               {topRisks.map(risk => (

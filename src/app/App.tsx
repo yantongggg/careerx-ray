@@ -27,8 +27,9 @@ import { Sidebar } from "./layout/Sidebar";
 import { ApplicationPrep } from "./pages/ApplicationPrep";
 import { HiringPipeline } from "./pages/HiringPipeline";
 import { IntelligenceProvider } from "./state/intelligence";
+import { CareerProfileProvider, useCareerProfile } from "./state/careerProfile";
 import { RoleSelect } from "./pages/RoleSelect";
-import { JOURNEY, StageHub } from "./state/stages";
+import { stageById, StageHub } from "./state/stages";
 import { SkillGraph } from "./pages/SkillGraph";
 import { ToastHost } from "./state/toast";
 import { AuthPage } from "./pages/Auth";
@@ -38,12 +39,6 @@ import { ChevronLeft, LogOut } from "lucide-react";
 
 type AppState = "landing" | "auth" | "role-select" | "onboarding" | "app";
 
-interface UserProfileData {
-  userType: string;
-  currentRole: string;
-  targetRole: string;
-  salaryRange: string;
-}
 type Role = "candidate" | "employer" | "university";
 type Page =
   | "command"
@@ -159,7 +154,23 @@ const roleLabels: Record<Role, string> = {
   university: "University",
 };
 
+/* The two providers wrap the whole app exactly once. They used to be
+   re-mounted inside every branch below, which quietly reset the
+   Career Intelligence Graph whenever the user moved between the
+   landing page, sign-in and the app — taking any live hiring signal
+   with it. */
 export default function App() {
+  return (
+    <IntelligenceProvider>
+      <CareerProfileProvider>
+        <AppRouter />
+      </CareerProfileProvider>
+    </IntelligenceProvider>
+  );
+}
+
+function AppRouter() {
+  const { profile, hasScanned, risks, setProfile, reset: resetProfile } = useCareerProfile();
   const [appState, setAppState] = useState<AppState>("landing");
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
   const [authed, setAuthed]     = useState(false);
@@ -168,9 +179,6 @@ export default function App() {
   const [page, setPage]         = useState<Page>("command");
   const [role, setRole]         = useState<Role>("candidate");
   const [history, setHistory]   = useState<Page[]>([]);
-  const [hasScanned, setHasScanned] = useState(false);
-  const [dnaScores, setDnaScores] = useState<Record<string, number> | null>(null);
-  const [profile, setProfile]   = useState<UserProfileData | null>(null);
   const [prepJobId, setPrepJobId] = useState<string | null>(null);
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set(["maybank-da", "grab-ae"]));
 
@@ -211,8 +219,8 @@ export default function App() {
   };
 
   const signOut = () => {
-    setAuthed(false); setUser(null); setHasScanned(false); setDnaScores(null);
-    setProfile(null); setHistory([]); setPage("command"); setRole("candidate");
+    setAuthed(false); setUser(null); resetProfile();
+    setHistory([]); setPage("command"); setRole("candidate");
     setAppState("landing");
   };
 
@@ -236,15 +244,10 @@ export default function App() {
   };
 
   if (appState === "landing") {
-    return (
-      <IntelligenceProvider key="ix">
-        <LandingPage onNavigate={navigate} />
-      </IntelligenceProvider>
-    );
+    return <LandingPage onNavigate={navigate} />;
   }
   if (appState === "auth") {
     return (
-      <IntelligenceProvider key="ix">
         <AuthPage
           mode={authMode}
           onBack={() => setAppState("landing")}
@@ -253,7 +256,7 @@ export default function App() {
             setAuthed(true);
             setUser({ name: u.name, email: u.email });
             const scanned = u.isNew ? false : hasScanned;
-            if (u.isNew) { setHasScanned(false); setDnaScores(null); setProfile(null); }
+            if (u.isNew) resetProfile();
             const target = pendingTarget;
             setPendingTarget(null);
             if (target && target !== "role-select") {
@@ -268,12 +271,10 @@ export default function App() {
             setAppState("role-select");
           }}
         />
-      </IntelligenceProvider>
     );
   }
   if (appState === "role-select") {
     return (
-      <IntelligenceProvider key="ix">
         <RoleSelect
           onBack={() => setAppState("landing")}
           onSelect={selected => {
@@ -285,19 +286,23 @@ export default function App() {
             }
           }}
         />
-      </IntelligenceProvider>
     );
   }
   if (appState === "onboarding") {
     return (
-      <IntelligenceProvider key="ix">
-        <Onboarding onComplete={(scores, prof) => { setDnaScores(scores); setProfile(prof); setHasScanned(true); setRole("candidate"); setPage("command"); setHistory([]); setAppState("app"); }} />
-      </IntelligenceProvider>
+      <Onboarding
+        onComplete={next => {
+          setProfile(next);
+          setRole("candidate");
+          setPage("command");
+          setHistory([]);
+          setAppState("app");
+        }}
+      />
     );
   }
 
   return (
-    <IntelligenceProvider key="ix">
     <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-muted">
       <Sidebar currentPage={page} currentRole={role} onNavigate={navigate} />
 
@@ -342,7 +347,7 @@ export default function App() {
             </div>
             <div className="hidden sm:flex items-center gap-1.5 bg-[rgba(184,154,94,0.14)] border border-[rgba(22,40,75,0.14)] px-3 py-1.5 rounded-lg">
               <div className="w-2 h-2 rounded-full bg-[#8A7038]" />
-              <span className="text-xs font-medium text-[#6F5A2B]">{role === "candidate" ? "4 open risks" : role === "employer" ? "3 delayed replies" : "128 students need support"}</span>
+              <span className="text-xs font-medium text-[#6F5A2B]">{role === "candidate" ? `${risks.length} open risk${risks.length === 1 ? "" : "s"}` : role === "employer" ? "3 delayed replies" : "128 students need support"}</span>
             </div>
             {role === "candidate" && (
               <button
@@ -371,24 +376,26 @@ export default function App() {
 
         {/* Page */}
         <div className="flex-1 overflow-hidden flex flex-col">
-          {page === "dashboard"       && <Dashboard onNavigate={navigate} scores={dnaScores ?? undefined} />}
-          {page === "command"         && <CareerCommandCenter onNavigate={navigate} profile={profile} />}
-          {page === "stage-diagnose"  && <StageHub stage={JOURNEY[0]} onNavigate={navigate} />}
-          {page === "stage-decide"    && <StageHub stage={JOURNEY[1]} onNavigate={navigate} />}
-          {page === "stage-prepare"   && <StageHub stage={JOURNEY[2]} onNavigate={navigate}><SkillGraph targetRole={profile?.targetRole} /></StageHub>}
-          {page === "stage-apply"     && <StageHub stage={JOURNEY[3]} onNavigate={navigate} />}
-          {page === "stage-prove"     && <StageHub stage={JOURNEY[4]} onNavigate={navigate} />}
-          {page === "dna"             && <CareerDna scores={dnaScores ?? undefined} onNavigate={navigate} />}
+          {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
+          {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
+          {/* Looked up by id, not array position — the journey order can
+              change without silently pointing a route at the wrong stage. */}
+          {page === "stage-diagnose"  && <StageHub stage={stageById("stage-diagnose")} onNavigate={navigate} />}
+          {page === "stage-decide"    && <StageHub stage={stageById("stage-decide")} onNavigate={navigate} />}
+          {page === "stage-prepare"   && <StageHub stage={stageById("stage-prepare")} onNavigate={navigate}><SkillGraph targetRole={profile.targetRole} /></StageHub>}
+          {page === "stage-apply"     && <StageHub stage={stageById("stage-apply")} onNavigate={navigate} />}
+          {page === "stage-prove"     && <StageHub stage={stageById("stage-prove")} onNavigate={navigate} />}
+          {page === "dna"             && <CareerDna onNavigate={navigate} />}
           {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
           {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
-          {page === "coach"           && <InterviewCoach jobId={prepJobId} />}
-          {page === "offers"          && <OfferDecisionDashboard scores={dnaScores ?? undefined} />}
-          {page === "portfolio"       && <PortfolioBuilder />}
+          {page === "coach"           && <InterviewCoach jobId={prepJobId} onNavigate={navigate} />}
+          {page === "offers"          && <OfferDecisionDashboard onNavigate={navigate} />}
+          {page === "portfolio"       && <PortfolioBuilder onNavigate={navigate} />}
           {page === "decisionlab"     && <DecisionLab onNavigate={navigate} />}
-          {page === "blindspots"      && <BlindSpots onNavigate={navigate} currentRole={profile?.currentRole} targetRole={profile?.targetRole} />}
-          {page === "prescription"    && <CareerPrescription />}
-          {page === "evidence"        && <CareerEvidence />}
-          {page === "profile"         && <UserProfile onNavigate={navigate} scores={dnaScores ?? undefined} />}
+          {page === "blindspots"      && <BlindSpots onNavigate={navigate} />}
+          {page === "prescription"    && <CareerPrescription onNavigate={navigate} />}
+          {page === "evidence"        && <CareerEvidence onNavigate={navigate} />}
+          {page === "profile"         && <UserProfile onNavigate={navigate} />}
           {page === "employer"        && <EmployerDashboard />}
           {page === "emp-matching"    && <SmartTalentMatching />}
           {page === "emp-sla"         && <ReplySlaMonitor />}
@@ -404,6 +411,5 @@ export default function App() {
       </main>
       <ToastHost />
     </div>
-    </IntelligenceProvider>
   );
 }

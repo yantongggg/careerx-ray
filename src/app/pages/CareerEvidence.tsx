@@ -1,4 +1,5 @@
 import { demoToast } from "../state/toast";
+import { NextStep } from "../state/stages";
 import { useState } from "react";
 import {
   Clock, Github, Linkedin, Award, CheckCircle, AlertCircle,
@@ -306,7 +307,7 @@ const tabs: { id: Tab; label: string; icon: typeof Clock }[] = [
   { id: "impact",   label: "X-Ray Impact",       icon: Shield       },
 ];
 
-export function CareerEvidence() {
+export function CareerEvidence({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const [active, setActive] = useState<Tab>("timeline");
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -360,6 +361,10 @@ export function CareerEvidence() {
         {active === "timeline" && <TimelineTab />}
         {active === "detected" && <DetectedTab />}
         {active === "impact"   && <ImpactTab />}
+
+        <div className="mt-6">
+          <NextStep currentPage="evidence" onNavigate={onNavigate} />
+        </div>
       </div>
     </div>
   );

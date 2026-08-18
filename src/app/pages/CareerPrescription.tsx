@@ -6,6 +6,9 @@ import {
   ArrowRight, Shield, Brain, Zap, Star
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { useCareerProfile } from "../state/careerProfile";
+import { NextStep } from "../state/stages";
+import { buildResumeForRole, downloadText } from "../lib/resumeGen";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -133,7 +136,7 @@ const severityColors: Record<string, string> = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function CareerPrescription() {
+export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const [activePhase, setActivePhase] = useState<Phase>("30day");
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const toggleCheck = (id: string) => setChecked(p => ({ ...p, [id]: !p[id] }));
@@ -385,15 +388,27 @@ export function CareerPrescription() {
 
         {/* ── Resume Gen ── */}
         <ResumeFromPortfolio />
+
+        <NextStep currentPage="prescription" onNavigate={onNavigate} />
       </div>
     </div>
   );
 }
 
+/* The general-purpose resume: aimed at where you want to go, built from
+   what is on your profile. The job-specific version lives in
+   Application Prep, which tailors this to one posting. */
 function ResumeFromPortfolio() {
-  const [target, setTarget] = useState("ML Engineer");
-  const [state, setState] = useState<"idle" | "generating" | "done">("idle");
-  const targets = ["ML Engineer", "Analytics Engineer", "Data Science Manager", "AI Security Engineer"];
+  const { profile } = useCareerProfile();
+  const targets = [profile.targetRole, "Analytics Engineer", "Product Manager", "Team Lead"].filter(Boolean) as string[];
+  const [target, setTarget] = useState(targets[0] ?? "your target role");
+  const [draft, setDraft] = useState<string | null>(null);
+  const [edited, setEdited] = useState(false);
+
+  const generate = () => {
+    setDraft(buildResumeForRole(profile, target));
+    setEdited(false);
+  };
 
   return (
     <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
@@ -402,39 +417,55 @@ function ResumeFromPortfolio() {
           <FileText size={16} className="text-primary" />
         </div>
         <div>
-          <h3 className="font-semibold text-foreground">Generate Resume From Career Evidence</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">AI tailors your verified evidence record to your target role. Not a builder — a generator.</p>
+          <h3 className="font-semibold text-foreground">Generate a resume from your evidence</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Everything below comes from your own scan. Edit anything before you use it.</p>
         </div>
       </div>
-      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-5 leading-relaxed">
-        AI reads your Career Evidence and rewrites it for your target role — reordering experiences, reframing impact statements, and surfacing the right signals automatically.
-      </p>
       <div className="flex items-end gap-4">
         <div className="flex-1">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Target Role</label>
-          <select value={target} onChange={e => { setTarget(e.target.value); setState("idle"); }}
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Target role</label>
+          <select value={target} onChange={e => { setTarget(e.target.value); setDraft(null); }}
             className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
-            {targets.map(t => <option key={t}>{t}</option>)}
+            {[...new Set(targets)].map(t => <option key={t}>{t}</option>)}
           </select>
         </div>
-        <button onClick={() => { setState("generating"); setTimeout(() => setState("done"), 2200); }}
-          disabled={state === "generating"}
-          className="flex items-center gap-2 bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-colors font-medium">
-          {state === "generating"
-            ? <><RefreshCw size={14} className="animate-spin" /> Generating…</>
-            : <><Sparkles size={14} /> Generate</>}
+        <button onClick={generate}
+          className="flex items-center gap-2 bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium">
+          <Sparkles size={14} /> {draft ? "Regenerate" : "Generate"}
         </button>
       </div>
-      {state === "done" && (
-        <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-4">
-          <CheckCircle size={16} className="text-emerald-600 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">Resume ready for {target}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">8 entries reordered · 3 impact statements rewritten · role-specific summary generated</p>
+
+      {draft !== null && (
+        <div className="mt-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Preview {edited && <span className="ml-2 normal-case tracking-normal text-[10px] bg-amber-50 border border-amber-200 text-amber-700 rounded-full px-2 py-0.5">Edited</span>}
+            </p>
+            <div className="flex items-center gap-2">
+              {edited && (
+                <button onClick={generate} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  Reset to draft
+                </button>
+              )}
+              <button
+                onClick={() => downloadText(`resume-${target.toLowerCase().replace(/\s+/g, "-")}.txt`, draft)}
+                className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+              >
+                <FileText size={12} /> Download
+              </button>
+            </div>
           </div>
-          <button onClick={() => demoToast(`Tailored resume for ${target} downloaded ✓`)} className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
-            <FileText size={12} /> Download PDF
-          </button>
+          <textarea
+            value={draft}
+            onChange={e => { setDraft(e.target.value); setEdited(true); }}
+            rows={12}
+            className="w-full text-sm font-mono leading-relaxed border border-border rounded-xl p-4 bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          />
+          {!profile.resume && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
+              This was built from your scan answers alone. Upload a resume on a re-scan and it will fill in employers, dates and detail.
+            </p>
+          )}
         </div>
       )}
     </div>

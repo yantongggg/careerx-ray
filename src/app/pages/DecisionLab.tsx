@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { NextStep } from "../state/stages";
 import {
   ChevronRight, Brain, Star, DollarSign, Clock, Zap, ArrowRight,
   TrendingUp, AlertTriangle, CheckCircle, Sparkles, Users,
@@ -46,10 +47,10 @@ const futures: Future[] = [
     borderColor: "border-blue-200",
     bgColor: "bg-blue-50",
     emoji: "⏸️",
-    story: "You continue as Senior Data Analyst at Stripe. No dramatic changes. Reasonable raises. Familiar work. On the surface, it's safe.",
-    oneYear: "Salary grows to RM 10.4k/mo with a standard review cycle. The work feels manageable. You're good at it. But the AI tools your team adopted are now handling 40% of what you used to own.",
+    story: "You continue as a Senior Data Analyst where you are. No dramatic changes. Reasonable raises. Familiar work. On the surface, it's safe.",
+    oneYear: "Salary grows to RM 9.7k/mo with a standard review cycle. The work feels manageable. You're good at it. But the AI tools your team adopted are now handling 40% of what you used to own.",
     threeYear: "Your role has been quietly restructured. The BI function consolidated. You're still employed — but your title hasn't changed, your scope has narrowed, and two analysts junior to you were promoted into different tracks.",
-    fiveYear: "You're earning RM 10.7k/mo. The market rate for your peers who made moves is RM 13.5k/mo+. You're good at your job — but you're no longer growing. And you know it.",
+    fiveYear: "You're earning RM 10.7k/mo. The market rate for your peers who made moves is RM 13.5k/mo and up. You're good at your job — but you're no longer growing. And you know it.",
     salary5yr: "RM 10.7k/mo",
     aiRisk: "High (62%)",
     aiRiskColor: "text-red-500",
@@ -58,8 +59,8 @@ const futures: Future[] = [
     satisfactionColor: "text-amber-500",
     salaryData: [9.2, 9.4, 9.7, 10.0, 10.3, 10.4, 10.5, 10.6, 10.6, 10.7],
     pros: ["Zero transition risk", "Familiar environment", "Strong team relationships"],
-    cons: ["AI exposure keeps compounding", "Salary gap widens every year", "Promotion ceiling becomes clearer"],
-    aiVerdict: "This path is not as safe as it feels. Stability is an illusion in a role with 62% automation exposure. The career regret risk is highest here — because the decline is gradual, invisible, and hard to reverse once it's obvious.",
+    cons: ["Compounding AI risk", "A salary gap that widens yearly", "A hardening promotion ceiling"],
+    aiVerdict: "This path is not as safe as it feels. Stability is an illusion in a role with 62% AI risk. The career regret risk is highest here — because the decline is gradual and easy to miss, and hard to reverse by the time it isn't.",
     confidence: 88,
   },
   {
@@ -71,10 +72,10 @@ const futures: Future[] = [
     borderColor: "border-emerald-200",
     bgColor: "bg-emerald-50",
     emoji: "🚀",
-    story: "You spend the next 9–12 months closing the skill gap. It's uncomfortable at first. Then it accelerates. Your Python + SQL foundation reduces the learning curve by months.",
-    oneYear: "You complete the AWS cert and two ML portfolio projects. You start applying. The interviews are harder than your current role. You get rejected twice. Then you get an offer at RM 11.5k/mo — an ML Engineer role at a fintech company.",
-    threeYear: "You're 18 months into the new role. Your skills are compounding faster than they ever did as an analyst. You're building things that ship. Your salary is RM 12.9k/mo. You're being sponsored for a Staff role.",
-    fiveYear: "You're earning RM 13.5k/mo, with equity. AI Risk exposure is 28% — you're building the automation, not being replaced by it. Career satisfaction is at its highest point in your professional life.",
+    story: "You spend the next 9–14 months closing the skill gap. It's uncomfortable at first. Then it accelerates. Your Python + SQL foundation reduces the learning curve by months.",
+    oneYear: "You complete the AWS cert and two ML portfolio projects. You start applying. The interviews are harder than your current role. You get rejected twice. Then you get an offer at RM 10.0k/mo — an ML Engineer role at a fintech company.",
+    threeYear: "You're 18 months into the new role. Your skills are compounding faster than they ever did as an analyst. You're building things that ship. Your salary is RM 12.3k/mo. You're being sponsored for a Staff role.",
+    fiveYear: "You're earning RM 13.5k/mo, with equity. AI risk is 28% — you're building the automation, not being replaced by it. Career satisfaction is at its highest point in your professional life.",
     salary5yr: "RM 13.5k/mo",
     aiRisk: "Low (28%)",
     aiRiskColor: "text-emerald-500",
@@ -83,8 +84,8 @@ const futures: Future[] = [
     satisfactionColor: "text-emerald-500",
     salaryData: [9.2, 9.5, 10.0, 10.7, 11.3, 11.8, 12.3, 12.8, 13.2, 13.5],
     pros: ["Highest long-term earnings", "AI-proof skill set", "RM 2.8k/mo salary jump potential"],
-    cons: ["9–14 months of transition investment", "Rejection risk in interviews", "Imposter syndrome is real and temporary"],
-    aiVerdict: "This is the highest risk-adjusted path. Your Python and SQL foundation means your transition timeline is 4 months shorter than average. The skill gap is real but closable. This is the path where career regret is least likely.",
+    cons: ["9–14 months of transition investment", "Rejection risk in interviews", "Imposter syndrome during the switch"],
+    aiVerdict: "This path delivers the best risk-adjusted outcome. Your Python and SQL foundation means your transition timeline is 4 months shorter than average. The skill gap is real but closable. This is the path where career regret is least likely.",
     confidence: 84,
   },
   {
@@ -98,8 +99,8 @@ const futures: Future[] = [
     emoji: "📈",
     story: "You decide the technical ladder isn't where you want to go long-term. You want to lead. You spend the next 12–18 months building leadership scope — deliberately, visibly, strategically.",
     oneYear: "You lead a cross-functional project that ships. You formally mentor two analysts. Your manager starts including you in planning conversations you weren't in before. No title change yet. But the narrative is shifting.",
-    threeYear: "You're promoted to Data Science Manager. Your salary jumps to RM 12.9k/mo. You manage a team of 4. It's harder than you expected. You have less time for the technical work you love — but more influence than you've ever had.",
-    fiveYear: "You're earning RM 14.6k/mo as a senior manager overseeing a team of 8. AI Risk exposure is 18% — leadership roles are highly protected. But you sometimes miss the craft of building things yourself.",
+    threeYear: "You're promoted to Data Science Manager. Your salary jumps to RM 12.3k/mo. You manage a team of 4. It's harder than you expected. You have less time for the technical work you love — but more influence than you've ever had.",
+    fiveYear: "You're earning RM 14.6k/mo as a senior manager overseeing a team of 8. AI risk is 18% — leadership roles are highly protected. But you sometimes miss the craft of building things yourself.",
     salary5yr: "RM 14.6k/mo",
     aiRisk: "Very Low (18%)",
     aiRiskColor: "text-emerald-500",
@@ -107,8 +108,8 @@ const futures: Future[] = [
     satisfaction: "Mixed",
     satisfactionColor: "text-amber-500",
     salaryData: [9.2, 9.4, 9.8, 10.5, 11.2, 11.8, 12.3, 13.2, 13.8, 14.6],
-    pros: ["Highest salary ceiling", "Very low AI displacement risk", "Leadership creates compounding career capital"],
-    cons: ["Requires 12–18 months of deliberate positioning", "Less hands-on technical work", "Management is a different job — not just a promotion"],
+    pros: ["Highest salary ceiling", "Very low AI risk", "Compounding leadership capital"],
+    cons: ["12–18 months of deliberate positioning", "Less hands-on technical work", "A different job, not just a promotion"],
     aiVerdict: "This path has the highest ceiling but the longest runway. It requires you to be strategic — not just competent. Your technical depth is a real asset in management. The risk is that most people underestimate how different managing is from doing.",
     confidence: 79,
   },
@@ -167,11 +168,11 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-xs text-muted-foreground">5yr salary</p>
+                  <p className="text-xs text-muted-foreground">5-year salary</p>
                   <p className="text-base font-bold text-foreground">{f.salary5yr}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">AI Risk</p>
+                  <p className="text-xs text-muted-foreground">AI risk</p>
                   <p className={`text-sm font-bold ${f.aiRiskColor}`}>{f.aiRisk}</p>
                 </div>
               </div>
@@ -218,9 +219,9 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
           {/* Metrics row */}
           <div className="border-t border-border px-8 py-5 grid grid-cols-4 gap-6">
             {[
-              { label: "5-Year Salary",   value: activeFuture.salary5yr,        color: "text-foreground" },
-              { label: "AI Risk",         value: activeFuture.aiRisk,            color: activeFuture.aiRiskColor },
-              { label: "Promotion Odds",  value: activeFuture.promotionOdds,     color: "text-foreground" },
+              { label: "5-year salary",   value: activeFuture.salary5yr,        color: "text-foreground" },
+              { label: "AI risk",         value: activeFuture.aiRisk,            color: activeFuture.aiRiskColor },
+              { label: "Promotion odds",  value: activeFuture.promotionOdds,     color: "text-foreground" },
               { label: "Satisfaction",    value: activeFuture.satisfaction,      color: activeFuture.satisfactionColor },
             ].map(m => (
               <div key={m.label}>
@@ -263,7 +264,7 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
                 <Brain size={17} className="text-white" />
               </div>
               <div>
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">AI Assessment of This Path</p>
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">AI assessment of this path</p>
                 <p className="text-sm text-slate-200 leading-relaxed">{activeFuture.aiVerdict}</p>
               </div>
             </div>
@@ -291,8 +292,8 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                     <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM${v}k`} />
-                    <Tooltip formatter={(v: number) => [`RM${v}k`, ""]} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM ${v}k`} />
+                    <Tooltip formatter={(v: number) => [`RM ${v}k/mo`, ""]} />
                     <Line key="line-stay"    type="monotone" dataKey="Future A (Stay)"    stroke="#3B82F6" strokeWidth={2} dot={false} isAnimationActive={false} />
                     <Line key="line-ml"      type="monotone" dataKey="Future B (ML Eng)"  stroke="#22C55E" strokeWidth={2} dot={false} isAnimationActive={false} />
                     <Line key="line-manager" type="monotone" dataKey="Future C (Manager)" stroke="#A855F7" strokeWidth={2} dot={false} isAnimationActive={false} />
@@ -318,17 +319,17 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
               <Sparkles size={20} className="text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-blue-200 font-semibold uppercase tracking-wider mb-2">AI Recommendation · 87% confidence</p>
-              <p className="text-lg font-bold mb-3">Future B: Transition to ML Engineering within 12 months.</p>
+              <p className="text-xs text-blue-200 font-semibold uppercase tracking-wider mb-2">AI recommendation · {futures[1].confidence}% confidence</p>
+              <p className="text-lg font-bold mb-3">Future B: Transition to ML Engineering within 9–14 months.</p>
               <p className="text-blue-100 text-sm leading-relaxed max-w-2xl">
-                Across all three paths, the ML Engineering transition delivers the best risk-adjusted outcome for your specific profile. Your Python and SQL depth reduces the transition timeline by an estimated 4 months versus a typical candidate. Future A (staying) carries more career risk than it appears. Future C (management) is viable, but requires 18+ months of deliberate positioning that you haven't started yet.
+                Across all three paths, the ML Engineering transition delivers the best risk-adjusted outcome for your specific profile. Your Python and SQL depth reduces the transition timeline by an estimated 4 months versus a typical candidate. Future A (staying) carries more career risk than it appears. Future C (management) is viable but requires 12–18 months of deliberate positioning that you haven't started yet.
               </p>
               <div className="flex flex-wrap items-center gap-4 mt-4">
                 <div className="flex items-center gap-1.5 text-xs text-blue-200">
                   <DollarSign size={13} /> +RM 2.8k/mo by year 5 vs. staying
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-blue-200">
-                  <Shield size={13} /> AI Risk: 62% → 28%
+                  <Shield size={13} /> AI risk: 62% → 28%
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-blue-200">
                   <Clock size={13} /> 9–14 months to transition
@@ -341,16 +342,7 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
         {/* ── Market Salary Comparison ── */}
         <MarketSalaryGraph />
 
-        {/* CTA to Prescription */}
-        <div className="bg-muted border border-border rounded-xl p-5 flex items-center justify-between">
-          <div>
-            <p className="font-semibold text-foreground">You've seen your futures. Now get the treatment plan.</p>
-            <p className="text-sm text-muted-foreground mt-1">Career Prescription turns this analysis into a day-by-day action plan.</p>
-          </div>
-          <button onClick={() => onNavigate?.("prescription")} className="flex-shrink-0 flex items-center gap-2 bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold">
-            View My Prescription <ArrowRight size={14} />
-          </button>
-        </div>
+        <NextStep currentPage="decisionlab" onNavigate={onNavigate} />
       </div>
     </div>
   );
@@ -588,11 +580,11 @@ function MarketSalaryGraph() {
                     <>
                       <text x={minX - 4} y={y + barH / 2 + 4} textAnchor="end" fontSize={9}
                         fill="rgba(22,40,75,0.4)" style={{ fontFamily: "var(--font-mono, monospace)" }}>
-                        {(c.min * animProgress / 1000).toFixed(1)}k
+                        RM {(c.min * animProgress / 1000).toFixed(1)}k
                       </text>
                       <text x={maxX + 4} y={y + barH / 2 + 4} textAnchor="start" fontSize={9}
                         fill="rgba(22,40,75,0.4)" style={{ fontFamily: "var(--font-mono, monospace)" }}>
-                        {(c.max * animProgress / 1000).toFixed(1)}k
+                        RM {(c.max * animProgress / 1000).toFixed(1)}k
                       </text>
                     </>
                   )}
@@ -639,8 +631,8 @@ function MarketSalaryGraph() {
             return [
               {
                 label: aboveMarket ? "Above Market" : "Below Market",
-                value: `${aboveMarket ? "+" : "-"}RM ${diff.toLocaleString()}`,
-                desc: `Your offer is ${pct}% ${aboveMarket ? "above" : "below"} market median`,
+                value: `${aboveMarket ? "+" : "−"}RM ${(diff / 1000).toFixed(1)}k`,
+                desc: `Your offer is ${pct}% ${aboveMarket ? "above" : "below"} the market median`,
                 color: aboveMarket ? "#115E50" : "#C62828",
                 bg: aboveMarket ? "rgba(17,94,80,0.06)" : "rgba(198,40,40,0.06)",
               },

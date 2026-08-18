@@ -5,79 +5,25 @@ import {
   Pill, ArrowRight, Zap, Clock
 } from "lucide-react";
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, ReferenceDot
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot
 } from "recharts";
-import { dimensions, getArchetypeForScoresSafe } from "../lib/careerDna.js";
+import { useCareerProfile } from "../state/careerProfile";
+import { NextStep } from "../state/stages";
 
 // ─── Score explanation modals ───────────────────────────────────────────────
 
-const scoreExplanations = {
-  health: {
-    title: "Career Health Score",
-    value: "74", unit: "/100",
-    verdict: "Your career is at moderate risk.",
-    summary: "Three structural problems are holding your score below 80 — and without action, they compound. The good news: all three are fixable within 90 days.",
-    confidence: 91,
-    evidence: [
-      { label: "Salary 14% below peer median (RM 10.1k/mo vs RM 11.7k/mo)",         positive: false },
-      { label: "No cloud certification — 73% of target roles require one", positive: false },
-      { label: "Core Python skills untouched for 14 months",             positive: false },
-      { label: "Strong FinTech domain expertise — top 20%",              positive: true  },
-      { label: "Communication & presentation — 88th percentile",         positive: true  },
-      { label: "Career velocity: 0.4 promotions/yr vs 0.6 peer avg",     positive: false },
-    ],
-    impact: "A score below 80 correlates with 2× higher pass-over risk at your next review cycle and a 34% higher probability of stagnation by year 3.",
-  },
-  ai: {
-    title: "AI Exposure Risk",
-    value: "High", unit: "",
-    verdict: "62% of your daily work is automatable within 24 months.",
-    summary: "The tasks that define your current role — data pulling, report generation, SQL query writing — are the exact tasks being automated first. This isn't a future risk. It's happening now.",
-    confidence: 86,
-    evidence: [
-      { label: "Report generation (~8 hrs/wk) — 95% automatable",  positive: false },
-      { label: "SQL queries & dashboards (~6 hrs/wk) — 82% auto.", positive: false },
-      { label: "Statistical modeling (~3 hrs/wk) — 32% auto.",     positive: true  },
-      { label: "Stakeholder communication (~5 hrs/wk) — 15% auto.",positive: true  },
-    ],
-    impact: "Roles with >40% automation exposure have seen 18% annual job posting decline since 2024. Without pivoting toward oversight, design, or decision-science work, your role faces structural elimination within 2–3 years.",
-  },
-  salary: {
-    title: "Salary vs Market",
-    value: "–14%", unit: "",
-    verdict: "You are earning RM 1.6k/mo below what the market would pay you today.",
-    summary: "Your +3% annual increment felt like progress — but the market for your peer cohort grew 12% in the same months. Every year this gap compounds, and it gets harder to close without a role change.",
-    confidence: 88,
-    evidence: [
-      { label: "Your current salary: RM 10.1k/mo",                        positive: false },
-      { label: "Market median for 5–7yr data professionals: RM 11.7k/mo", positive: false },
-      { label: "Salary moves once a year (increment); market moves monthly", positive: false },
-      { label: "Top performers at your level: RM 13–14k/mo via switch", positive: false },
-    ],
-    impact: "Compounding 3 years of underperformance means a RM 58k+ cumulative deficit. This is money you are leaving on the table right now.",
-  },
-  promotion: {
-    title: "Promotion Readiness",
-    value: "65%", unit: "",
-    verdict: "You have the technical depth — but not the scope.",
-    summary: "Your skills are strong enough for L5. The blocker isn't performance — it's that your impact is contained to your team. Senior roles require cross-functional visibility.",
-    confidence: 79,
-    evidence: [
-      { label: "Technical performance: Meets expectations (3/5)",          positive: false },
-      { label: "Impact scope: Team-level, not cross-functional",            positive: false },
-      { label: "26 months at current level — within promotion window",     positive: true  },
-      { label: "Domain expertise: Strong differentiator",                   positive: true  },
-      { label: "No cloud credentials — missing L5 competency requirement", positive: false },
-    ],
-    impact: "At 65% readiness, one competing candidate or a soft cycle can delay your promotion 12–18 months. Closing the cloud cert gap alone raises this to ~81%.",
-  },
+type MetricKey = "health" | "ai" | "salary" | "promotion";
+
+const METRIC_TITLE: Record<MetricKey, string> = {
+  health: "Career Health Score",
+  ai: "AI Exposure",
+  salary: "Position vs Market",
+  promotion: "Promotion Readiness",
 };
 
-type MetricKey = keyof typeof scoreExplanations;
-
-function ScoreModal({ k, onClose }: { k: MetricKey; onClose: () => void }) {
-  const e = scoreExplanations[k];
+/* The modal shows the derivation, not a second hand-written copy of the
+   number. The two used to be maintained separately and drifted apart. */
+function ScoreModal({ k, value, lines, onClose }: { k: MetricKey; value: string; lines: string[]; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -85,7 +31,7 @@ function ScoreModal({ k, onClose }: { k: MetricKey; onClose: () => void }) {
         <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div>
             <p className="text-xs text-muted-foreground">Why this score?</p>
-            <h2 className="font-bold text-foreground">{e.title}</h2>
+            <h2 className="font-bold text-foreground">{METRIC_TITLE[k]}</h2>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center">
             <X size={15} className="text-muted-foreground" />
@@ -93,38 +39,28 @@ function ScoreModal({ k, onClose }: { k: MetricKey; onClose: () => void }) {
         </div>
         <div className="p-6 space-y-5">
           <div className="bg-slate-950 text-white rounded-xl p-4">
-            <p className="text-2xl font-bold">{e.value}<span className="text-base font-normal text-slate-400 ml-1">{e.unit}</span></p>
-            <p className="text-sm text-slate-300 mt-1 font-medium">{e.verdict}</p>
+            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-sm text-slate-300 mt-1 font-medium">Computed from your scan — same answers, same score.</p>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{e.summary}</p>
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Evidence the AI used</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">How this was worked out</p>
             <div className="space-y-2">
-              {e.evidence.map(ev => (
-                <div key={ev.label} className={`flex items-start gap-2.5 p-3 rounded-xl text-xs ${ev.positive ? "bg-emerald-50 border border-emerald-100" : "bg-red-50 border border-red-100"}`}>
-                  {ev.positive
-                    ? <CheckCircle size={12} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                    : <AlertTriangle size={12} className="text-red-400 mt-0.5 flex-shrink-0" />}
-                  <span className="text-foreground">{ev.label}</span>
+              {lines.map((line, i) => (
+                <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl text-xs bg-muted border border-border">
+                  <Info size={12} className="text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground leading-relaxed">{line}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1.5">What happens if nothing changes</p>
-            <p className="text-sm text-amber-900 leading-relaxed">{e.impact}</p>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className={`w-2 h-2 rounded-full ${e.confidence >= 85 ? "bg-emerald-500" : "bg-amber-400"}`} />
-            AI confidence: {e.confidence}% · Based on your resume, LinkedIn, GitHub, and market data
-          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Nothing here is a model guess. The scoring is a deterministic rule set, which is what makes this panel possible at all.
+          </p>
         </div>
       </div>
     </div>
   );
 }
-
-// ─── Data ───────────────────────────────────────────────────────────────────
 
 /* Monthly salary (RM '000/mo). Personal pay is a step function — it only moves
    at the annual increment — while the market median drifts up every month. */
@@ -138,71 +74,41 @@ const salaryData = [
   { month: "Jan", salary: 10.1, market: 11.7 },
 ];
 
-/* Fallback Career DNA scores — used when no scan scores are passed in */
-const FALLBACK_DNA_SCORES: Record<string, number> = {
-  Technical:     82,
-  Leadership:    62,
-  Communication: 88,
-  Strategic:     61,
-  Innovation:    55,
-  Execution:     79,
-};
-
-const metricCards = [
-  { key: "health"   as MetricKey, label: "Career Health",     value: "74",   unit: "/100", color: "text-amber-500",  bg: "bg-amber-50",   icon: Shield    },
-  { key: "ai"       as MetricKey, label: "AI Exposure",       value: "High", unit: "",     color: "text-red-500",    bg: "bg-red-50",     icon: Brain     },
-  { key: "salary"   as MetricKey, label: "vs Market",         value: "–14%", unit: "",     color: "text-red-500",    bg: "bg-red-50",     icon: TrendingUp},
-  { key: "promotion"as MetricKey, label: "Promotion Ready",   value: "65%",  unit: "",     color: "text-amber-500",  bg: "bg-amber-50",   icon: Award     },
-];
-
-const strengthsAndRisks = {
-  strengths: [
-    "FinTech domain expertise — top 20% of peers",
-    "Communication & storytelling with data — 88th percentile",
-    "Active OSS contributor — dbt package with 89 GitHub stars",
-    "Competition track record — SuperAI NEXT Top 5/2,400",
-  ],
-  risks: [
-    "62% of daily tasks are automatable within 24 months",
-    "Salary RM 1.6k/mo below what the market would pay you today",
-    "Core skills haven't evolved in 14 months",
-    "No cross-functional leadership record — promotion blocker",
-  ],
-};
-
-const evidenceUsed = [
-  { source: "Resume",         items: "6 yrs experience, 3 roles, 8 projects" },
-  { source: "LinkedIn",       items: "Endorsements, connections, activity score" },
-  { source: "GitHub",         items: "4 repos, dbt OSS package, commit frequency" },
-  { source: "Market Data",    items: "240,000 job postings, 12,000 peer trajectories" },
-  { source: "AWS Portal",     items: "1 active certification verified" },
-];
-
 // ─── Component ──────────────────────────────────────────────────────────────
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
-  scores?: Record<string, number>;
 }
 
-export function Dashboard({ onNavigate, scores }: DashboardProps) {
+export function Dashboard({ onNavigate }: DashboardProps) {
+  const { profile, risks, scorecard } = useCareerProfile();
   const [modal, setModal] = useState<MetricKey | null>(null);
 
-  // Career DNA — dynamic from scan scores, falling back to the seed profile
-  const dnaScores: Record<string, number> = { ...FALLBACK_DNA_SCORES, ...(scores ?? {}) };
-  const dnaData = (dimensions as string[]).map(subject => ({
-    subject,
-    A: dnaScores[subject] ?? 0,
-  }));
-  const archetype = getArchetypeForScoresSafe(dnaScores);
-  const lowestTwo = Object.entries(dnaScores)
-    .sort(([, a], [, b]) => a - b)
+  /* Every number on this page comes from the one derivation. There used
+     to be three separate hardcoded copies — the headline said 4 open
+     risks while the footer of the same page said 5. */
+  const metricCards = [
+    { key: "health"    as MetricKey, label: "Career Health",   value: String(scorecard.careerHealth), unit: "/100",
+      color: scorecard.careerHealth >= 80 ? "text-emerald-600" : "text-amber-500", bg: scorecard.careerHealth >= 80 ? "bg-emerald-50" : "bg-amber-50", icon: Shield },
+    { key: "ai"        as MetricKey, label: "AI Exposure",     value: scorecard.aiExposure.label, unit: "",
+      color: scorecard.aiExposure.percent >= 55 ? "text-red-500" : "text-amber-500", bg: scorecard.aiExposure.percent >= 55 ? "bg-red-50" : "bg-amber-50", icon: Brain },
+    { key: "salary"    as MetricKey, label: "vs Market",       value: scorecard.vsMarket.label, unit: "",
+      color: scorecard.vsMarket.percent < 0 ? "text-red-500" : "text-emerald-600", bg: scorecard.vsMarket.percent < 0 ? "bg-red-50" : "bg-emerald-50", icon: TrendingUp },
+    { key: "promotion" as MetricKey, label: "Promotion Ready", value: `${scorecard.promotionReady}%`, unit: "",
+      color: scorecard.promotionReady >= 70 ? "text-emerald-600" : "text-amber-500", bg: scorecard.promotionReady >= 70 ? "bg-emerald-50" : "bg-amber-50", icon: Award },
+  ];
+
+  const strengths = Object.entries(profile.dnaScores)
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 2)
-    .map(([dimension]) => dimension);
+    .map(([dimension, score]) => `${dimension} — ${score}/100, your strongest calibrated dimension`)
+    .concat(profile.evidence.filter(e => e.kind !== "resume").slice(0, 2).map(e => `${e.label} — ${e.trust} evidence on file`));
+
+  const firstName = profile.resume?.name?.split(" ")[0];
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
-      {modal && <ScoreModal k={modal} onClose={() => setModal(null)} />}
+      {modal && <ScoreModal k={modal} lines={scorecard.explain[modal]} value={metricCards.find(m => m.key === modal)!.value} onClose={() => setModal(null)} />}
       <div className="p-6 lg:p-8 max-w-[1300px] mx-auto space-y-6">
 
         {/* ── MRI Header ── */}
@@ -214,47 +120,21 @@ export function Dashboard({ onNavigate, scores }: DashboardProps) {
                   <Zap size={14} className="text-white" />
                 </div>
                 <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Career X-Ray Result</span>
-                <span className="text-xs bg-white/10 text-slate-300 px-2 py-0.5 rounded-full">Scanned Jun 13, 2026</span>
+                {profile.scannedAt && (
+                  <span className="text-xs bg-white/10 text-slate-300 px-2 py-0.5 rounded-full">Scanned {profile.scannedAt}</span>
+                )}
               </div>
-              <h1 className="text-2xl font-bold text-white">Jordan, your career has 4 open risks.</h1>
+              <h1 className="text-2xl font-bold text-white">
+                {firstName ? `${firstName}, your` : "Your"} career has {risks.length} open risk{risks.length === 1 ? "" : "s"}.
+              </h1>
               <p className="text-slate-400 text-sm mt-1.5 max-w-xl leading-relaxed">
-                Your Career Health Score is <strong className="text-white">74/100</strong> — below the threshold that typically leads to smooth promotion and market salary. Here's what we found, why it matters, and what to do about it.
+                Your Career Health Score is <strong className="text-white">{scorecard.careerHealth}/100</strong>
+                {scorecard.careerHealth < 80
+                  ? " — below the threshold that typically leads to smooth promotion and market salary."
+                  : " — comfortably in the range that supports promotion and market pay."}{" "}
+                Here&apos;s what we found, why it matters, and what to do about it.
               </p>
             </div>
-            <button
-              onClick={() => onNavigate("blindspots")}
-              className="flex-shrink-0 flex items-center gap-2 bg-white text-slate-900 text-sm px-4 py-2.5 rounded-xl hover:bg-slate-100 transition-colors font-semibold"
-            >
-              View Blind Spots <ChevronRight size={14} />
-            </button>
-          </div>
-
-          {/* Journey progress */}
-          <div className="grid grid-cols-4 gap-3 mt-6">
-            {[
-              { step: "01", label: "X-Ray Scan",        icon: Zap,         done: true,  page: "dashboard"    },
-              { step: "02", label: "Blind Spots",        icon: Eye,         done: false, page: "blindspots"   },
-              { step: "03", label: "Decision Lab",       icon: FlaskConical,done: false, page: "decisionlab"  },
-              { step: "04", label: "Prescription",       icon: Pill,        done: false, page: "prescription" },
-            ].map((s, i) => (
-              <button
-                key={s.step}
-                onClick={() => onNavigate(s.page)}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
-                  s.done
-                    ? "bg-white/10 border-white/20 text-white"
-                    : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${s.done ? "bg-primary" : "bg-white/10"}`}>
-                  {s.done ? <CheckCircle size={13} className="text-white" /> : <span className="text-xs font-bold text-slate-400">{i + 1}</span>}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold truncate">{s.label}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{s.done ? "Complete" : "Up next"}</p>
-                </div>
-              </button>
-            ))}
           </div>
         </div>
 
@@ -291,12 +171,14 @@ export function Dashboard({ onNavigate, scores }: DashboardProps) {
               <h3 className="font-semibold text-foreground">What's working for you</h3>
             </div>
             <div className="space-y-3">
-              {strengthsAndRisks.strengths.map(s => (
+              {strengths.length ? strengths.map(s => (
                 <div key={s} className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
                   <CheckCircle size={13} className="text-emerald-500 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-foreground">{s}</p>
                 </div>
-              ))}
+              )) : (
+                <p className="text-sm text-muted-foreground">Add evidence on a re-scan and your confirmed strengths will show up here.</p>
+              )}
             </div>
           </div>
 
@@ -306,43 +188,31 @@ export function Dashboard({ onNavigate, scores }: DashboardProps) {
               <h3 className="font-semibold text-foreground">What's putting you at risk</h3>
             </div>
             <div className="space-y-3">
-              {strengthsAndRisks.risks.map(r => (
-                <div key={r} className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-xl">
+              {risks.map(r => (
+                <div key={r.id} className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-xl">
                   <AlertTriangle size={13} className="text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-foreground">{r}</p>
+                  <div className="min-w-0">
+                    <p className="text-sm text-foreground">{r.headline}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      <span className="font-semibold uppercase tracking-wide">{r.severity}</span> · {r.metric} · {r.horizon}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* ── Career DNA + Salary trend ── */}
-        <div className="grid lg:grid-cols-3 gap-4">
+        {/* ── Salary trend ── */}
+        <div className="grid grid-cols-1 gap-4">
           <div className="bg-white border border-border rounded-xl p-6">
-            <h3 className="font-semibold text-foreground mb-1">Your Career DNA</h3>
-            <p className="text-xs text-muted-foreground mb-4">How AI mapped your professional identity</p>
-            <div style={{ width: "100%", height: 220 }}>
-              <ResponsiveContainer width="100%" height={220}>
-                <RadarChart data={dnaData}>
-                  <PolarGrid stroke="#E2E8F0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "#94A3B8" }} />
-                  <Radar key="radar-dna" dataKey="A" stroke="#2563EB" fill="#2563EB" fillOpacity={0.15} strokeWidth={2} isAnimationActive={false} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-xs text-muted-foreground text-center mt-1">
-              Primary type: <strong className="text-foreground">{archetype.careerStyle}</strong> ({archetype.name}) · Low: {lowestTwo.join(", ")}
-            </p>
-          </div>
-
-          <div className="lg:col-span-2 bg-white border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-semibold text-foreground">Salary vs Market Trend</h3>
-              <button onClick={() => setModal("salary")} className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-1 rounded-full font-medium hover:bg-red-100 transition-colors inline-flex items-center gap-1">
-                –14% below market <Info size={11} /> <span className="underline underline-offset-2">why?</span>
+              <h3 className="font-semibold text-foreground">Salary vs market trend</h3>
+              <button onClick={() => setModal("salary")} className={`text-xs px-2 py-1 rounded-full font-medium transition-colors inline-flex items-center gap-1 ${scorecard.vsMarket.percent < 0 ? "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100" : "bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100"}`}>
+                {scorecard.vsMarket.label} vs market <Info size={11} /> <span className="underline underline-offset-2">why?</span>
               </button>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Monthly salary, RM &apos;000. Your pay only moves at the annual increment (+3% in Jan) — the market median moves every month. That&apos;s how the gap quietly widens.</p>
+            <p className="text-xs text-muted-foreground mb-3">Monthly salary in RM. Your pay only moves at the annual increment (+3% in Jan), while the market median moves every month — that is how the gap quietly widens.</p>
             <div className="flex items-center gap-4 mb-2">
               <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><span className="w-3 h-0.5 rounded-full inline-block" style={{ backgroundColor: "#2563EB" }} /> Your salary</span>
               <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><span className="w-3 h-0.5 rounded-full inline-block border-b border-dashed" style={{ borderColor: "#B45309" }} /> Market median (KL)</span>
@@ -357,7 +227,7 @@ export function Dashboard({ onNavigate, scores }: DashboardProps) {
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM${v}k`} domain={[9.5, 12]} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM ${v}k`} domain={[9.5, 12]} />
                   <Tooltip formatter={(v: number, name: string) => [`RM ${v}k/mo`, name === "market" ? "Market median" : "Your salary"]} />
                   <Area key="area-db-market" type="monotone" dataKey="market" stroke="#B45309" strokeWidth={2} strokeDasharray="5 4" fill="none" isAnimationActive={false} />
                   <Area key="area-db-sal" type="stepAfter" dataKey="salary" stroke="#2563EB" strokeWidth={2} fill="url(#db-salGrad)" isAnimationActive={false} />
@@ -366,8 +236,7 @@ export function Dashboard({ onNavigate, scores }: DashboardProps) {
               </ResponsiveContainer>
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Market median for your cohort (5–7yr, FinTech, KL): <strong className="text-foreground">RM 11.7k/mo</strong> vs your <strong className="text-foreground">RM 10.1k/mo</strong>.
-              That&apos;s a RM 1.6k/mo gap — RM 19k+ per year left on the table if nothing changes.
+              {scorecard.explain.salary[0]}
             </p>
           </div>
         </div>
@@ -379,16 +248,21 @@ export function Dashboard({ onNavigate, scores }: DashboardProps) {
               <Sparkles size={16} className="text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">How we reached these conclusions</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Every finding is grounded in verified evidence — not assumptions.</p>
-            </div>
-            <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Overall confidence: 89%
+              <h3 className="font-semibold text-foreground">What we used to reach these conclusions</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Only what you actually gave us. Nothing here is assumed.</p>
             </div>
           </div>
-          <div className="grid grid-cols-5 gap-3">
-            {evidenceUsed.map(e => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { source: "Career Calibration", items: `${Object.keys(profile.calibrationAnswers).length} of 6 scenario answers` },
+              { source: "Resume", items: profile.resume
+                  ? `${profile.resume.fileName} · ${profile.resume.skills.length} skills, ${profile.resume.employers.length} employers`
+                  : "Not provided" },
+              { source: "Evidence added", items: profile.evidence.length
+                  ? profile.evidence.map(e => e.label).slice(0, 3).join(", ")
+                  : "None yet" },
+              { source: "Market reference", items: "Authored Malaysian salary and demand datasets" },
+            ].map(e => (
               <div key={e.source} className="bg-muted rounded-xl p-3.5">
                 <p className="text-xs font-semibold text-foreground mb-1">{e.source}</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">{e.items}</p>
@@ -397,19 +271,7 @@ export function Dashboard({ onNavigate, scores }: DashboardProps) {
           </div>
         </div>
 
-        {/* ── Next step CTA ── */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex items-center justify-between">
-          <div>
-            <p className="font-semibold text-foreground">Your X-Ray scan is complete. Next: see your blind spots in detail.</p>
-            <p className="text-sm text-muted-foreground mt-1">5 hidden career risks have been identified. Each one has a fix.</p>
-          </div>
-          <button
-            onClick={() => onNavigate("blindspots")}
-            className="flex-shrink-0 flex items-center gap-2 bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold"
-          >
-            View My Blind Spots <ArrowRight size={14} />
-          </button>
-        </div>
+        <NextStep currentPage="dashboard" onNavigate={onNavigate} />
 
       </div>
     </div>

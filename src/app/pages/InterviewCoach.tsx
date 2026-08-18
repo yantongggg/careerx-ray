@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { demoToast } from "../state/toast";
 import { Brain, CheckCircle, MessageSquareText, Mic, Play, Sparkles, Star, Video, Wand2 } from "lucide-react";
+import { NextStep } from "../state/stages";
 
 interface RoleCoachData {
   title: string;
@@ -83,12 +84,27 @@ const ROLE_DATA: Record<string, RoleCoachData> = {
 const DEFAULT_DATA: RoleCoachData = ROLE_DATA["maybank-da"];
 
 interface InterviewCoachProps {
-  jobId?: string;
+  jobId?: string | null;
+  onNavigate?: (page: string) => void;
 }
 
-export function InterviewCoach({ jobId }: InterviewCoachProps) {
+const ROLE_IDS = Object.keys(ROLE_DATA);
+
+export function InterviewCoach({ jobId, onNavigate }: InterviewCoachProps) {
   const [pickedQ, setPickedQ] = useState<number | null>(null);
-  const data = (jobId && ROLE_DATA[jobId]) || DEFAULT_DATA;
+  /* Arriving from a job card preselects that job, but the coach is also
+     a sidebar destination — landing here with no job used to silently
+     show one company's questions with no way to change them. */
+  const [roleId, setRoleId] = useState<string>(
+    jobId && ROLE_DATA[jobId] ? jobId : ROLE_IDS[0],
+  );
+  const data = ROLE_DATA[roleId] ?? DEFAULT_DATA;
+  const activeQ = pickedQ ?? data.activeQ;
+
+  const selectRole = (id: string) => {
+    setRoleId(id);
+    setPickedQ(null);
+  };
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -103,6 +119,26 @@ export function InterviewCoach({ jobId }: InterviewCoachProps) {
               <p className="text-sm text-muted-foreground leading-relaxed mt-1.5 max-w-2xl">
                 The coach turns your resume, job description, and X-Ray gaps into likely questions, then scores your answer like a hiring panel.
               </p>
+              <div className="flex flex-wrap gap-2 mt-4">
+                {ROLE_IDS.map(id => {
+                  const role = ROLE_DATA[id];
+                  const active = id === roleId;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => selectRole(id)}
+                      className={`px-3.5 py-2 rounded-lg border text-xs font-semibold transition-all ${
+                        active
+                          ? "bg-primary text-white border-primary shadow-sm"
+                          : "bg-white text-foreground border-border hover:border-primary/40"
+                      }`}
+                    >
+                      {role.company}
+                      <span className={`ml-2 tabular-nums ${active ? "text-blue-200" : "text-muted-foreground"}`}>{role.readiness}%</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="bg-slate-950 text-white rounded-xl p-4 min-w-[210px]">
               <p className="text-xs text-slate-400">Interview readiness</p>
@@ -120,7 +156,7 @@ export function InterviewCoach({ jobId }: InterviewCoachProps) {
             </div>
             <div className="divide-y divide-border">
               {data.questions.map((q, i) => (
-                <button key={q} onClick={() => setPickedQ(i)} className={`w-full flex gap-3 px-5 py-4 text-left hover:bg-muted/50 ${i === (pickedQ ?? data.activeQ) ? "bg-blue-50/70" : ""}`}>
+                <button key={q} onClick={() => setPickedQ(i)} className={`w-full flex gap-3 px-5 py-4 text-left hover:bg-muted/50 ${i === activeQ ? "bg-blue-50/70" : ""}`}>
                   <span className="w-6 h-6 rounded-full bg-white border border-border flex items-center justify-center text-xs font-bold text-muted-foreground">{i + 1}</span>
                   <span className="text-sm font-medium text-foreground">{q}</span>
                 </button>
@@ -132,7 +168,7 @@ export function InterviewCoach({ jobId }: InterviewCoachProps) {
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
                 <h2 className="font-semibold text-foreground">Rehearsal room</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">{data.promptLabel}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Question {activeQ + 1} of {data.questions.length} · {data.company}</p>
               </div>
               <button onClick={() => demoToast("Recording… answer aloud — AI scores structure, clarity, and confidence")} className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
                 <Mic size={14} /> Record answer
@@ -146,7 +182,7 @@ export function InterviewCoach({ jobId }: InterviewCoachProps) {
                 </div>
                 <div>
                   <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Prompt</p>
-                  <p className="text-sm text-slate-100 leading-relaxed mt-1">{data.questions[pickedQ ?? data.activeQ]}</p>
+                  <p className="text-sm text-slate-100 leading-relaxed mt-1">{data.questions[activeQ]}</p>
                 </div>
               </div>
               <button onClick={() => demoToast("Playing a top-scoring sample answer for this question\u2026")} className="mt-5 inline-flex items-center gap-2 bg-white text-slate-950 px-4 py-2 rounded-lg text-sm font-semibold">
@@ -154,7 +190,13 @@ export function InterviewCoach({ jobId }: InterviewCoachProps) {
               </button>
             </div>
 
-            <div className="mt-5 grid sm:grid-cols-2 gap-3">
+            {/* These are the baseline the panel would start you at from
+                your evidence — not a score of an answer you haven't given
+                yet. Saying so is the difference between a coach and a prop. */}
+            <p className="text-xs text-muted-foreground mt-5 mb-2">
+              Your expected starting profile for {data.company}, from your evidence. Record an answer and these update.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3">
               {data.feedback.map(f => (
                 <div key={f.label} className="border border-border rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -189,6 +231,8 @@ export function InterviewCoach({ jobId }: InterviewCoachProps) {
             </div>
           ))}
         </div>
+
+        <NextStep currentPage="coach" onNavigate={onNavigate} />
       </div>
     </div>
   );

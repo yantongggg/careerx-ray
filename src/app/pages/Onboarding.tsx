@@ -1,18 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  Upload, Linkedin, Github, ChevronRight, ChevronLeft,
+  Upload, Linkedin, ChevronRight, ChevronLeft,
   BarChart3, Check, Loader2, Briefcase, Target, DollarSign,
   Sparkles, FileText, Globe, Zap, Brain, GraduationCap,
-  Trophy, FolderOpen, Palette, Dribbble
+  Trophy, FolderOpen, AlertCircle, ShieldCheck, X,
 } from "lucide-react";
 import { dimensions, getArchetypeForScoresSafe } from "../lib/careerDna.js";
 import { demoToast } from "../state/toast";
+import { detectRoleFamily, FAMILY_LABEL, type RoleFamily } from "../lib/roleFamily";
+import { analyzeResume, formatBytes, rejectReasonFor } from "../lib/resumeParse";
+import { TRUST_LABEL, type CareerProfile, type EvidenceItem, type ParsedResume, type TrustLevel } from "../lib/profileTypes";
+import { deriveRisks, deriveScorecard } from "../lib/careerRisk";
 
 interface OnboardingProps {
-  onComplete: (
-    dnaScores: Record<string, number>,
-    profile: { userType: string; currentRole: string; targetRole: string; salaryRange: string }
-  ) => void;
+  onComplete: (profile: CareerProfile) => void;
 }
 
 /* Each calibration option contributes to one or two Career DNA dimensions
@@ -38,76 +39,152 @@ const USER_TYPES = [
   "Exploring / not sure",
 ];
 
-type EvidenceGroup = "starter" | "professional";
+/* ── Evidence doors ──
+   A property agent and a data analyst do not have the same things to
+   show. Asking everyone for "a project or a certificate" gets you a
+   blank stare from most of the workforce, so the doors are written per
+   role family and named in the words that family actually uses.
 
-const evidenceGroupFor = (userType: string): EvidenceGroup => {
-  if (userType === "Working professional" || userType === "Changing direction") return "professional";
-  return "starter"; // students, early career, freelancers, explorers — no CV required
-};
+   Everything file-based takes PDF only. Supporting five formats badly
+   is worse than supporting one properly: PDF is the one format every
+   phone, scanner and office suite can produce, and it is the only one
+   we can actually read text out of. */
 
-interface EvidenceSource {
+interface EvidenceDoor {
   id: string;
   name: string;
-  optional?: boolean;
   icon: typeof Upload;
-  brand: string; // Tailwind bg class for icon tile + connect button
+  brand: string; // Tailwind bg class for the icon tile + action button
   hover: string;
   desc: string;
-  connectedDesc: string;
-  action: string;
+  /** What the door collects. Files are always PDF. */
+  input: "pdf" | "link";
+  kind: EvidenceItem["kind"];
+  /** The most we can claim about this evidence without further checks. */
+  trust: TrustLevel;
+  /** Shown under a credential door — how it could be raised to Verified. */
+  verifyHint?: string;
 }
 
-/* One inclusive evidence menu — the order shifts by journey stage, but nobody
-   is asked for something they may not have. */
-const CARD_RESUME: EvidenceSource = {
-  id: "resume", name: "Upload resume", icon: FileText,
-  brand: "bg-[#16284B]", hover: "hover:bg-[#1e3560]", action: "Upload",
-  desc: "Have one? Great. Don't? Every other card below works just as well",
-  connectedDesc: "Uploaded · Parsing roles, skills, achievements",
+const DOOR_RESUME: EvidenceDoor = {
+  id: "resume", name: "Resume or CV", icon: FileText,
+  brand: "bg-[#16284B]", hover: "hover:bg-[#1e3560]",
+  desc: "One PDF. We read it in your browser — the file never leaves your device.",
+  input: "pdf", kind: "resume", trust: "self-declared",
 };
-const CARD_LINKS: EvidenceSource = {
-  id: "links", name: "Add LinkedIn / portfolio", icon: Linkedin,
-  brand: "bg-[#0077B5]", hover: "hover:bg-[#006097]", action: "Add link",
-  desc: "LinkedIn, personal site, Behance, Dribbble — any link that shows your work",
-  connectedDesc: "Added · Scanning your public work and profile",
-};
-const CARD_PROJECT: EvidenceSource = {
-  id: "project", name: "Add a project", icon: FolderOpen,
-  brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]", action: "Upload",
-  desc: "Class assignments, final-year builds, freelance gigs, side projects — anything you made",
-  connectedDesc: "Uploaded · Analyzing project scope, tools, and outcomes",
-};
-const CARD_CERT: EvidenceSource = {
-  id: "certificate", name: "Add a certificate", icon: Trophy,
-  brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]", action: "Upload",
-  desc: "SPM, diploma, TVET, competitions, micro-credentials, professional certs — all count",
-  connectedDesc: "Uploaded · Verifying credentials and skill signals",
+const DOOR_LINK: EvidenceDoor = {
+  id: "links", name: "LinkedIn or personal site", icon: Linkedin,
+  brand: "bg-[#0077B5]", hover: "hover:bg-[#006097]",
+  desc: "Paste the URL. We record it as a source you can point an employer at.",
+  input: "link", kind: "link", trust: "self-declared",
 };
 
-const EVIDENCE_SOURCES: Record<EvidenceGroup, EvidenceSource[]> = {
-  starter: [CARD_PROJECT, CARD_CERT, CARD_LINKS, { ...CARD_RESUME, optional: true }],
-  professional: [CARD_RESUME, CARD_LINKS, CARD_PROJECT, CARD_CERT],
+const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
+  data: [
+    { id: "project", name: "A piece of analysis you built", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
+      desc: "A dashboard, a report, a model write-up — export it as PDF.", input: "pdf", kind: "project", trust: "self-declared" },
+    { id: "certificate", name: "A data or cloud certificate", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
+      desc: "AWS, Google Cloud, Azure, Coursera — or a university transcript.", input: "pdf", kind: "certificate", trust: "self-declared",
+      verifyHint: "Add the issuer's verification link and this becomes Verified." },
+    DOOR_LINK, DOOR_RESUME,
+  ],
+  software: [
+    { id: "project", name: "Something you shipped", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
+      desc: "A project write-up, an architecture doc, a final-year build — as PDF.", input: "pdf", kind: "project", trust: "self-declared" },
+    { id: "certificate", name: "A technical certificate", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
+      desc: "Cloud, security, or a completed course. Diplomas and TVET count.", input: "pdf", kind: "certificate", trust: "self-declared",
+      verifyHint: "Add the issuer's verification link and this becomes Verified." },
+    DOOR_LINK, DOOR_RESUME,
+  ],
+  design: [
+    { id: "portfolio", name: "A case study from your portfolio", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
+      desc: "One project, start to finish — the problem, your work, the outcome. PDF.", input: "pdf", kind: "portfolio", trust: "self-declared" },
+    { id: "certificate", name: "A design qualification", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
+      desc: "A diploma, a course certificate, a competition result.", input: "pdf", kind: "certificate", trust: "self-declared",
+      verifyHint: "Add the issuer's verification link and this becomes Verified." },
+    { ...DOOR_LINK, name: "Behance, Dribbble or your site", desc: "Paste the URL where your work lives." },
+    DOOR_RESUME,
+  ],
+  marketing: [
+    { id: "record", name: "Results you owned", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
+      desc: "A campaign report, a growth deck, a performance summary. PDF.", input: "pdf", kind: "record", trust: "self-declared" },
+    { id: "certificate", name: "A platform certification", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
+      desc: "Google Ads, Meta Blueprint, HubSpot — or a marketing diploma.", input: "pdf", kind: "certificate", trust: "self-declared",
+      verifyHint: "Add the issuer's verification link and this becomes Verified." },
+    { ...DOOR_LINK, name: "Published work or your profile", desc: "A campaign page, an article, a LinkedIn URL." },
+    DOOR_RESUME,
+  ],
+  product: [
+    { id: "project", name: "A product you helped ship", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
+      desc: "A spec, a launch summary, a case study — as PDF.", input: "pdf", kind: "project", trust: "self-declared" },
+    { id: "certificate", name: "A qualification", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
+      desc: "A degree, a diploma, or a product or agile certification.", input: "pdf", kind: "certificate", trust: "self-declared",
+      verifyHint: "Add the issuer's verification link and this becomes Verified." },
+    DOOR_LINK, DOOR_RESUME,
+  ],
+  business: [
+    { id: "certificate", name: "Your licence or registration", icon: ShieldCheck, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
+      desc: "REN or REA registration, an insurance or financial licence, a professional body number.", input: "pdf", kind: "certificate", trust: "self-declared",
+      verifyHint: "Registrations can be checked against the public register — add the number to verify." },
+    { id: "record", name: "A record of what you closed", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
+      desc: "Sales figures, transactions handled, targets met. A PDF summary is enough.", input: "pdf", kind: "record", trust: "self-declared" },
+    { id: "reference", name: "A letter from an employer", icon: GraduationCap, brand: "bg-[#4F46E5]", hover: "hover:bg-[#4338ca]",
+      desc: "A reference or confirmation of employment, on company letterhead.", input: "pdf", kind: "reference", trust: "corroborated" },
+    DOOR_RESUME,
+  ],
+  service: [
+    { id: "reference", name: "A letter from where you worked", icon: GraduationCap, brand: "bg-[#4F46E5]", hover: "hover:bg-[#4338ca]",
+      desc: "A reference letter, a confirmation of employment, or a payslip with the dates on it.", input: "pdf", kind: "reference", trust: "corroborated" },
+    { id: "certificate", name: "Training you've completed", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
+      desc: "Food handling, first aid, safety, barista or hospitality training. SPM counts too.", input: "pdf", kind: "certificate", trust: "self-declared",
+      verifyHint: "Add the issuer's verification link and this becomes Verified." },
+    { id: "record", name: "Proof of responsibility", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
+      desc: "A promotion letter, a shift-lead roster, anything showing what you ran.", input: "pdf", kind: "record", trust: "self-declared" },
+    DOOR_RESUME,
+  ],
+  generic: [
+    { id: "record", name: "Proof of what you've done", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
+      desc: "A project, a report, a work record — whatever shows your actual output. PDF.", input: "pdf", kind: "record", trust: "self-declared" },
+    { id: "certificate", name: "A qualification or certificate", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
+      desc: "SPM, STPM, diploma, TVET, a short course — all of it counts.", input: "pdf", kind: "certificate", trust: "self-declared",
+      verifyHint: "Add the issuer's verification link and this becomes Verified." },
+    { id: "reference", name: "A letter from an employer", icon: GraduationCap, brand: "bg-[#4F46E5]", hover: "hover:bg-[#4338ca]",
+      desc: "A reference or confirmation of employment.", input: "pdf", kind: "reference", trust: "corroborated" },
+    DOOR_LINK, DOOR_RESUME,
+  ],
 };
 
-const SOMETHING_ELSE: EvidenceSource = {
-  id: "other", name: "Something else", icon: Upload,
-  brand: "bg-slate-500", hover: "hover:bg-slate-600", action: "Upload",
-  desc: "Upload anything that proves your skills — certificates, slides, videos, code, or artwork",
-  connectedDesc: "Received · Extracting skill signals from your evidence",
-};
-
+/* The role lists reach well beyond tech on purpose. Most of Malaysia's
+   underemployed graduates are not analysts, and a career product that
+   only lists engineering titles tells everyone else it isn't for them. */
 const roles = [
+  "Student / no job yet",
   "Data Analyst", "Senior Data Analyst", "Analytics Engineer", "Data Engineer",
-  "ML Engineer", "Data Science Manager", "Senior ML Engineer", "Staff Data Scientist",
-  "Product Manager", "Software Engineer", "Senior Software Engineer", "Engineering Manager",
-  "UX Designer", "Marketing Manager", "Financial Analyst", "Strategy Consultant",
+  "ML Engineer", "Data Scientist",
+  "Software Engineer", "Senior Software Engineer", "QA Engineer", "IT Support",
+  "Product Manager", "Business Analyst", "Project Coordinator",
+  "Graphic Designer", "UX/UI Designer", "Content Creator", "Videographer",
+  "Marketing Executive", "Digital Marketing Specialist", "Social Media Executive",
+  "Sales Executive", "Account Manager", "Business Development Executive",
+  "Real Estate Negotiator", "Property Agent", "Insurance Agent",
+  "Accountant", "Audit Associate", "Finance Executive", "Bank Officer",
+  "Admin Executive", "Human Resources Executive", "Customer Service Officer",
+  "Retail Supervisor", "Restaurant Server", "Barista", "Chef / Cook",
+  "Hotel Front Desk", "Nurse", "Technician", "Logistics Coordinator",
 ];
 
 const targetRoles = [
-  "ML Engineer", "Senior ML Engineer", "Staff ML Engineer", "Principal Data Scientist",
-  "Data Science Manager", "Head of Data", "VP of Data", "Chief Data Officer",
-  "Analytics Engineer", "Data Engineer", "Product Manager", "Senior SWE",
-  "Engineering Manager", "CTO / VP Engineering", "Independent Consultant",
+  "Data Analyst", "Senior Data Analyst", "Analytics Engineer", "Data Engineer",
+  "ML Engineer", "Data Scientist", "Data Science Manager", "Head of Data",
+  "Software Engineer", "Senior Software Engineer", "Engineering Manager",
+  "Product Manager", "Senior Product Manager", "Business Analyst",
+  "UX/UI Designer", "Senior Designer", "Design Lead", "Art Director",
+  "Marketing Manager", "Growth Manager", "Brand Manager", "Content Lead",
+  "Sales Manager", "Key Account Manager", "Business Development Manager",
+  "Real Estate Agent", "Property Manager", "Financial Advisor",
+  "Finance Manager", "Chartered Accountant", "HR Manager",
+  "Operations Manager", "Restaurant Manager", "Hotel Supervisor",
+  "Team Lead", "Independent Consultant", "Starting my own business",
 ];
 
 const goals = [
@@ -121,7 +198,7 @@ const goals = [
 
 const scanSteps = [
   { id: "dna", label: "Generating Career DNA", detail: "Combining profile evidence with your Career Calibration answers", duration: 1800 },
-  { id: "market", label: "Benchmarking Market Demand", detail: "Comparing your profile against 240,000+ job postings and 12,000+ career trajectories", duration: 2200 },
+  { id: "market", label: "Benchmarking Market Demand", detail: "Comparing your profile against our Malaysian role, salary and demand datasets", duration: 2200 },
   { id: "blind", label: "Detecting Blind Spots", detail: "Running 50+ career risk models: automation exposure, stagnation signals, demand shifts", duration: 2000 },
   { id: "scenarios", label: "Generating Decision Scenarios", detail: "Simulating 4 future career paths with salary, promotion, and satisfaction projections", duration: 1900 },
   { id: "prescription", label: "Building Career Prescription", detail: "Synthesizing findings into a personalized 30/90-day action plan", duration: 1600 },
@@ -195,16 +272,22 @@ type Step = "upload" | "connect" | "profile" | "calibration" | "scan" | "done";
 export function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState<Step>("upload");
   const [userType, setUserType] = useState("");
-  const [resumeUploaded, setResumeUploaded] = useState(false);
-  const [connectedSources, setConnectedSources] = useState<Record<string, boolean>>({});
-  const [currentRole, setCurrentRole] = useState("Senior Data Analyst");
+  const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
+  const [resumeState, setResumeState] = useState<"idle" | "reading" | "done" | "error">("idle");
+  const [resumeError, setResumeError] = useState<string | null>(null);
+  const [resumeNote, setResumeNote] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [evidence, setEvidence] = useState<EvidenceItem[]>([]);
+  const [linkDraft, setLinkDraft] = useState("");
+  const [openDoor, setOpenDoor] = useState<string | null>(null);
+  const [currentRole, setCurrentRole] = useState("");
   const [customCurrentRole, setCustomCurrentRole] = useState("");
-  const [targetRole, setTargetRole] = useState("ML Engineer");
+  const [targetRole, setTargetRole] = useState("");
   const [customTargetRole, setCustomTargetRole] = useState("");
-  const [experience, setExperience] = useState("5-7");
-  const [salaryRange, setSalaryRange] = useState("RM 5k-8k/mo");
+  const [experience, setExperience] = useState("");
+  const [salaryRange, setSalaryRange] = useState("");
   const [customSalary, setCustomSalary] = useState("");
-  const [selectedGoals, setSelectedGoals] = useState<string[]>(["salary", "pivot"]);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   /* No preset answers — the archetype must reflect the user's own calibration */
   const [calibrationAnswers, setCalibrationAnswers] = useState<Record<string, string>>({});
   const [scanProgress, setScanProgress] = useState<Record<string, "pending" | "running" | "done">>({});
@@ -231,21 +314,68 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     );
   };
 
-  /* Career DNA scores derived from calibration answers.
-     Every answer contributes 2 points total, so single-dimension options
-     weigh the same as dual-dimension ones. */
+  /* ── Career DNA scoring ──
+     Each answer contributes exactly 2 points, split across the one or
+     two dimensions that option maps to, so a single-dimension answer
+     carries the same total weight as a dual-dimension one. Six
+     questions therefore distribute a fixed 12-point budget.
+
+     score = 35 + round(55 × points / 6)
+
+     The earlier formula used a flat +42 baseline, which parked every
+     untouched dimension on exactly 42 and made half the radar look
+     identical for everyone. Scoring is fully deterministic — the same
+     answers always produce the same scores. */
+  const DNA_FLOOR = 35;
+  const DNA_RANGE = 55;
+  const DNA_MAX_POINTS = 6;
+
   const dnaCounts: Record<string, number> = Object.fromEntries(dimensions.map((d: string) => [d, 0]));
-  calibrationQuestions.forEach(q => {
+  const dnaSources: Record<string, string[]> = Object.fromEntries(dimensions.map((d: string) => [d, [] as string[]]));
+  calibrationQuestions.forEach((q, qi) => {
     const idx = q.options.indexOf(calibrationAnswers[q.id]);
     if (idx >= 0) {
       const dims = OPTION_DIMS[q.id][idx];
-      dims.forEach(d => { dnaCounts[d] += 2 / dims.length; });
+      dims.forEach(d => {
+        dnaCounts[d] += 2 / dims.length;
+        dnaSources[d].push(`Q${qi + 1} · ${q.options[idx]} (+${(2 / dims.length).toFixed(dims.length > 1 ? 1 : 0)})`);
+      });
     }
   });
   const dnaScores: Record<string, number> = Object.fromEntries(
-    Object.entries(dnaCounts).map(([d, n]) => [d, Math.min(95, 42 + Math.round(n * 6))])
+    Object.entries(dnaCounts).map(([d, n]) => [
+      d,
+      Math.min(95, DNA_FLOOR + Math.round((DNA_RANGE * n) / DNA_MAX_POINTS)),
+    ])
+  );
+  /* A dimension no answer touched has no signal behind it. We say so
+     rather than presenting a floor score as a measurement. */
+  const dnaMeasured: Record<string, boolean> = Object.fromEntries(
+    Object.entries(dnaCounts).map(([d, n]) => [d, n > 0])
   );
   const archetype = getArchetypeForScoresSafe(dnaScores);
+  const measuredCount = Object.values(dnaMeasured).filter(Boolean).length;
+  const dnaConfidence = Math.round((measuredCount / (dimensions as string[]).length) * 100);
+
+  /* The completed scan, assembled once and handed to the app whole.
+     The summary tiles below read from exactly the same object the rest
+     of the product will, so what the user is shown here is what they
+     get on the dashboard. */
+  const builtProfile: CareerProfile = {
+    userType: userType || "Exploring / not sure",
+    currentRole: currentRole === "Other…" ? (customCurrentRole.trim() || "Other") : currentRole,
+    targetRole: targetRole === "Other…" ? (customTargetRole.trim() || "Other") : targetRole,
+    salaryRange: salaryRange === "Other…" ? (customSalary.trim() || "Other") : salaryRange,
+    experience,
+    goals: selectedGoals,
+    dnaScores,
+    calibrationAnswers,
+    resume: parsedResume,
+    evidence,
+    scannedAt: new Date().toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" }),
+  };
+  const risks = deriveRisks(builtProfile);
+  const scorecard = deriveScorecard(builtProfile);
 
   const startScan = () => {
     setStep("scan");
@@ -256,23 +386,98 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   useEffect(() => {
     if (step !== "scan") return;
     let idx = 0;
+    // Every timer in the chain is tracked, not just the first — leaving
+    // the scan mid-run used to keep firing state updates afterwards.
+    const timers: ReturnType<typeof setTimeout>[] = [];
     const runNext = () => {
       if (idx >= scanSteps.length) {
-        setTimeout(() => setStep("done"), 600);
+        timers.push(setTimeout(() => setStep("done"), 600));
         return;
       }
       const s = scanSteps[idx];
       setScanProgress(prev => ({ ...prev, [s.id]: "running" }));
       setCurrentScanStep(idx);
-      setTimeout(() => {
+      timers.push(setTimeout(() => {
         setScanProgress(prev => ({ ...prev, [s.id]: "done" }));
         idx++;
-        setTimeout(runNext, 200);
-      }, s.duration);
+        timers.push(setTimeout(runNext, 200));
+      }, s.duration));
     };
-    const t = setTimeout(runNext, 300);
-    return () => clearTimeout(t);
+    timers.push(setTimeout(runNext, 300));
+    return () => timers.forEach(clearTimeout);
   }, [step]);
+
+  /* ── Evidence intake ── */
+
+  const roleFamily: RoleFamily = detectRoleFamily(
+    currentRole === "Other…" ? customCurrentRole : currentRole,
+    targetRole === "Other…" ? customTargetRole : targetRole,
+  );
+  const doors = DOORS_BY_FAMILY[roleFamily];
+  const hasEvidence = (id: string) => evidence.some(e => e.id.startsWith(id));
+
+  const addEvidenceItem = (door: EvidenceDoor, label: string, source: string, skills: string[] = []) => {
+    setEvidence(prev =>
+      prev.some(e => e.id.startsWith(door.id) && e.source === source)
+        ? prev
+        : [...prev, {
+            id: `${door.id}-${prev.length + 1}`,
+            kind: door.kind,
+            label,
+            source,
+            trust: door.trust,
+            skills,
+            addedAt: "Just now",
+          }],
+    );
+  };
+
+  const handleResumeFile = async (file: File | undefined | null) => {
+    if (!file) return;
+    const rejection = rejectReasonFor(file);
+    if (rejection) {
+      setResumeState("error");
+      setResumeError(rejection);
+      setParsedResume(null);
+      return;
+    }
+    setResumeState("reading");
+    setResumeError(null);
+    setResumeNote(null);
+    try {
+      const { resume, aiError } = await analyzeResume(file);
+      setParsedResume(resume);
+      setResumeState("done");
+      setResumeNote(aiError ?? null);
+      addEvidenceItem(DOOR_RESUME, resume.fileName, resume.fileName, resume.skills);
+    } catch (err) {
+      setResumeState("error");
+      setResumeError(
+        err instanceof Error ? `We couldn't read that PDF — ${err.message}` : "We couldn't read that PDF.",
+      );
+    }
+  };
+
+  const handleDoorFile = (door: EvidenceDoor, file: File | undefined | null) => {
+    if (!file) return;
+    if (door.id === "resume") { void handleResumeFile(file); return; }
+    const rejection = rejectReasonFor(file);
+    if (rejection) { demoToast(rejection); return; }
+    addEvidenceItem(door, file.name, file.name);
+    setOpenDoor(null);
+    demoToast(`${file.name} added · ${formatBytes(file.size)}`);
+  };
+
+  const handleDoorLink = (door: EvidenceDoor) => {
+    const url = linkDraft.trim();
+    if (!/^https?:\/\/.+\..+/.test(url)) {
+      demoToast("That doesn't look like a full URL — include https://");
+      return;
+    }
+    addEvidenceItem(door, new URL(url).hostname.replace(/^www\./, ""), url);
+    setLinkDraft("");
+    setOpenDoor(null);
+  };
 
   const answeredCount = calibrationQuestions.filter(q => calibrationAnswers[q.id]).length;
   const stepIndex = ["upload", "connect", "profile", "calibration"].indexOf(step);
@@ -349,43 +554,102 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 </div>
               </div>
 
-              {/* Drop zone */}
+              {/* Drop zone — a real file input. The PDF is read in this
+                  browser; only the extracted text is ever sent anywhere. */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                className="hidden"
+                onChange={e => { void handleResumeFile(e.target.files?.[0]); e.target.value = ""; }}
+              />
               <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
+                onDrop={e => {
                   e.preventDefault();
                   setIsDragging(false);
-                  setResumeUploaded(true);
+                  void handleResumeFile(e.dataTransfer.files?.[0]);
                 }}
-                onClick={() => setResumeUploaded(true)}
-                className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all mb-4 ${
+                onClick={() => resumeState !== "reading" && fileInputRef.current?.click()}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
+                className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all mb-4 ${
                   isDragging ? "border-primary bg-blue-50" :
-                  resumeUploaded ? "border-emerald-300 bg-emerald-50" :
+                  resumeState === "done" ? "border-emerald-300 bg-emerald-50" :
+                  resumeState === "error" ? "border-red-300 bg-red-50" :
                   "border-border hover:border-primary/50 hover:bg-blue-50/30"
                 }`}
               >
-                {resumeUploaded ? (
+                {resumeState === "reading" ? (
                   <div>
-                    <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Check size={22} className="text-emerald-600" />
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Loader2 size={20} className="text-primary animate-spin" />
                     </div>
-                    <p className="font-semibold text-emerald-700">resume_jordan_kim.pdf uploaded</p>
-                    <p className="text-sm text-emerald-600 mt-1">42 KB · Ready to analyze</p>
+                    <p className="font-medium text-foreground">Reading your resume…</p>
+                    <p className="text-sm text-muted-foreground mt-1">Extracting text, then pulling out your experience.</p>
+                  </div>
+                ) : resumeState === "done" && parsedResume ? (
+                  <div className="text-left">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Check size={18} className="text-emerald-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-emerald-700 truncate">{parsedResume.fileName}</p>
+                        <p className="text-xs text-emerald-600 mt-0.5">
+                          {formatBytes(parsedResume.fileSize)} · {parsedResume.method === "ai" ? "Analyzed by AI" : "Rule-based extraction"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5 mt-4 text-xs">
+                      {parsedResume.name && <p><span className="text-muted-foreground">Name</span> · <span className="font-medium text-foreground">{parsedResume.name}</span></p>}
+                      {parsedResume.currentTitle && <p><span className="text-muted-foreground">Most recent</span> · <span className="font-medium text-foreground">{parsedResume.currentTitle}</span></p>}
+                      {parsedResume.yearsExperience !== undefined && <p><span className="text-muted-foreground">Experience</span> · <span className="font-medium text-foreground">{parsedResume.yearsExperience} years</span></p>}
+                      {!!parsedResume.employers.length && <p className="truncate"><span className="text-muted-foreground">Worked at</span> · <span className="font-medium text-foreground">{parsedResume.employers.slice(0, 2).join(", ")}</span></p>}
+                      {!!parsedResume.education.length && <p className="sm:col-span-2 truncate"><span className="text-muted-foreground">Education</span> · <span className="font-medium text-foreground">{parsedResume.education[0]}</span></p>}
+                    </div>
+                    {!!parsedResume.skills.length && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {parsedResume.skills.slice(0, 12).map(s => (
+                          <span key={s} className="text-[11px] bg-white border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full">{s}</span>
+                        ))}
+                        {parsedResume.skills.length > 12 && (
+                          <span className="text-[11px] text-emerald-600 px-1 py-0.5">+{parsedResume.skills.length - 12} more</span>
+                        )}
+                      </div>
+                    )}
+                    {!parsedResume.skills.length && (
+                      <p className="text-xs text-muted-foreground mt-3">No recognisable skills found in this file — the calibration questions will do the work instead.</p>
+                    )}
+                    <p className="text-xs text-primary font-medium mt-3">Click to replace this file</p>
                   </div>
                 ) : (
                   <div>
-                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Upload size={20} className="text-muted-foreground" />
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${resumeState === "error" ? "bg-red-100" : "bg-muted"}`}>
+                      {resumeState === "error"
+                        ? <AlertCircle size={20} className="text-red-500" />
+                        : <Upload size={20} className="text-muted-foreground" />}
                     </div>
-                    <p className="font-medium text-foreground">Drop your resume here, or click to upload</p>
-                    <p className="text-sm text-muted-foreground mt-1">PDF, DOCX, or TXT · Max 10MB</p>
+                    <p className="font-medium text-foreground">
+                      {resumeState === "error" ? "That didn't work" : "Drop your resume here, or click to upload"}
+                    </p>
+                    <p className={`text-sm mt-1 ${resumeState === "error" ? "text-red-600" : "text-muted-foreground"}`}>
+                      {resumeState === "error" ? resumeError : "PDF only · Max 10 MB"}
+                    </p>
                   </div>
                 )}
               </div>
 
+              {resumeNote && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                  {resumeNote} We used on-device extraction instead.
+                </p>
+              )}
+
               <p className="text-center text-xs text-muted-foreground mb-2">
-                Your resume is processed securely and never shared. <span className="text-primary cursor-pointer hover:underline">Privacy Policy →</span>
+                Your PDF is read in your browser and never uploaded. Only the extracted text is analysed.
               </p>
               <p className="text-center text-sm mb-8">
                 <button onClick={() => setStep("profile")} className="text-primary font-semibold hover:underline">
@@ -395,13 +659,13 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
               <div className="flex justify-between">
                 <button
-                  onClick={() => setStep("connect")}
+                  onClick={() => setStep("profile")}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Skip for now
                 </button>
                 <button
-                  onClick={() => setStep("connect")}
+                  onClick={() => setStep("profile")}
                   className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm"
                 >
                   Continue <ChevronRight size={16} />
@@ -417,89 +681,114 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Globe size={24} className="text-primary" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Add your career evidence</h1>
-                <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                  {userType ? <>For someone <strong className="text-foreground">{userType.toLowerCase()}</strong>, this evidence matters most — pick what you have, skip what you don't.</> : <>Pick what you have, skip what you don't — every card is optional.</>}
+                <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">What can you show for it?</h1>
+                <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                  These are the things that carry weight for {FAMILY_LABEL[roleFamily].toLowerCase()} work. Add what you have, skip what you don't — none of it is required.
                 </p>
               </div>
 
-              <div className="space-y-4 mb-4">
-                {[...EVIDENCE_SOURCES[evidenceGroupFor(userType)], SOMETHING_ELSE].map(src => {
-                  const connected = !!connectedSources[src.id];
-                  const Icon = src.icon;
+              <div className="space-y-3 mb-5">
+                {doors.map(door => {
+                  const added = hasEvidence(door.id);
+                  const isOpen = openDoor === door.id;
+                  const Icon = door.icon;
+                  const mine = evidence.filter(e => e.id.startsWith(door.id));
                   return (
-                    <div key={src.id} className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${connected ? "bg-emerald-50/60 border-emerald-200" : "bg-white border-border"}`}>
-                      <div className={`w-12 h-12 ${src.brand} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                        <Icon size={22} className="text-white" />
+                    <div key={door.id} className={`rounded-2xl border transition-all ${added ? "bg-emerald-50/60 border-emerald-200" : "bg-white border-border"}`}>
+                      <div className="flex items-center gap-4 p-5">
+                        <div className={`w-12 h-12 ${door.brand} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                          <Icon size={22} className="text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground">{door.name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{door.desc}</p>
+                          {mine.map(item => (
+                            <p key={item.id} className="text-xs text-emerald-700 mt-1.5 flex items-center gap-1.5 truncate">
+                              <Check size={12} className="flex-shrink-0" />
+                              <span className="truncate">{item.label}</span>
+                              <span className="text-[10px] uppercase tracking-wide bg-white border border-emerald-200 rounded-full px-1.5 py-0.5 flex-shrink-0">
+                                {TRUST_LABEL[item.trust]}
+                              </span>
+                            </p>
+                          ))}
+                          {added && door.verifyHint && (
+                            <p className="text-[11px] text-muted-foreground mt-1.5">{door.verifyHint}</p>
+                          )}
+                        </div>
+                        {door.input === "pdf" ? (
+                          <label className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer flex-shrink-0 ${added ? "bg-white text-emerald-700 border border-emerald-200" : `${door.brand} ${door.hover} text-white`}`}>
+                            {added ? "Add another" : "Upload PDF"}
+                            <input
+                              type="file"
+                              accept="application/pdf,.pdf"
+                              className="hidden"
+                              onChange={e => { handleDoorFile(door, e.target.files?.[0]); e.target.value = ""; }}
+                            />
+                          </label>
+                        ) : (
+                          <button
+                            onClick={() => setOpenDoor(isOpen ? null : door.id)}
+                            className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors flex-shrink-0 ${added ? "bg-white text-emerald-700 border border-emerald-200" : `${door.brand} ${door.hover} text-white`}`}
+                          >
+                            {isOpen ? "Cancel" : added ? "Add another" : "Add link"}
+                          </button>
+                        )}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-foreground">
-                          {src.name}
-                          {src.optional && <span className="ml-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground bg-muted border border-border rounded-full px-2 py-0.5 align-middle">Optional</span>}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {connected ? src.connectedDesc : src.desc}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (src.id === "other" && !connected) demoToast("Evidence received — extracting skill signals ✓");
-                          setConnectedSources(prev => ({ ...prev, [src.id]: !connected }));
-                        }}
-                        className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
-                          connected
-                            ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                            : `${src.brand} ${src.hover} text-white`
-                        }`}
-                      >
-                        {connected ? <span className="flex items-center gap-1.5"><Check size={13} /> Added</span> : src.action}
-                      </button>
+                      {isOpen && door.input === "link" && (
+                        <div className="px-5 pb-5 flex gap-2">
+                          <input
+                            autoFocus
+                            value={linkDraft}
+                            onChange={e => setLinkDraft(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") handleDoorLink(door); }}
+                            placeholder="https://linkedin.com/in/yourname"
+                            className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                          <button
+                            onClick={() => handleDoorLink(door)}
+                            className="bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
 
+              {/* We tell people what we can and cannot stand behind rather
+                  than letting an uploaded file imply it was checked. */}
+              <div className="mb-5 bg-accent border border-border rounded-2xl p-4 flex items-start gap-3">
+                <ShieldCheck size={16} className="text-[#8A7038] mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">How much we can vouch for this</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                    Anything you upload starts as <strong className="text-foreground">Self-declared</strong> — we have read it, but nobody has checked it.
+                    A letter from an employer counts as <strong className="text-foreground">Corroborated</strong>.
+                    Only a credential we can confirm against the issuer's own record becomes <strong className="text-foreground">Verified</strong>.
+                    Employers see which is which.
+                  </p>
+                </div>
+              </div>
+
               <button
-                onClick={() => setStep("profile")}
+                onClick={() => setStep("calibration")}
                 className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-primary/40 text-primary rounded-2xl px-5 py-4 text-sm font-semibold hover:bg-blue-50/60 transition-colors mb-4"
               >
                 <Sparkles size={15} /> Nothing to upload? Answer quick questions instead →
               </button>
 
               <p className="text-center text-xs text-muted-foreground mb-8">
-                No GitHub, LinkedIn, or resume? No problem — nobody gets blocked here. Evidence only sharpens the scan.
+                Nobody gets blocked here. Evidence sharpens the scan — the calibration questions alone are enough to start.
               </p>
 
-              <div className="mb-8 bg-slate-950 text-white rounded-2xl p-5">
-                <div className="flex items-start gap-3">
-                  <Sparkles size={18} className="text-blue-300 mt-0.5" />
-                  <div>
-                    <p className="font-semibold">AI Signal Scan preview</p>
-                    <p className="text-xs text-slate-300 leading-relaxed mt-1">
-                      Your evidence shows what you have done. Next, Career Calibration captures how you think, work, communicate, and grow before we assign your animal archetype.
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  {[
-                    "Technical depth: High",
-                    "Execution: High",
-                    "Leadership: Low confidence",
-                    "Communication: Needs calibration",
-                  ].map(signal => (
-                    <div key={signal} className="bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200">
-                      {signal}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               <div className="flex justify-between">
-                <button onClick={() => setStep("upload")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={() => setStep("profile")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft size={16} /> Back
                 </button>
                 <button
-                  onClick={() => setStep("profile")}
+                  onClick={() => setStep("calibration")}
                   className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm"
                 >
                   Continue <ChevronRight size={16} />
@@ -621,15 +910,15 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <div className="flex justify-between">
-                <button onClick={() => setStep("connect")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={() => setStep("upload")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft size={16} /> Back
                 </button>
                 <button
-                  onClick={() => setStep("calibration")}
+                  onClick={() => setStep("connect")}
                   disabled={selectedGoals.length === 0}
                   className="flex items-center gap-2 bg-primary text-white px-7 py-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm shadow-lg shadow-blue-200"
                 >
-                  Continue to Calibration <ChevronRight size={16} />
+                  Continue <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -694,7 +983,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <div className="flex justify-between">
-                <button onClick={() => setStep("profile")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={() => setStep("connect")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft size={16} /> Back
                 </button>
                 <button
@@ -779,11 +1068,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 <p className="text-sm text-slate-300 leading-relaxed mt-2"><span className="text-blue-200 font-semibold">Growth move:</span> {archetype.move}</p>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-3 gap-4 mb-6">
                 {[
-                  { label: "DNA Confidence", value: "82%", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-                  { label: "Career Health Score", value: "78/100", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
-                  { label: "Open Skill Gaps", value: "4", color: "text-red-600", bg: "bg-red-50", border: "border-red-100" },
+                  { label: "DNA confidence", value: `${dnaConfidence}%`, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+                  { label: "Career Health", value: `${scorecard.careerHealth}/100`, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
+                  { label: risks.length === 1 ? "Open risk" : "Open risks", value: String(risks.length), color: "text-red-600", bg: "bg-red-50", border: "border-red-100" },
                 ].map(m => (
                   <div key={m.label} className={`${m.bg} border ${m.border} rounded-xl p-4 text-center`}>
                     <p className={`text-lg font-bold ${m.color}`}>{m.value}</p>
@@ -792,18 +1081,45 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 ))}
               </div>
 
+              {/* Showing the arithmetic is the whole point of the product —
+                  a score nobody can interrogate is just a number. */}
+              <details className="text-left bg-white border border-border rounded-xl mb-8 group">
+                <summary className="cursor-pointer list-none px-5 py-3.5 flex items-center justify-between text-sm font-semibold text-foreground">
+                  How this was calculated
+                  <ChevronRight size={15} className="text-muted-foreground transition-transform group-open:rotate-90" />
+                </summary>
+                <div className="px-5 pb-5 border-t border-border pt-4 space-y-3">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Each of the 6 questions contributes 2 points, split across the dimensions its answer maps to.
+                    A dimension&apos;s score is <code className="text-[11px] bg-muted border border-border rounded px-1 py-0.5">35 + 55 × points / 6</code>.
+                    Same answers, same scores — every time.
+                  </p>
+                  {(dimensions as string[]).map(d => (
+                    <div key={d} className="flex items-start gap-3">
+                      <span className="text-xs font-semibold text-foreground w-28 flex-shrink-0">{d}</span>
+                      <span className="text-xs font-bold tabular-nums text-primary w-8 flex-shrink-0">{dnaScores[d]}</span>
+                      <span className="text-xs text-muted-foreground leading-relaxed">
+                        {dnaMeasured[d]
+                          ? dnaSources[d].join(" · ")
+                          : "No answer mapped to this dimension — floor score, not a measurement."}
+                      </span>
+                    </div>
+                  ))}
+                  {measuredCount < (dimensions as string[]).length && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      {(dimensions as string[]).length - measuredCount} of {(dimensions as string[]).length} dimensions have no signal behind them yet. They sit at the floor score until more evidence or a re-scan fills them in.
+                    </p>
+                  )}
+                </div>
+              </details>
+
               <button
-                onClick={() => onComplete(dnaScores, {
-                  userType: userType || "Exploring / not sure",
-                  currentRole: currentRole === "Other…" ? (customCurrentRole.trim() || "Other") : currentRole,
-                  targetRole: targetRole === "Other…" ? (customTargetRole.trim() || "Other") : targetRole,
-                  salaryRange: salaryRange === "Other…" ? (customSalary.trim() || "Other") : salaryRange,
-                })}
+                onClick={() => onComplete(builtProfile)}
                 className="w-full flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 transition-colors font-semibold text-sm shadow-lg shadow-blue-200"
               >
                 View My Career Dashboard <ChevronRight size={16} />
               </button>
-              <p className="text-xs text-muted-foreground mt-4">Your scan results are saved and update weekly.</p>
+              <p className="text-xs text-muted-foreground mt-4">Re-scan any time — your Career Health moves as the market does.</p>
             </div>
           )}
         </div>

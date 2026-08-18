@@ -11,6 +11,9 @@ import {
   getArchetypeForScoresSafe,
   getTopDimensions,
 } from "../lib/careerDna.js";
+import { useCareerProfile } from "../state/careerProfile";
+import { NextStep } from "../state/stages";
+import { detectRoleFamily, type RoleFamily } from "../lib/roleFamily";
 
 const defaultDnaScores = {
   Technical: 88,
@@ -21,14 +24,27 @@ const defaultDnaScores = {
   Leadership: 64,
 };
 
-const aspirationScores = {
-  Technical: 72,
-  Execution: 65,
-  Communication: 80,
-  Strategic: 88,
-  Innovation: 85,
-  Leadership: 78,
+/* What the role you're aiming at actually leans on.
+
+   This used to be one hardcoded set of numbers, identical for every
+   user, so "conflict detection" produced the same four conflicts for a
+   restaurant supervisor and a machine-learning engineer. The profile
+   below is picked from the target role, so the comparison is against
+   the job you want rather than against a fixed persona. */
+const ASPIRATION_BY_FAMILY: Record<RoleFamily, Record<string, number>> = {
+  data:      { Technical: 88, Strategic: 82, Execution: 74, Communication: 72, Innovation: 66, Leadership: 60 },
+  software:  { Technical: 90, Execution: 82, Innovation: 74, Strategic: 70, Communication: 64, Leadership: 58 },
+  design:    { Innovation: 90, Communication: 84, Strategic: 74, Execution: 70, Technical: 62, Leadership: 60 },
+  marketing: { Communication: 88, Innovation: 82, Strategic: 78, Execution: 72, Leadership: 64, Technical: 56 },
+  product:   { Strategic: 88, Communication: 84, Leadership: 78, Innovation: 74, Execution: 70, Technical: 64 },
+  business:  { Communication: 90, Strategic: 78, Execution: 76, Leadership: 72, Innovation: 62, Technical: 52 },
+  service:   { Communication: 86, Execution: 84, Leadership: 70, Strategic: 62, Innovation: 58, Technical: 50 },
+  generic:   { Communication: 78, Execution: 78, Strategic: 74, Technical: 70, Innovation: 68, Leadership: 66 },
 };
+
+/* A dimension only counts as a conflict once the gap is wide enough to
+   act on. Below this it is noise in a six-question calibration. */
+const CONFLICT_THRESHOLD = 15;
 
 const conflictInsights: Record<string, { rising: string; falling: string }> = {
   Technical: {
@@ -56,8 +72,6 @@ const conflictInsights: Record<string, { rising: string; falling: string }> = {
     falling: "You're pulling back from the spotlight to focus on depth. That's a valid strategic choice.",
   },
 };
-
-const aspirationPrimary = getArchetypeForScores(aspirationScores);
 
 const signalLayers = [
   {
@@ -106,24 +120,28 @@ const confidenceRows = [
   { dimension: "Innovation", source: "Project variety, hackathon signals", confidence: "Medium" },
 ];
 
-export function CareerDna({ scores, onNavigate }: { scores?: Record<string, number>; onNavigate?: (page: string) => void }) {
-  /* Live scan scores from onboarding calibration; falls back to the demo profile */
-  const dnaScores = { ...defaultDnaScores, ...(scores ?? {}) };
+export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { profile } = useCareerProfile();
+  const dnaScores = Object.keys(profile.dnaScores).length ? profile.dnaScores : defaultDnaScores;
+  const targetRole = profile.targetRole;
+  const aspirationScores = ASPIRATION_BY_FAMILY[detectRoleFamily(targetRole)];
+
   const radarData = Object.entries(dnaScores).map(([subject, A]) => ({ subject, A }));
   const conflictRadarData = Object.entries(dnaScores).map(([subject, A]) => ({
     subject,
     evidence: A,
-    aspiration: aspirationScores[subject as keyof typeof aspirationScores],
+    aspiration: aspirationScores[subject] ?? 70,
   }));
   const conflicts = Object.entries(dnaScores)
     .map(([dim, evidenceVal]) => {
-      const aspVal = aspirationScores[dim as keyof typeof aspirationScores];
+      const aspVal = aspirationScores[dim] ?? 70;
       const gap = aspVal - evidenceVal;
       return { dimension: dim, evidence: evidenceVal, aspiration: aspVal, gap, absGap: Math.abs(gap) };
     })
-    .filter(c => c.absGap >= 15)
+    .filter(c => c.absGap >= CONFLICT_THRESHOLD)
     .sort((a, b) => b.absGap - a.absGap);
   const primary = getArchetypeForScoresSafe(dnaScores);
+  const aspirationPrimary = getArchetypeForScores(aspirationScores);
   const topDimensions = getTopDimensions(dnaScores);
 
   return (
@@ -317,9 +335,12 @@ export function CareerDna({ scores, onNavigate }: { scores?: Record<string, numb
           <div className="p-5 border-b border-border">
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-              <h2 className="font-semibold text-foreground">DNA Conflict Detection</h2>
+              <h2 className="font-semibold text-foreground">Where you are vs. where you&apos;re headed</h2>
             </div>
-            <p className="text-sm text-muted-foreground">What you're doing vs. what you're becoming — the gap is the signal.</p>
+            <p className="text-sm text-muted-foreground">
+              The blue shape is the work you can currently prove. The gold shape is what {targetRole || "your target role"} actually leans on.
+              Where they pull apart by more than {CONFLICT_THRESHOLD} points, that gap is your next move.
+            </p>
           </div>
 
           <div className="grid lg:grid-cols-[1fr_1fr] gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border">
@@ -360,7 +381,7 @@ export function CareerDna({ scores, onNavigate }: { scores?: Record<string, numb
 
             <div className="p-5">
               <p className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-3">
-                {conflicts.length} Conflict{conflicts.length !== 1 ? "s" : ""} Detected
+                {conflicts.length} gap{conflicts.length !== 1 ? "s" : ""} worth acting on
               </p>
               <div className="space-y-3">
                 {conflicts.map(c => {
@@ -420,10 +441,9 @@ export function CareerDna({ scores, onNavigate }: { scores?: Record<string, numb
               <p className="text-sm text-slate-300 mt-0.5">We do not treat this as a fixed identity. It updates every 6 months as evidence, work style, and market fit change.</p>
             </div>
           </div>
-          <button onClick={() => onNavigate?.("prescription")} className="inline-flex items-center justify-center gap-2 bg-white text-slate-950 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
-            Use DNA in career plan <ArrowRight size={14} />
-          </button>
         </div>
+
+        <NextStep currentPage="dna" onNavigate={onNavigate} />
       </div>
     </div>
   );

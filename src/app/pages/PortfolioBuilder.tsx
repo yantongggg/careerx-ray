@@ -1,4 +1,7 @@
 import { demoToast } from "../state/toast";
+import { useCareerProfile } from "../state/careerProfile";
+import { NextStep } from "../state/stages";
+import { buildResumeForRole, downloadText } from "../lib/resumeGen";
 import { useState } from "react";
 import {
   Globe,
@@ -45,13 +48,16 @@ const templates = [
   { id: "startup", name: "Startup", desc: "Modern, gradient-heavy", colors: ["#6366f1", "#8b5cf6", "#ec4899"] },
 ];
 
+/* Toasts confirm what happened, nothing more. They used to assert
+   specific parse results — a CGPA, a named hackathon, a count of case
+   studies — for files nobody had uploaded. */
 const altEvidenceSources = [
-  { id: "behance", name: "Behance", desc: "Design case studies", icon: Palette, iconBg: "bg-blue-100", iconColor: "text-blue-600", action: "Connect", done: "Connected", toast: "Behance connected — 6 case studies imported as project evidence ✓" },
-  { id: "dribbble", name: "Dribbble", desc: "UI shots & visual work", icon: Dribbble, iconBg: "bg-pink-100", iconColor: "text-pink-500", action: "Connect", done: "Connected", toast: "Dribbble connected — 14 shots added as visual evidence ✓" },
-  { id: "transcript", name: "Academic Transcript", desc: "PDF from your university", icon: GraduationCap, iconBg: "bg-emerald-100", iconColor: "text-emerald-700", action: "Upload", done: "Uploaded", toast: "Transcript uploaded — CGPA 3.72 & 8 relevant courses parsed ✓" },
-  { id: "certificates", name: "Competition Certificates", desc: "Hackathons, contests, awards", icon: Trophy, iconBg: "bg-amber-100", iconColor: "text-amber-600", action: "Upload", done: "Uploaded", toast: "3 certificates added — PayNet Hackathon & Varsity Datathon verified ✓" },
-  { id: "projectfiles", name: "Project Files", desc: "Slides, reports, design files", icon: File, iconBg: "bg-sky-100", iconColor: "text-sky-600", action: "Upload", done: "Uploaded", toast: "5 project files uploaded — FYP report & pitch deck added ✓" },
-  { id: "videointro", name: "Video Intro", desc: "60-sec self introduction", icon: Video, iconBg: "bg-rose-100", iconColor: "text-rose-500", action: "Upload", done: "Uploaded", toast: "Video intro uploaded — added to your portfolio hero ✓" },
+  { id: "behance", name: "Behance", desc: "Design case studies", icon: Palette, iconBg: "bg-blue-100", iconColor: "text-blue-600", action: "Connect", done: "Connected", toast: "Behance linked as a portfolio source ✓" },
+  { id: "dribbble", name: "Dribbble", desc: "UI shots & visual work", icon: Dribbble, iconBg: "bg-pink-100", iconColor: "text-pink-500", action: "Connect", done: "Connected", toast: "Dribbble linked as a portfolio source ✓" },
+  { id: "transcript", name: "Academic Transcript", desc: "PDF from your university", icon: GraduationCap, iconBg: "bg-emerald-100", iconColor: "text-emerald-700", action: "Upload", done: "Uploaded", toast: "Transcript added to your evidence record ✓" },
+  { id: "certificates", name: "Competition Certificates", desc: "Hackathons, contests, awards", icon: Trophy, iconBg: "bg-amber-100", iconColor: "text-amber-600", action: "Upload", done: "Uploaded", toast: "Certificate added — self-declared until the issuer link is added ✓" },
+  { id: "projectfiles", name: "Project Files", desc: "Slides, reports, design files", icon: File, iconBg: "bg-sky-100", iconColor: "text-sky-600", action: "Upload", done: "Uploaded", toast: "Project file added to your evidence record ✓" },
+  { id: "videointro", name: "Video Intro", desc: "60-sec self introduction", icon: Video, iconBg: "bg-rose-100", iconColor: "text-rose-500", action: "Upload", done: "Uploaded", toast: "Video intro added to your portfolio ✓" },
 ];
 
 const defaultSections = [
@@ -63,11 +69,18 @@ const defaultSections = [
   { id: "contact", name: "Contact", desc: "Email, social links, calendar", icon: Mail, enabled: true },
 ];
 
-export function PortfolioBuilder() {
-  const [linkedinConnected, setLinkedinConnected] = useState(false);
+export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { profile } = useCareerProfile();
+
+  /* Whatever the user added during their scan is already imported. This
+     page used to start every source at false, so someone who had just
+     uploaded a resume and linked their profile was asked to do it all
+     over again. */
+  const importedLink = profile.evidence.find(e => e.kind === "link" || e.kind === "portfolio");
+  const [linkedinConnected, setLinkedinConnected] = useState(!!importedLink);
   const [githubConnected, setGithubConnected] = useState(false);
-  const [resumeUploaded, setResumeUploaded] = useState(false);
-  const [dnaImported, setDnaImported] = useState(false);
+  const [resumeUploaded, setResumeUploaded] = useState(!!profile.resume);
+  const [dnaImported, setDnaImported] = useState(Object.keys(profile.dnaScores).length > 0);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [sections, setSections] = useState(defaultSections);
   const [aiPolished, setAiPolished] = useState(false);
@@ -591,15 +604,18 @@ export function PortfolioBuilder() {
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
-                Generate Resume ({resumeFormat === "pdf" ? "PDF" : "Word"})
+                Generate Resume
               </button>
               {resumeGenerated && (
                 <div className="flex items-center gap-3">
                   <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
-                    <Check className="w-4 h-4" /> Resume ready!
+                    <Check className="w-4 h-4" /> Resume ready
                   </span>
                   <button
-                    onClick={() => {}}
+                    onClick={() => downloadText(
+                      `resume-${(profile.targetRole || "profile").toLowerCase().replace(/\s+/g, "-")}.txt`,
+                      buildResumeForRole(profile, profile.targetRole || "your target role"),
+                    )}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-white text-foreground text-sm font-medium hover:bg-muted transition-colors"
                   >
                     <Download className="w-4 h-4" />
@@ -754,6 +770,10 @@ export function PortfolioBuilder() {
             <p className="text-2xl font-bold text-foreground">4.2 min</p>
             <p className="text-sm text-muted-foreground mt-1">Avg time to create</p>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <NextStep currentPage="portfolio" onNavigate={onNavigate} />
         </div>
       </div>
 
