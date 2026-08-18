@@ -7,9 +7,9 @@ interface LandingPageProps {
 /* The three ways into the product. Everything past the landing page
    asks for an account, so App.tsx routes these through auth itself. */
 const DOORS = [
-  { label: "Candidate", desc: "Find the risks in your career, and the fastest way out of them.", target: "onboarding" },
-  { label: "Employer", desc: "See your hiring pipeline with readiness intelligence attached.", target: "emp-pipeline" },
-  { label: "University", desc: "Catch graduate readiness gaps before they cost offers.", target: "insights" },
+  { label: "Candidate", desc: "Your risks, and the way out.", target: "onboarding" },
+  { label: "Employer", desc: "Your pipeline, with readiness attached.", target: "emp-pipeline" },
+  { label: "University", desc: "Gaps caught before they cost offers.", target: "insights" },
 ];
 
 /* What the plate exposes, in the order the beam reaches it. */
@@ -114,51 +114,74 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           whole product is about comes into focus. */}
       <style>{`
         @keyframes xr-travel {
-          0%        { transform: translateY(-18%); opacity: 0; }
-          6%        { opacity: 1; }
-          48%       { transform: translateY(116%); opacity: 1; }
-          54%, 100% { transform: translateY(116%); opacity: 0; }
+          0%        { transform: translateY(-16%); opacity: 0; }
+          4%        { opacity: 1; }
+          44%       { transform: translateY(114%); opacity: 1; }
+          50%, 100% { transform: translateY(114%); opacity: 0; }
         }
+        /* Findings do not fade in — they strike, overshoot, then settle. */
         @keyframes xr-expose {
-          0%        { opacity: 0; transform: translateY(8px); filter: blur(3px); }
-          6%, 82%   { opacity: 1; transform: none; filter: blur(0); }
-          90%, 100% { opacity: 0; transform: translateY(8px); filter: blur(3px); }
+          0%        { opacity: 0; transform: translateY(7px) scale(.96); filter: brightness(1); }
+          5%        { opacity: 1; transform: translateY(0) scale(1.035); filter: brightness(2.4); }
+          12%, 80%  { opacity: 1; transform: none; filter: brightness(1); }
+          88%, 100% { opacity: 0; transform: translateY(7px) scale(.96); }
         }
+        /* Each line of the record flares as the beam crosses it. */
         @keyframes xr-bone {
-          0%, 6%    { opacity: .13; }
-          44%, 82%  { opacity: .55; }
-          92%, 100% { opacity: .13; }
+          0%, 5%    { opacity: .10; }
+          13%       { opacity: 1; }
+          32%, 80%  { opacity: .48; }
+          90%, 100% { opacity: .10; }
         }
         @keyframes xr-arc {
-          0%, 40%   { stroke-dashoffset: 190; }
-          62%, 84%  { stroke-dashoffset: 52; }
-          93%, 100% { stroke-dashoffset: 190; }
+          0%, 34%   { stroke-dashoffset: 190; }
+          56%, 82%  { stroke-dashoffset: 52; }
+          90%, 100% { stroke-dashoffset: 190; }
+        }
+        @keyframes xr-num {
+          0%, 38%   { opacity: .2; filter: blur(6px); }
+          56%, 82%  { opacity: 1;  filter: blur(0); }
+          90%, 100% { opacity: .2; filter: blur(6px); }
         }
         @keyframes xr-focus {
-          0%, 14%   { filter: blur(9px); opacity: .28; }
-          30%, 84%  { filter: blur(0);   opacity: 1; }
-          94%, 100% { filter: blur(9px); opacity: .28; }
+          0%, 12%   { filter: blur(10px); opacity: .24; }
+          28%, 82%  { filter: blur(0);    opacity: 1; }
+          92%, 100% { filter: blur(10px); opacity: .24; }
         }
-        @keyframes xr-pulse {
-          0%, 100% { opacity: 1; }
-          50%      { opacity: .25; }
+        /* Corner brackets snap bright the instant the exposure completes. */
+        @keyframes xr-reticle {
+          0%, 42%   { opacity: .16; }
+          49%       { opacity: 1; }
+          60%, 82%  { opacity: .4; }
+          90%, 100% { opacity: .16; }
         }
-        .xr-beam  { animation: xr-travel 6s cubic-bezier(.45,0,.25,1) infinite; }
-        .xr-find  { animation: xr-expose 6s ease-out infinite both; }
-        .xr-bone  { animation: xr-bone   6s ease-in-out infinite both; }
-        .xr-arc   { animation: xr-arc    6s cubic-bezier(.3,0,.2,1) infinite both; }
+        @keyframes xr-scanning { 0%, 42% { opacity: 1; } 48%, 100% { opacity: 0; } }
+        @keyframes xr-exposed  { 0%, 44% { opacity: 0; } 52%, 84% { opacity: 1; } 92%, 100% { opacity: 0; } }
+        @keyframes xr-pulse    { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+        .xr-beam     { animation: xr-travel   4s cubic-bezier(.4,0,.2,1) infinite; }
+        .xr-find     { animation: xr-expose   4s cubic-bezier(.2,.9,.3,1) infinite both; }
+        .xr-bone     { animation: xr-bone     4s ease-out infinite both; }
+        .xr-arc      { animation: xr-arc      4s cubic-bezier(.3,0,.2,1) infinite both; }
+        .xr-num      { animation: xr-num      4s ease-out infinite both; }
+        .xr-reticle  { animation: xr-reticle  4s ease-out infinite both; }
+        .xr-scanning { animation: xr-scanning 4s steps(1,end) infinite both; }
+        .xr-exposed  { animation: xr-exposed  4s steps(1,end) infinite both; }
         /* The italic's right sidebearing is tight against the roman that
            follows it, so the word carries its own trailing space. */
-        .xr-word  { animation: xr-focus 6s ease-out infinite both; display: inline-block; padding-right: .1em; }
-        .xr-dot   { animation: xr-pulse  2.4s ease-in-out infinite; }
+        .xr-word     { animation: xr-focus 4s ease-out infinite both; display: inline-block; padding-right: .1em; }
+        .xr-dot      { animation: xr-pulse 2.4s ease-in-out infinite; }
         @keyframes ls-breathe { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
         .ls-breathe { animation: ls-breathe 4s ease-in-out infinite; }
 
         @media (prefers-reduced-motion: reduce) {
-          .xr-beam { display: none; }
-          .xr-find, .xr-word { animation: none; opacity: 1; filter: none; transform: none; }
-          .xr-bone { animation: none; opacity: .5; }
-          .xr-arc  { animation: none; stroke-dashoffset: 52; }
+          .xr-beam, .xr-scanning { display: none; }
+          .xr-find, .xr-word, .xr-num, .xr-exposed {
+            animation: none; opacity: 1; filter: none; transform: none;
+          }
+          .xr-bone    { animation: none; opacity: .48; }
+          .xr-arc     { animation: none; stroke-dashoffset: 52; }
+          .xr-reticle { animation: none; opacity: .4; }
           .xr-dot, .ls-breathe { animation: none; }
         }
       `}</style>
@@ -199,7 +222,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               style={{ fontFamily: "var(--font-mono)" }}
             >
               <span className="xr-dot w-1.5 h-1.5 rounded-full bg-primary inline-block" />
-              Career diagnostics · Malaysia
+              Career diagnostics
             </p>
 
             <h1
@@ -209,14 +232,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               Are you{" "}
               <span className="xr-word text-primary italic">ready</span>{" "}
               for your next opportunity?
-              <span className="block mt-3 text-[0.62em] leading-[1.2] text-muted-foreground/70">
-                Most people find out too late.
-              </span>
             </h1>
 
-            <p className="mt-8 text-lg leading-relaxed text-muted-foreground max-w-[27rem]">
-              Upload what you already have. Three minutes later you have the risks in the
-              job you hold, the gaps to the one you want, and what to do about each.
+            <p className="mt-7 text-lg text-muted-foreground max-w-[24rem]">
+              Upload anything you have. Three minutes later you know.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -224,10 +243,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 onClick={() => onNavigate("register")}
                 className="group inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-4 rounded-full font-medium hover:opacity-90 transition-opacity"
               >
-                Find out in 3 minutes
+                Find out
                 <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
               </button>
-              <span className="text-sm text-muted-foreground">Free · No credit card · No résumé required</span>
             </div>
           </div>
 
@@ -254,8 +272,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
               <div className="relative flex items-start justify-between mb-7">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em]" style={{ fontFamily: "var(--font-mono)", color: "#5E738F" }}>
-                    Plate 01 · exposure
+                  <p className="relative text-[10px] uppercase tracking-[0.2em]" style={{ fontFamily: "var(--font-mono)", color: "#5E738F" }}>
+                    <span className="xr-scanning">Scanning</span>
+                    <span className="xr-exposed absolute left-0 top-0" style={{ color: "#F2C75A" }}>Exposed</span>
                   </p>
                   <p className="text-[#DCE7F5] text-lg mt-1 tracking-tight">Senior Data Analyst</p>
                 </div>
@@ -272,7 +291,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-[#DCE7F5] text-lg leading-none" style={{ fontFamily: "var(--font-mono)" }}>72</span>
+                    <span className="xr-num text-[#DCE7F5] text-lg leading-none" style={{ fontFamily: "var(--font-mono)" }}>72</span>
                     <span className="text-[9px] text-[#5E738F] mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>/100</span>
                   </div>
                 </div>
@@ -332,14 +351,35 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   className="h-full w-full"
                   style={{
                     background:
-                      "linear-gradient(to bottom, rgba(233,185,73,0) 0%, rgba(233,185,73,0.05) 60%, rgba(233,185,73,0.16) 92%, rgba(233,185,73,0) 100%)",
+                      "linear-gradient(to bottom, rgba(233,185,73,0) 0%, rgba(233,185,73,0.04) 55%, rgba(233,185,73,0.20) 94%, rgba(255,240,200,0.30) 100%)",
                   }}
                 />
                 <div
-                  className="h-[2px] w-full"
-                  style={{ background: "#F2C75A", boxShadow: "0 0 18px 3px rgba(242,199,90,0.6)" }}
+                  className="h-[1.5px] w-full"
+                  style={{
+                    background: "linear-gradient(90deg, rgba(242,199,90,0) 0%, #FFF3D0 18%, #FFF9E8 50%, #FFF3D0 82%, rgba(242,199,90,0) 100%)",
+                    boxShadow: "0 0 6px 1px rgba(255,243,208,0.95), 0 0 26px 6px rgba(242,199,90,0.55)",
+                  }}
+                />
+                <div
+                  className="h-6 w-full"
+                  style={{ background: "linear-gradient(to bottom, rgba(242,199,90,0.16), rgba(242,199,90,0))" }}
                 />
               </div>
+
+              {/* Reticle corners */}
+              {[
+                { pos: "top-3 left-3",     b: "border-t-2 border-l-2" },
+                { pos: "top-3 right-3",    b: "border-t-2 border-r-2" },
+                { pos: "bottom-3 left-3",  b: "border-b-2 border-l-2" },
+                { pos: "bottom-3 right-3", b: "border-b-2 border-r-2" },
+              ].map(c => (
+                <div
+                  key={c.pos}
+                  className={`xr-reticle pointer-events-none absolute ${c.pos} ${c.b} w-4 h-4`}
+                  style={{ borderColor: "#F2C75A" }}
+                />
+              ))}
 
               {/* Vignette, so the film has edges */}
               <div
@@ -348,9 +388,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               />
             </div>
 
-            <p className="mt-5 text-center text-xs text-muted-foreground">
-              Every number traces back to something you gave us.
-            </p>
+
           </div>
         </div>
       </section>
@@ -371,22 +409,20 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               className="text-[11px] uppercase tracking-[0.22em] mb-6"
               style={{ fontFamily: "var(--font-mono)", color: "#7E93AE" }}
             >
-              Then · the skill system
+              The skill system
             </p>
             <h2 className="text-[2.5rem] sm:text-[3.25rem] leading-[1.02] tracking-[-0.03em] text-[#EDF3FA]">
               The job you want is the{" "}
               <span className="italic" style={{ color: "#F2C75A" }}>sun</span>.
             </h2>
             <p className="mt-6 text-[#9FB4CE] leading-relaxed max-w-md">
-              What you can already prove orbits close in. What you&apos;re missing burns on
-              the outer ring — and that ring is the shortest honest description of the
-              distance between you and the offer.
+              What you can prove orbits close. What&apos;s missing burns on the outer ring.
             </p>
             <button
               onClick={() => onNavigate("register")}
               className="group mt-9 inline-flex items-center gap-2.5 text-[#F2C75A] font-medium"
             >
-              See your own system
+              See yours
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
@@ -454,7 +490,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-8"
             style={{ fontFamily: "var(--font-mono)" }}
           >
-            One intelligence layer · three doors
+            Three doors
           </p>
           <div className="grid sm:grid-cols-3 gap-x-10 gap-y-8">
             {DOORS.map(door => (
@@ -476,7 +512,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       <footer className="border-t border-border">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            CareerX-Ray — Talentbank&apos;s career intelligence layer
+            CareerX-Ray · Talentbank
           </p>
           <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-mono)" }}>
             Built in Malaysia
