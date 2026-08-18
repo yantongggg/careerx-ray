@@ -206,10 +206,12 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               className="text-[3.25rem] leading-[0.98] tracking-[-0.035em] sm:text-[4.5rem] sm:leading-[0.95]"
               style={{ textWrap: "balance" } as any}
             >
-              Your career has{" "}
-              <span className="xr-word text-primary italic">hidden</span>{" "}
-              fractures.
-              <span className="block mt-2 text-muted-foreground/70">See them first.</span>
+              Are you{" "}
+              <span className="xr-word text-primary italic">ready</span>{" "}
+              for your next opportunity?
+              <span className="block mt-3 text-[0.62em] leading-[1.2] text-muted-foreground/70">
+                Most people find out too late.
+              </span>
             </h1>
 
             <p className="mt-8 text-lg leading-relaxed text-muted-foreground max-w-[27rem]">
@@ -222,10 +224,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 onClick={() => onNavigate("register")}
                 className="group inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-4 rounded-full font-medium hover:opacity-90 transition-opacity"
               >
-                Expose my career
+                Find out in 3 minutes
                 <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
               </button>
-              <span className="text-sm text-muted-foreground">Free · No credit card · 3 minutes</span>
+              <span className="text-sm text-muted-foreground">Free · No credit card · No résumé required</span>
             </div>
           </div>
 
