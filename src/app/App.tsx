@@ -320,7 +320,7 @@ function AppRouter() {
             {history.length > 0 && (
               <button
                 onClick={goBack}
-                className={`${hasJourneyRail ? "2xl:hidden" : ""} flex items-center gap-1 text-xs font-semibold border border-border rounded-lg px-2 py-1.5 hover:bg-muted hover:text-foreground transition-colors mr-1`}
+                className={`${hasJourneyRail ? "xl:hidden" : ""} flex items-center gap-1 text-xs font-semibold border border-border rounded-lg px-2 py-1.5 hover:bg-muted hover:text-foreground transition-colors mr-1`}
               >
                 <ChevronLeft size={13} /> Back
               </button>
@@ -389,6 +389,7 @@ function AppRouter() {
               onNavigate={navigate}
               onBack={goBack}
               canGoBack={history.length > 0}
+              backPage={history.at(-1)}
             />
           )}
           <div className="flex-1 min-w-0 overflow-hidden flex flex-col">

@@ -256,7 +256,7 @@ export function NextStep({ currentPage, onNavigate }: { currentPage: string; onN
 
   return (
     <div
-      className="2xl:hidden bg-white border border-border rounded-xl shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+      className="xl:hidden bg-white border border-border rounded-xl shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4"
       style={{ borderLeft: `3px solid ${next.stage.color}` }}
     >
       <NextDestinationCopy next={next} className="flex-1 min-w-0" />
@@ -283,19 +283,24 @@ function NextDestinationButton({
   next,
   onNavigate,
   showLabel = false,
+  compact = false,
 }: {
   next: NextDestination;
   onNavigate: (page: string) => void;
   showLabel?: boolean;
+  compact?: boolean;
 }) {
   return (
     <button
       onClick={() => onNavigate(next.page)}
-      className="flex-shrink-0 inline-flex items-center justify-between gap-2 text-sm font-semibold text-white px-4 py-3 rounded-lg transition-opacity hover:opacity-90"
+      className={compact
+        ? "mx-auto w-10 h-10 rounded-full shadow-sm inline-flex items-center justify-center text-white hover:shadow-md hover:opacity-90 transition-all"
+        : "flex-shrink-0 inline-flex items-center justify-between gap-2 text-sm font-semibold text-white px-4 py-3 rounded-lg transition-opacity hover:opacity-90"}
       style={{ backgroundColor: next.stage.color }}
       aria-label={`Continue to ${next.label}`}
+      title={compact ? `Continue to ${next.label}` : undefined}
     >
-      {showLabel ? `Continue to ${next.label}` : "Continue"} <ArrowRight size={15} />
+      {!compact && (showLabel ? `Continue to ${next.label}` : "Continue")} <ArrowRight size={compact ? 16 : 15} />
     </button>
   );
 }
@@ -308,50 +313,51 @@ export function JourneyPageRail({
   onNavigate,
   onBack,
   canGoBack,
+  backPage,
 }: {
   currentPage: string;
   onNavigate: (page: string) => void;
   onBack: () => void;
   canGoBack: boolean;
+  backPage?: string;
 }) {
   if (!PAGE_ORDER.includes(currentPage)) return null;
 
   const currentStage = stageForPage(currentPage)!;
-  const currentTool = currentStage.tools.find(tool => tool.page === currentPage)!;
   const next = nextPage(currentPage);
+  const backStage = backPage ? stageForPage(backPage) : undefined;
 
   return (
-    <aside className="hidden 2xl:flex order-last w-60 flex-shrink-0 border-l border-border bg-white/80 p-5 flex-col overflow-y-auto" aria-label="Journey navigation">
-      <div className="sticky top-0 flex min-h-full flex-col">
+    <aside className="hidden xl:flex order-last w-36 flex-shrink-0 items-center justify-center" aria-label="Journey navigation">
+      <div className="grid grid-cols-2 gap-x-5 gap-y-2 text-center">
         <button
           onClick={onBack}
           disabled={!canGoBack}
-          className="inline-flex items-center gap-2 self-start text-xs font-semibold text-muted-foreground hover:text-foreground disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+          className="mx-auto w-10 h-10 rounded-full border border-border bg-white shadow-sm inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-slate-400 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          aria-label="Back"
+          title="Back"
         >
-          <ArrowLeft size={14} /> Back
+          <ArrowLeft size={16} />
         </button>
-
-        <div className="mt-8 border-l-2 pl-4" style={{ borderColor: currentStage.color }}>
-          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: currentStage.color }}>
-            Stage {currentStage.num} · {currentStage.label}
-          </p>
-          <p className="text-sm font-semibold text-foreground mt-1">{currentTool.label}</p>
-          <p className="text-xs text-muted-foreground leading-relaxed mt-1">{currentStage.question}</p>
-        </div>
-
         {next ? (
-          <div className="mt-auto pt-10">
-            <NextDestinationCopy next={next} />
-            <div className="mt-4 [&>button]:w-full">
-              <NextDestinationButton next={next} onNavigate={onNavigate} />
-            </div>
-          </div>
+          <NextDestinationButton next={next} onNavigate={onNavigate} compact />
         ) : (
-          <div className="mt-auto pt-10 border-t border-border">
-            <p className="text-xs font-semibold text-emerald-700">Journey complete</p>
-            <p className="text-xs text-muted-foreground mt-1">You reached the final tool in Stage {currentStage.num}.</p>
-          </div>
+          <button
+            disabled
+            className="mx-auto w-10 h-10 rounded-full shadow-sm inline-flex items-center justify-center text-white opacity-35 cursor-not-allowed"
+            style={{ backgroundColor: currentStage.color }}
+            aria-label="Journey complete"
+            title="Journey complete"
+          >
+            <ArrowRight size={16} />
+          </button>
         )}
+        <p className="text-[9px] font-semibold leading-tight text-muted-foreground">
+          {backStage ? `Stage ${backStage.num} · ${backStage.label}` : "Back"}
+        </p>
+        <p className="text-[9px] font-semibold leading-tight text-slate-700">
+          {next ? `Stage ${next.stage.num} · ${next.stage.label}` : "Complete"}
+        </p>
       </div>
     </aside>
   );
