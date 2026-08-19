@@ -421,7 +421,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
       </nav>
 
       <div className={`flex-1 flex items-center justify-center px-6 ${step === "calibration" || step === "connect" ? "py-6" : "py-12"}`}>
-        <div className={`w-full ${step === "calibration" || step === "connect" ? "max-w-5xl" : "max-w-2xl"}`}>
+        <div className={`w-full ${step === "calibration" || step === "connect" ? "max-w-[1200px]" : "max-w-2xl"}`}>
 
           {/* Progress indicator */}
           {step !== "scan" && step !== "done" && (
@@ -887,23 +887,23 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                 </div>
               </div>
 
-              <div className="grid lg:grid-cols-2 gap-2.5 mb-4">
+              <div className="grid lg:grid-cols-2 gap-3.5 mb-5 items-start">
                 {calibrationQuestions.map((item, index) => (
-                  <div key={item.id} className="bg-white border border-border rounded-xl p-3.5">
-                    <div className="flex items-start gap-2.5 mb-2.5">
+                  <div key={item.id} className="bg-white border border-border rounded-2xl p-5">
+                    <div className="flex items-start gap-3 mb-3.5">
                       <div className="w-6 h-6 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
                         {index + 1}
                       </div>
-                      <p className="font-semibold text-foreground text-sm leading-snug">{item.question}</p>
+                      <p className="font-semibold text-foreground text-[15px] leading-snug">{item.question}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-2 gap-2">
                       {(optionOrders[item.id] ?? item.options.map((_, i) => i)).map(oi => item.options[oi]).map(option => {
                         const active = calibrationAnswers[item.id] === option;
                         return (
                           <button
                             key={option}
                             onClick={() => setCalibrationAnswers(prev => ({ ...prev, [item.id]: option }))}
-                            className={`text-left rounded-lg border px-2.5 py-[7px] text-[11px] leading-snug transition-all ${
+                            className={`text-left rounded-xl border px-3.5 py-2.5 text-[13px] leading-normal transition-all ${
                               active
                                 ? "bg-primary text-white border-primary shadow-sm"
                                 : "bg-white text-foreground border-border hover:border-primary/40 hover:bg-blue-50"
