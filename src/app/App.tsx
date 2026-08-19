@@ -3,6 +3,7 @@ import { Onboarding } from "./pages/Onboarding";
 import { LandingPage } from "./pages/LandingPage";
 import { CareerCommandCenter } from "./pages/CareerCommandCenter";
 import { CareerDna } from "./pages/CareerDna";
+import { DnaMethod } from "./pages/DnaMethod";
 import { JobMatchTracker } from "./pages/JobMatchTracker";
 import { InterviewCoach } from "./pages/InterviewCoach";
 import { OfferDecisionDashboard } from "./pages/OfferDecisionDashboard";
@@ -48,6 +49,7 @@ type Page =
   | "stage-apply"
   | "stage-prove"
   | "dna"
+  | "dna-method"
   | "jobs"
   | "apply-prep"
   | "coach"
@@ -79,6 +81,7 @@ const pageLabels: Record<Page, string> = {
   "stage-apply":    "Apply",
   "stage-prove":    "Prove",
   dna:              "Career DNA",
+  "dna-method":     "How Career DNA Works",
   jobs:             "Job Match Tracker",
   "apply-prep":     "Application Preparation",
   coach:            "Interview Coach",
@@ -105,7 +108,7 @@ const pageLabels: Record<Page, string> = {
 
 const allPages: Page[] = [
   "command", "stage-diagnose", "stage-decide", "stage-prepare", "stage-apply", "stage-prove",
-  "dna", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
+  "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
   "prescription", "evidence", "profile", "employer", "emp-matching", "emp-sla", "emp-reengage",
   "emp-resilience", "emp-pipeline", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
 ];
@@ -118,6 +121,7 @@ const pageRole: Record<Page, Role> = {
   "stage-apply": "candidate",
   "stage-prove": "candidate",
   dna: "candidate",
+  "dna-method": "candidate",
   jobs: "candidate",
   "apply-prep": "candidate",
   coach: "candidate",
@@ -387,6 +391,7 @@ function AppRouter() {
           {page === "stage-apply"     && <StageHub stage={stageById("stage-apply")} onNavigate={navigate} />}
           {page === "stage-prove"     && <StageHub stage={stageById("stage-prove")} onNavigate={navigate} />}
           {page === "dna"             && <CareerDna onNavigate={navigate} />}
+          {page === "dna-method"      && <DnaMethod onNavigate={navigate} />}
           {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
           {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
           {page === "coach"           && <InterviewCoach jobId={prepJobId} onNavigate={navigate} />}

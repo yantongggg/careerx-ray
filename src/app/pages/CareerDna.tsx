@@ -173,6 +173,13 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
               </div>
               <p className="text-sm font-semibold text-primary">{primary.name} · {primary.core.join(" + ")}</p>
               <p className="text-sm text-muted-foreground leading-relaxed mt-2">{primary.oneLiner}</p>
+              <button
+                onClick={() => onNavigate?.("dna-method")}
+                className="group mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+              >
+                How was this worked out?
+                <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+              </button>
             </div>
           </div>
         </div>
