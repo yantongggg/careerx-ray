@@ -262,6 +262,16 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
   const archetype = dnaResult.archetype;
   const dnaConfidence = dnaResult.confidence;
 
+  const profileFieldsComplete = Boolean(
+    currentRole &&
+    targetRole &&
+    experience &&
+    salaryRange &&
+    (currentRole !== "Other…" || customCurrentRole.trim()) &&
+    (targetRole !== "Other…" || customTargetRole.trim()) &&
+    (salaryRange !== "Other…" || customSalary.trim())
+  );
+
   /* The completed scan, assembled once and handed to the app whole.
      The summary tiles below read from exactly the same object the rest
      of the product will, so what the user is shown here is what they
@@ -737,6 +747,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                       onChange={e => setCurrentRole(e.target.value)}
                       className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
+                      <option value="" disabled>Select current role</option>
                       {[...roles, "Student", "Other…"].map(r => <option key={r}>{r}</option>)}
                     </select>
                     {currentRole === "Other…" && (
@@ -757,6 +768,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                       onChange={e => setTargetRole(e.target.value)}
                       className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
+                      <option value="" disabled>Select target role</option>
                       {[...targetRoles, "Other…"].map(r => <option key={r}>{r}</option>)}
                     </select>
                     {targetRole === "Other…" && (
@@ -780,6 +792,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                       onChange={e => setExperience(e.target.value)}
                       className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
+                      <option value="" disabled>Select experience</option>
                       {["0-1", "1-3", "3-5", "5-7", "7-10", "10-15", "15+"].map(v => <option key={v}>{v} years</option>)}
                     </select>
                   </div>
@@ -790,6 +803,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                       onChange={e => setSalaryRange(e.target.value)}
                       className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
+                      <option value="" disabled>Select salary range</option>
                       {["<RM 3k/mo", "RM 3k-5k/mo", "RM 5k-8k/mo", "RM 8k-12k/mo", "RM 12k-20k/mo", "RM 20k+/mo", "Other…"].map(v => <option key={v}>{v}</option>)}
                     </select>
                     {salaryRange === "Other…" && (
@@ -835,7 +849,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                 </button>
                 <button
                   onClick={goNext}
-                  disabled={selectedGoals.length === 0}
+                  disabled={!profileFieldsComplete || selectedGoals.length === 0}
                   className="flex items-center gap-2 bg-primary text-white px-7 py-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm shadow-lg shadow-blue-200"
                 >
                   Continue <ChevronRight size={16} />

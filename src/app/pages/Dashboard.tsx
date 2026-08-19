@@ -19,7 +19,7 @@ const METRIC_TITLE: Record<MetricKey, string> = {
 
 /* The modal shows the derivation, not a second hand-written copy of the
    number. The two used to be maintained separately and drifted apart. */
-function ScoreModal({ k, value, lines, onClose }: { k: MetricKey; value: string; lines: string[]; onClose: () => void }) {
+function ScoreModal({ k, value, summary, lines, onClose }: { k: MetricKey; value: string; summary: string; lines: string[]; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -36,7 +36,7 @@ function ScoreModal({ k, value, lines, onClose }: { k: MetricKey; value: string;
         <div className="p-6 space-y-5">
           <div className="bg-slate-950 text-white rounded-xl p-4">
             <p className="text-2xl font-bold">{value}</p>
-            <p className="text-sm text-slate-300 mt-1 font-medium">Computed from your scan — same answers, same score.</p>
+            <p className="text-sm text-slate-300 mt-1 font-medium">{summary}</p>
           </div>
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">How this was worked out</p>
@@ -50,7 +50,7 @@ function ScoreModal({ k, value, lines, onClose }: { k: MetricKey; value: string;
             </div>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Nothing here is a model guess. The scoring is a deterministic rule set, which is what makes this panel possible at all.
+            This panel uses deterministic rules and reports missing or inconclusive inputs instead of guessing.
           </p>
         </div>
       </div>
@@ -73,12 +73,20 @@ export function Dashboard({ onNavigate }: DashboardProps) {
      risks while the footer of the same page said 5. */
   const metricCards = [
     { key: "health"    as MetricKey, label: "Career Health",   value: String(scorecard.careerHealth), unit: "/100",
+      summary: "Computed from your scan — same answers, same score.",
       color: scorecard.careerHealth >= 80 ? "text-emerald-600" : "text-amber-500", bg: scorecard.careerHealth >= 80 ? "bg-emerald-50" : "bg-amber-50", icon: Shield },
     { key: "ai"        as MetricKey, label: "AI Exposure",     value: scorecard.aiExposure.label, unit: "",
+      summary: "Computed from your scan — same answers, same score.",
       color: scorecard.aiExposure.percent >= 55 ? "text-red-500" : "text-amber-500", bg: scorecard.aiExposure.percent >= 55 ? "bg-red-50" : "bg-amber-50", icon: Brain },
     { key: "salary"    as MetricKey, label: "vs Market",       value: scorecard.vsMarket.label, unit: "",
+      summary: scorecard.vsMarket.label === "No data"
+        ? "Not calculated — no salary was provided in your scan."
+        : scorecard.vsMarket.label === "Inconclusive"
+          ? "Calculated, but your open-ended range does not prove which side of the benchmark you are on."
+          : "Computed from your scan — same answers, same score.",
       color: !scorecard.vsMarket.conclusive ? "text-amber-600" : scorecard.vsMarket.percent < 0 ? "text-red-500" : "text-emerald-600", bg: !scorecard.vsMarket.conclusive ? "bg-amber-50" : scorecard.vsMarket.percent < 0 ? "bg-red-50" : "bg-emerald-50", icon: TrendingUp },
     { key: "promotion" as MetricKey, label: "Promotion Ready", value: `${scorecard.promotionReady}%`, unit: "",
+      summary: "Computed from your scan — same answers, same score.",
       color: scorecard.promotionReady >= 70 ? "text-emerald-600" : "text-amber-500", bg: scorecard.promotionReady >= 70 ? "bg-emerald-50" : "bg-amber-50", icon: Award },
   ];
 
@@ -89,10 +97,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     .concat(profile.evidence.filter(e => e.kind !== "resume").slice(0, 2).map(e => `${e.label} — ${e.trust} evidence on file`));
 
   const firstName = profile.resume?.name?.split(" ")[0];
+  const activeMetric = modal ? metricCards.find(m => m.key === modal) : undefined;
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
-      {modal && <ScoreModal k={modal} lines={scorecard.explain[modal]} value={metricCards.find(m => m.key === modal)!.value} onClose={() => setModal(null)} />}
+      {modal && activeMetric && (
+        <ScoreModal k={modal} lines={scorecard.explain[modal]} value={activeMetric.value} summary={activeMetric.summary} onClose={() => setModal(null)} />
+      )}
       <div className="p-6 lg:p-8 max-w-[1300px] mx-auto space-y-6">
 
         {/* ── MRI Header ── */}
