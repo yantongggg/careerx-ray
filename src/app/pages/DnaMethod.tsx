@@ -11,6 +11,9 @@ interface DnaMethodProps {
   onNavigate?: (page: string) => void;
 }
 
+/* Kept in step with CONFLICT_THRESHOLD in CareerDna.tsx. */
+const CONFLICT_GAP = 15;
+
 const AXIS_NOTE: Record<string, string> = {
   craft: "Whether your evidence is in the work itself or in carrying it to other people.",
   tempo: "Whether you are trusted to land things, or to find the thing worth landing.",
@@ -173,6 +176,37 @@ export function DnaMethod({ onNavigate }: DnaMethodProps) {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* ── Step 5 · the target-role benchmark ── */}
+        <section className="bg-white border border-border rounded-xl p-6">
+          <div className="flex items-baseline gap-3 mb-1">
+            <span className="text-xs font-bold text-primary" style={{ fontFamily: "var(--font-mono)" }}>05</span>
+            <h2 className="font-semibold text-foreground">Where the target-role profile comes from</h2>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-5 max-w-2xl">
+            On your Career DNA page a second shape sits over yours — the profile a role like the one
+            you picked usually leans on. That shape is not something you told us, and it is not
+            measured from hiring data. It is a written benchmark, one per role family, and we would
+            rather say so than let it look like a finding.
+          </p>
+
+          <div className="border border-amber-200 bg-amber-50/60 rounded-xl p-4 mb-4">
+            <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider mb-2">
+              Authored, not measured
+            </p>
+            <p className="text-sm text-amber-900 leading-relaxed">
+              Eight role families, each with a written profile across the six dimensions. Your target
+              role is matched to a family, and that family&apos;s profile becomes the comparison. Replace
+              it with real postings data and every gap on your Career DNA page gets sharper — nothing
+              else in the method has to change.
+            </p>
+          </div>
+
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            What is real: the gap arithmetic, the {CONFLICT_GAP}-point threshold before a gap is worth
+            showing, and your own six scores. What is authored: the benchmark being compared against.
+          </p>
         </section>
 
         {/* ── What this is not ── */}

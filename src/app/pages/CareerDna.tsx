@@ -317,26 +317,21 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
           </section>
         </div>
 
-        <section className="bg-white border border-border rounded-xl p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 size={17} className="text-muted-foreground" />
-            <h2 className="font-semibold text-foreground">12 archetypes model</h2>
+        <button
+          onClick={() => onNavigate?.("dna-method")}
+          className="group w-full bg-white border border-border rounded-xl p-5 shadow-sm text-left hover:border-primary/40 transition-colors flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3">
+            <BarChart3 size={17} className="text-muted-foreground flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-foreground">See the full 12-role model</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                The three axes, all twelve roles, and how this was worked out.
+              </p>
+            </div>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {archetypes.map(archetype => (
-              <div key={archetype.name} className={`border rounded-xl p-4 ${archetype.name === primary.name ? "border-primary bg-blue-50" : "border-border bg-white"}`}>
-                <div className="flex items-center gap-3">
-                  <img src={archetype.image} alt={archetype.animal} className="w-11 h-11 rounded-lg object-cover shadow-sm flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-foreground truncate">{archetype.type}</p>
-                    <p className="text-xs text-primary font-semibold mt-0.5">{archetype.core.join(" + ")}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{archetype.name}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+          <ArrowRight size={16} className="text-primary flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
+        </button>
 
         <section className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
           <div className="p-5 border-b border-border">
@@ -345,7 +340,8 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
               <h2 className="font-semibold text-foreground">Where you are vs. where you&apos;re headed</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              The blue shape is the work you can currently prove. The gold shape is what {targetRole || "your target role"} actually leans on.
+              The blue shape is the work you can currently prove. The gold shape is the profile a role
+              like {targetRole || "your target role"} usually leans on — a written benchmark, not a measurement.
               Where they pull apart by more than {CONFLICT_THRESHOLD} points, that gap is your next move.
             </p>
           </div>
@@ -355,11 +351,11 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
               <div className="flex items-center justify-center gap-6 mb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ background: "#2563EB" }} />
-                  <span className="text-xs font-semibold text-muted-foreground">Evidence (What you do)</span>
+                  <span className="text-xs font-semibold text-muted-foreground">You · what your answers show</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ background: "#8A7038" }} />
-                  <span className="text-xs font-semibold text-muted-foreground">Aspiration (What you want)</span>
+                  <span className="text-xs font-semibold text-muted-foreground">{targetRole || "Target role"} · typical profile</span>
                 </div>
               </div>
               <div style={{ width: "100%", height: 300 }}>
@@ -368,7 +364,7 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
                     <PolarGrid stroke="#E2E8F0" />
                     <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: "#64748B" }} />
                     <RadarShape dataKey="evidence" stroke="#2563EB" fill="#2563EB" fillOpacity={0.12} strokeWidth={2.5} isAnimationActive={false} name="Evidence" />
-                    <RadarShape dataKey="aspiration" stroke="#8A7038" fill="#8A7038" fillOpacity={0.10} strokeWidth={2.5} strokeDasharray="6 3" isAnimationActive={false} name="Aspiration" />
+                    <RadarShape dataKey="aspiration" stroke="#8A7038" fill="#8A7038" fillOpacity={0.10} strokeWidth={2.5} strokeDasharray="6 3" isAnimationActive={false} name="Target role" />
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
@@ -409,7 +405,7 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
                         <div className="flex-1">
                           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                             <span>Evidence: {c.evidence}</span>
-                            <span>Aspiration: {c.aspiration}</span>
+                            <span>Target role: {c.aspiration}</span>
                           </div>
                           <div className="h-2 bg-muted rounded-full overflow-hidden relative">
                             <div className="absolute h-full bg-blue-400 rounded-full" style={{ width: `${c.evidence}%` }} />
