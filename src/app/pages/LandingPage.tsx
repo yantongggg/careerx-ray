@@ -20,8 +20,15 @@ const FINDINGS = [
   { label: "Communication", value: "84", risk: false },
 ];
 
-/* The record underneath, before anything has been read into it. */
-const BONES = [88, 62, 74, 46, 80, 55];
+/* The record the beam reads. Each row is a real line off a CV, so the
+   scan is visibly working on evidence rather than on placeholder bars. */
+const RECORD: { k: string; v: string; flag?: boolean }[] = [
+  { k: "ROLE",   v: "Senior Data Analyst · 5 yrs" },
+  { k: "SKILLS", v: "SQL · Python · Tableau · dbt" },
+  { k: "PAY",    v: "RM 8,500 / month" },
+  { k: "CERTS",  v: "None on file", flag: true },
+  { k: "TARGET", v: "ML Engineer" },
+];
 
 /* The skill system, as it appears inside the product: the target role is
    the sun, proven skills orbit close in, and what you're missing burns
@@ -109,7 +116,7 @@ function Planet({
 export function LandingPage({ onNavigate }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* One 6s exposure drives everything: the beam travels, the record
+      {/* One 4s exposure drives everything: the beam travels, the record
           under it lights up, findings ignite behind it, and the word the
           whole product is about comes into focus. */}
       <style>{`
@@ -139,14 +146,14 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           90%, 100% { stroke-dashoffset: 190; }
         }
         @keyframes xr-num {
-          0%, 38%   { opacity: .2; filter: blur(6px); }
-          56%, 82%  { opacity: 1;  filter: blur(0); }
-          90%, 100% { opacity: .2; filter: blur(6px); }
+          0%, 34%   { opacity: .2; filter: blur(6px); }
+          52%, 90%  { opacity: 1;  filter: blur(0); }
+          97%, 100% { opacity: .2; filter: blur(6px); }
         }
         @keyframes xr-focus {
-          0%, 12%   { filter: blur(10px); opacity: .24; }
-          28%, 82%  { filter: blur(0);    opacity: 1; }
-          92%, 100% { filter: blur(10px); opacity: .24; }
+          0%, 10%   { filter: blur(10px); opacity: .24; }
+          26%, 90%  { filter: blur(0);    opacity: 1; }
+          97%, 100% { filter: blur(10px); opacity: .24; }
         }
         /* Corner brackets snap bright the instant the exposure completes. */
         @keyframes xr-reticle {
@@ -154,6 +161,20 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           49%       { opacity: 1; }
           60%, 82%  { opacity: .4; }
           90%, 100% { opacity: .16; }
+        }
+        @keyframes xr-read {
+          0%, 3%    { opacity: 0; transform: scaleX(0);   transform-origin: left; }
+          8%        { opacity: 1; transform: scaleX(1);   transform-origin: left; }
+          16%       { opacity: 1; transform: scaleX(1);   transform-origin: right; }
+          22%, 100% { opacity: 0; transform: scaleX(0);   transform-origin: right; }
+        }
+        /* The gap the whole product exists to find, flagged on completion. */
+        @keyframes xr-flag {
+          0%, 46%          { color: #DCE7F5; text-shadow: 0 0 14px rgba(190,215,255,.35); }
+          52%, 58%, 64%    { color: #FF8A8A; text-shadow: 0 0 16px rgba(255,138,138,.9); }
+          55%, 61%         { color: #FFC4C4; text-shadow: 0 0 22px rgba(255,138,138,1); }
+          72%, 84%         { color: #FF8A8A; text-shadow: 0 0 14px rgba(255,138,138,.5); }
+          92%, 100%        { color: #DCE7F5; text-shadow: none; }
         }
         @keyframes xr-scanning { 0%, 42% { opacity: 1; } 48%, 100% { opacity: 0; } }
         @keyframes xr-exposed  { 0%, 44% { opacity: 0; } 52%, 84% { opacity: 1; } 92%, 100% { opacity: 0; } }
@@ -165,6 +186,8 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         .xr-arc      { animation: xr-arc      4s cubic-bezier(.3,0,.2,1) infinite both; }
         .xr-num      { animation: xr-num      4s ease-out infinite both; }
         .xr-reticle  { animation: xr-reticle  4s ease-out infinite both; }
+        .xr-read     { animation: xr-read     4s ease-out infinite both; }
+        .xr-flag     { animation: xr-flag     4s steps(1,end) infinite both; }
         .xr-scanning { animation: xr-scanning 4s steps(1,end) infinite both; }
         .xr-exposed  { animation: xr-exposed  4s steps(1,end) infinite both; }
         /* The italic's right sidebearing is tight against the roman that
@@ -180,6 +203,8 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             animation: none; opacity: 1; filter: none; transform: none;
           }
           .xr-bone    { animation: none; opacity: .48; }
+          .xr-read    { display: none; }
+          .xr-flag    { animation: none; color: #FF8A8A; }
           .xr-arc     { animation: none; stroke-dashoffset: 52; }
           .xr-reticle { animation: none; opacity: .4; }
           .xr-dot, .ls-breathe { animation: none; }
@@ -214,7 +239,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
       {/* ── Hero ── */}
       <section className="max-w-6xl mx-auto px-6 pt-12 pb-24 lg:pt-16 lg:pb-32">
-        <div className="grid lg:grid-cols-[1.08fr_1fr] gap-14 lg:gap-16 items-center">
+        <div className="grid lg:grid-cols-[1.15fr_1fr] gap-14 lg:gap-14 items-center">
 
           <div>
             <p
@@ -226,7 +251,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             </p>
 
             <h1
-              className="text-[3.25rem] leading-[0.98] tracking-[-0.035em] sm:text-[4.5rem] sm:leading-[0.95]"
+              className="text-[3.5rem] leading-[0.94] tracking-[-0.04em] sm:text-[5.25rem] lg:text-[6rem] sm:leading-[0.92]"
               style={{ textWrap: "balance" } as any}
             >
               Are you{" "}
@@ -297,19 +322,35 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 </div>
               </div>
 
-              {/* The record, lighting up as it is read */}
-              <div className="relative space-y-2 mb-7">
-                {BONES.map((w, i) => (
+              {/* The record, read line by line as the beam crosses it */}
+              <div className="relative mb-6">
+                {RECORD.map((r, i) => (
                   <div
-                    key={i}
-                    className="xr-bone h-2 rounded-full"
+                    key={r.k}
+                    className="xr-bone relative grid grid-cols-[64px_1fr] items-baseline gap-3 py-[7px]"
                     style={{
-                      width: `${w}%`,
-                      background: "linear-gradient(90deg, #DCE7F5, rgba(220,231,245,0.35))",
-                      boxShadow: "0 0 12px rgba(190,215,255,0.35)",
-                      animationDelay: `${i * 0.08}s`,
+                      animationDelay: `${i * 0.07}s`,
+                      borderTop: i ? "1px solid rgba(159,180,206,0.12)" : "none",
                     }}
-                  />
+                  >
+                    <span className="text-[9.5px] tracking-[0.14em]"
+                          style={{ fontFamily: "var(--font-mono)", color: "#5E738F" }}>
+                      {r.k}
+                    </span>
+                    <span
+                      className={`text-[13px] ${r.flag ? "xr-flag" : "text-[#DCE7F5]"}`}
+                      style={r.flag ? undefined : { textShadow: "0 0 14px rgba(190,215,255,0.35)" }}
+                    >
+                      {r.v}
+                    </span>
+                    <span
+                      className="xr-read pointer-events-none absolute inset-y-0 -inset-x-2 rounded"
+                      style={{
+                        animationDelay: `${i * 0.07}s`,
+                        background: "linear-gradient(90deg, rgba(242,199,90,0.22), rgba(242,199,90,0.05))",
+                      }}
+                    />
+                  </div>
                 ))}
               </div>
 
