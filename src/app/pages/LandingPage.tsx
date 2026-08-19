@@ -115,7 +115,7 @@ function Planet({
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
       {/* One 4s exposure drives everything: the beam travels, the record
           under it lights up, findings ignite behind it, and the word the
           whole product is about comes into focus. */}
@@ -238,40 +238,41 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       </nav>
 
       {/* ── Hero ── */}
-      <section className="max-w-6xl mx-auto px-6 pt-12 pb-24 lg:pt-16 lg:pb-32">
-        <div className="grid lg:grid-cols-[1.15fr_1fr] gap-14 lg:gap-14 items-center">
+      {/* The headline runs the full width and the plate sits under it, so
+          the sentence is the thing you remember and the scan is the proof
+          you scroll into. */}
+      <section className="max-w-[1400px] mx-auto px-6 pt-10 pb-20 lg:pt-12 lg:pb-24">
+        <p
+          className="flex items-center gap-2.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground mb-7"
+          style={{ fontFamily: "var(--font-mono)" }}
+        >
+          <span className="xr-dot w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+          Career diagnostics
+        </p>
+
+        {/* Sized off the viewport so it fills the width at every breakpoint
+            without a fixed no-wrap phrase pushing the page sideways. */}
+        <h1
+          className="leading-[0.9] tracking-[-0.045em]"
+          style={{ fontSize: "clamp(2.75rem, 8.4vw, 7.5rem)", textWrap: "balance" } as any}
+        >
+          Are you <span className="xr-word text-primary italic">ready</span> for your next opportunity?
+        </h1>
+
+        <div className="mt-10 lg:mt-12 grid lg:grid-cols-[1fr_1.3fr] gap-10 lg:gap-14 items-center">
 
           <div>
-            <p
-              className="flex items-center gap-2.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground mb-8"
-              style={{ fontFamily: "var(--font-mono)" }}
-            >
-              <span className="xr-dot w-1.5 h-1.5 rounded-full bg-primary inline-block" />
-              Career diagnostics
-            </p>
-
-            <h1
-              className="text-[3.5rem] leading-[0.94] tracking-[-0.04em] sm:text-[5.25rem] lg:text-[6rem] sm:leading-[0.92]"
-              style={{ textWrap: "balance" } as any}
-            >
-              Are you{" "}
-              <span className="xr-word text-primary italic">ready</span>{" "}
-              for your next opportunity?
-            </h1>
-
-            <p className="mt-7 text-lg text-muted-foreground max-w-[24rem]">
+            <p className="text-xl lg:text-2xl leading-snug text-muted-foreground max-w-[22rem]">
               Upload anything you have. Three minutes later you know.
             </p>
 
-            <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-3">
-              <button
-                onClick={() => onNavigate("register")}
-                className="group inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-4 rounded-full font-medium hover:opacity-90 transition-opacity"
-              >
-                Find out
-                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
+            <button
+              onClick={() => onNavigate("register")}
+              className="group mt-8 inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-4 rounded-full font-medium hover:opacity-90 transition-opacity"
+            >
+              Find out
+              <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+            </button>
           </div>
 
           {/* ── The plate ── */}
