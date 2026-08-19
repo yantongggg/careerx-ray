@@ -73,6 +73,9 @@ export interface CareerProfile {
   experience: string;
   goals: string[];
   dnaScores: Record<string, number>;
+  /* Decided once by calculateCareerDna at scan time. Pages read this;
+     none of them re-derive it. */
+  archetypeName: string;
   /** Kept so "why is my score this?" can point at the actual answers. */
   calibrationAnswers: Record<string, string>;
   resume: ParsedResume | null;
@@ -88,6 +91,7 @@ export const EMPTY_PROFILE: CareerProfile = {
   experience: "",
   goals: [],
   dnaScores: {},
+  archetypeName: "",
   calibrationAnswers: {},
   resume: null,
   evidence: [],

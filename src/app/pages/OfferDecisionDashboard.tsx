@@ -1,4 +1,4 @@
-import { getArchetypeForScoresSafe } from "../lib/careerDna.js";
+import { archetypeFor } from "../lib/careerDna.js";
 import { useState } from "react";
 import {
   ArrowRight, Award, BarChart3, Building2, CheckCircle, MapPin, Scale,
@@ -71,7 +71,7 @@ export function OfferDecisionDashboard({ onNavigate }: { onNavigate?: (page: str
   const dnaScores = Object.keys(profile.dnaScores).length
     ? profile.dnaScores
     : { Technical: 55, Execution: 55, Communication: 55, Strategic: 55, Innovation: 55, Leadership: 55 };
-  const archetype = getArchetypeForScoresSafe(dnaScores);
+  const archetype = archetypeFor(profile);
 
   /* How well your calibrated dimensions line up with what the role
      leans on — a weighted average of your own scores, so this is the

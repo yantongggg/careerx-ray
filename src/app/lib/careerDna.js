@@ -453,6 +453,17 @@ const maxPointsByDimension = Object.fromEntries(
   ]),
 );
 
+/* The one way a page should get someone's archetype. It reads the name
+   decided at scan time; the score-based fallbacks exist only for the
+   seeded demo profile, which has no scan behind it. */
+export function archetypeFor(profile) {
+  const stored = profile?.archetypeName
+    ? archetypes.find((a) => a.name === profile.archetypeName)
+    : null;
+  if (stored) return stored;
+  return getArchetypeForScoresSafe(profile?.dnaScores ?? {});
+}
+
 export function calculateCareerDna(answers) {
   const points = Object.fromEntries(dimensions.map((d) => [d, 0]));
   const sources = Object.fromEntries(dimensions.map((d) => [d, []]));

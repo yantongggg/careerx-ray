@@ -8,7 +8,7 @@ import {
 import {
   archetypes,
   getArchetypeForScores,
-  getArchetypeForScoresSafe,
+  archetypeFor,
   getTopDimensions,
 } from "../lib/careerDna.js";
 import { useCareerProfile } from "../state/careerProfile";
@@ -140,7 +140,7 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
     })
     .filter(c => c.absGap >= CONFLICT_THRESHOLD)
     .sort((a, b) => b.absGap - a.absGap);
-  const primary = getArchetypeForScoresSafe(dnaScores);
+  const primary = archetypeFor(profile);
   const aspirationPrimary = getArchetypeForScores(aspirationScores);
   const topDimensions = getTopDimensions(dnaScores);
 

@@ -273,6 +273,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
     experience,
     goals: selectedGoals,
     dnaScores,
+    archetypeName: archetype.name,
     calibrationAnswers,
     resume: parsedResume,
     evidence,

@@ -1,5 +1,6 @@
 import { demoToast } from "../state/toast";
-import { getArchetypeForScoresSafe } from "../lib/careerDna.js";
+import { archetypeFor } from "../lib/careerDna.js";
+import { useCareerProfile } from "../state/careerProfile";
 import { MapPin, Briefcase, GraduationCap, Award, Code, Star, ExternalLink, Edit3, Plus, ArrowRight } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 
@@ -79,8 +80,9 @@ const achievements = [
   { label: "Hackathon Winner", issuer: "Stripe ML Summit 2023", icon: Award },
 ];
 
-export function UserProfile({ onNavigate, scores }: { onNavigate?: (page: string) => void; scores?: Record<string, number> }) {
-  const primary = getArchetypeForScoresSafe(scores ?? { Technical: 88, Execution: 92, Communication: 76, Strategic: 60, Innovation: 52, Leadership: 64 });
+export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { profile } = useCareerProfile();
+  const primary = archetypeFor(profile);
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
