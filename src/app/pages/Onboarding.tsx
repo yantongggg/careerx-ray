@@ -420,12 +420,12 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
         </div>
       </nav>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-2xl">
+      <div className={`flex-1 flex items-center justify-center px-6 ${step === "calibration" || step === "connect" ? "py-6" : "py-12"}`}>
+        <div className={`w-full ${step === "calibration" || step === "connect" ? "max-w-5xl" : "max-w-2xl"}`}>
 
           {/* Progress indicator */}
           {step !== "scan" && step !== "done" && (
-            <div className="flex items-center gap-2 mb-8 justify-center">
+            <div className={`flex items-center gap-2 justify-center ${step === "calibration" || step === "connect" ? "mb-5" : "mb-8"}`}>
               {STEP_LABELS.map((label, i) => (
                 <div key={label} className="flex items-center gap-2">
                   <div className={`flex items-center gap-2 ${i <= stepIndex ? "text-primary" : "text-muted-foreground"}`}>
@@ -607,17 +607,19 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
           {/* Step: Connect accounts */}
           {step === "connect" && (
             <div>
-              <div className="text-center mb-8">
-                <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Globe size={24} className="text-primary" />
+              <div className="flex items-start gap-2.5 mb-5">
+                <div className="w-9 h-9 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Globe size={17} className="text-primary" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">What can you show for it?</h1>
-                <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                  These are the things that carry weight for {FAMILY_LABEL[roleFamily].toLowerCase()} work. Add what you have, skip what you don't — none of it is required.
-                </p>
+                <div>
+                  <h1 className="text-xl font-bold text-foreground tracking-tight">What can you show for it?</h1>
+                  <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
+                    What carries weight for {FAMILY_LABEL[roleFamily].toLowerCase()} work. Add what you have, skip what you don&apos;t — none of it is required.
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-3 mb-5">
+              <div className="grid lg:grid-cols-2 gap-3 mb-5 items-start">
                 {doors.map(door => {
                   const added = hasEvidence(door.id);
                   const isOpen = openDoor === door.id;
@@ -861,47 +863,47 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
           {/* Step: Career Calibration */}
           {step === "calibration" && (
             <div>
-              <div className="text-center mb-8">
-                <div className="w-14 h-14 bg-purple-50 border border-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Brain size={24} className="text-purple-600" />
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 bg-purple-50 border border-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Brain size={17} className="text-purple-600" />
+                    </div>
+                    <h1 className="text-xl font-bold text-foreground tracking-tight">Career Calibration</h1>
+                  </div>
+                  <p className="text-muted-foreground text-sm mt-2 max-w-lg">
+                    Six scenarios. No archetype is assigned until all six are answered.
+                  </p>
                 </div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Career Calibration</h1>
-                <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                  Your profiles show evidence. These quick scenarios add the human signal layer before we generate your Career DNA animal.
-                </p>
+
+                <div className="sm:w-56 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs text-muted-foreground">Progress</span>
+                    <span className="text-xs font-bold text-primary">{answeredCount}/{calibrationQuestions.length}</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden border border-border">
+                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(answeredCount / calibrationQuestions.length) * 100}%` }} />
+                  </div>
+                </div>
               </div>
 
-              <div className="mb-5 bg-blue-50 border border-blue-100 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-semibold text-foreground">Calibration progress</p>
-                  <span className="text-xs font-bold text-primary">{answeredCount}/6 answered</span>
-                </div>
-                <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(answeredCount / calibrationQuestions.length) * 100}%` }} />
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">No animal archetype is assigned until this layer is complete.</p>
-              </div>
-
-              <div className="space-y-4 mb-8">
+              <div className="grid lg:grid-cols-2 gap-2.5 mb-4">
                 {calibrationQuestions.map((item, index) => (
-                  <div key={item.id} className="bg-white border border-border rounded-2xl p-5">
-                    <div className="flex items-start gap-3 mb-4">
-                      <div className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                  <div key={item.id} className="bg-white border border-border rounded-xl p-3.5">
+                    <div className="flex items-start gap-2.5 mb-2.5">
+                      <div className="w-6 h-6 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
                         {index + 1}
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground text-sm">{item.question}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Scenario-based calibration, not a personality label.</p>
-                      </div>
+                      <p className="font-semibold text-foreground text-sm leading-snug">{item.question}</p>
                     </div>
-                    <div className="grid sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {(optionOrders[item.id] ?? item.options.map((_, i) => i)).map(oi => item.options[oi]).map(option => {
                         const active = calibrationAnswers[item.id] === option;
                         return (
                           <button
                             key={option}
                             onClick={() => setCalibrationAnswers(prev => ({ ...prev, [item.id]: option }))}
-                            className={`text-left rounded-xl border px-3 py-3 text-xs transition-all ${
+                            className={`text-left rounded-lg border px-2.5 py-[7px] text-[11px] leading-snug transition-all ${
                               active
                                 ? "bg-primary text-white border-primary shadow-sm"
                                 : "bg-white text-foreground border-border hover:border-primary/40 hover:bg-blue-50"
