@@ -12,13 +12,41 @@ const DOORS = [
   { label: "University", desc: "Gaps caught before they cost offers.", target: "insights" },
 ];
 
-/* Three readings, in the order the beam reaches them. One thing to fix,
-   one to watch, one already working — a page of red reads as a verdict,
-   which is not what a diagnostic is for. */
-const SIGNALS = [
-  { label: "No cloud credential",  note: "Asked for in most ML Engineer postings", value: "Gap",   tone: "#E8927C" },
-  { label: "Pay vs market",        note: "Against your level in Kuala Lumpur",     value: "−14%",  tone: "#D9C18A" },
-  { label: "Communication",        note: "Your strongest calibrated dimension",    value: "84",    tone: "#7BC9A4" },
+/* The card cycles three of the things a scan actually returns, so it
+   demonstrates the product rather than describing it. One panel per pass
+   of the beam. Each keeps one thing to fix, one to watch, one already
+   working — a card of red reads as a verdict, which is not what a
+   diagnostic is for. */
+const PANELS = [
+  {
+    id: "signals",
+    label: "Career signals",
+    rows: [
+      { label: "No cloud credential", note: "Asked for in most ML Engineer postings", value: "Gap",  tone: "#E8927C" },
+      { label: "Pay vs market",       note: "Against your level in Kuala Lumpur",     value: "−14%", tone: "#D9C18A" },
+      { label: "Communication",       note: "Your strongest calibrated dimension",    value: "84",   tone: "#7BC9A4" },
+    ],
+  },
+  {
+    id: "dna",
+    label: "Career DNA",
+    /* The badge earns its place here: this panel is the archetype. */
+    badge: { image: "/dna/eagle.png", role: "Direction Setter", animal: "Crown Eagle" },
+    rows: [
+      { label: "Work signal",    note: "Build and analyse ↔ explain and connect", value: "62 / 38", tone: "#9FB4CE" },
+      { label: "Operating mode", note: "Ship reliably ↔ explore possibilities",   value: "71 / 29", tone: "#9FB4CE" },
+      { label: "Influence style", note: "Set direction ↔ mobilise people",        value: "44 / 56", tone: "#9FB4CE" },
+    ],
+  },
+  {
+    id: "gap",
+    label: "Gap to target",
+    rows: [
+      { label: "Cloud deployment",  note: "68% of applicants blocked on this", value: "3 mo", tone: "#E8927C" },
+      { label: "Team leadership",   note: "Named in senior postings",          value: "6 mo", tone: "#D9C18A" },
+      { label: "SQL · Python",      note: "Already transfers to the new role",  value: "Ready", tone: "#7BC9A4" },
+    ],
+  },
 ];
 
 /* The skill system, as it appears inside the product: the target role is
@@ -117,13 +145,6 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           44%       { transform: translateY(114%); opacity: 1; }
           50%, 100% { transform: translateY(114%); opacity: 0; }
         }
-        /* Findings do not fade in — they strike, overshoot, then settle. */
-        @keyframes xr-expose {
-          0%        { opacity: 0; transform: translateY(7px) scale(.96); filter: brightness(1); }
-          5%        { opacity: 1; transform: translateY(0) scale(1.035); filter: brightness(2.4); }
-          12%, 80%  { opacity: 1; transform: none; filter: brightness(1); }
-          88%, 100% { opacity: 0; transform: translateY(7px) scale(.96); }
-        }
         @keyframes xr-arc {
           0%, 34%   { stroke-dashoffset: 176; }
           56%, 88%  { stroke-dashoffset: 48; }
@@ -148,8 +169,20 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         }
         @keyframes xr-pulse    { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
+        /* One 12s cycle, three 4s panels. The beam sweeps once per panel. */
+        @keyframes xr-panel {
+          0%       { opacity: 0; transform: translateY(7px); }
+          5%, 29%  { opacity: 1; transform: none; }
+          34%, 100%{ opacity: 0; transform: translateY(-7px); }
+        }
+        @keyframes xr-tick {
+          0%, 4%   { width: 0; }
+          30%      { width: 100%; }
+          34%, 100%{ width: 0; }
+        }
+        .xr-panel    { animation: xr-panel 12s ease-in-out infinite both; }
+        .xr-tick     { animation: xr-tick  12s linear infinite both; }
         .xr-beam     { animation: xr-travel   4s cubic-bezier(.4,0,.2,1) infinite; }
-        .xr-find     { animation: xr-expose   4s cubic-bezier(.2,.9,.3,1) infinite both; }
         .xr-arc      { animation: xr-arc      4s cubic-bezier(.3,0,.2,1) infinite both; }
         .xr-num      { animation: xr-num      4s ease-out infinite both; }
         .xr-reticle  { animation: xr-reticle  4s ease-out infinite both; }
@@ -161,16 +194,16 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         .ls-breathe { animation: ls-breathe 4s ease-in-out infinite; }
 
         @media (prefers-reduced-motion: reduce) {
-          .xr-beam, .xr-scanning { display: none; }
-          .xr-find, .xr-word, .xr-num, .xr-exposed {
-            animation: none; opacity: 1; filter: none; transform: none;
-          }
-          .xr-bone    { animation: none; opacity: .48; }
-          .xr-read    { display: none; }
-          .xr-flag    { animation: none; color: #FF8A8A; }
-          .xr-arc     { animation: none; stroke-dashoffset: 52; }
+          .xr-beam { display: none; }
+          .xr-word, .xr-num { animation: none; opacity: 1; filter: none; transform: none; }
+          .xr-arc     { animation: none; stroke-dashoffset: 48; }
           .xr-reticle { animation: none; opacity: .4; }
           .xr-dot, .ls-breathe { animation: none; }
+          /* Stacked panels would pile on top of each other without the
+             cycle, so the first one is the one that stays. */
+          .xr-panel { animation: none; opacity: 0; }
+          .xr-panel:first-child { animation: none; opacity: 1; transform: none; }
+          .xr-tick  { animation: none; width: 0; }
         }
       `}</style>
 
@@ -253,17 +286,37 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               className="relative overflow-hidden rounded-[1.25rem] p-6 shadow-[0_30px_70px_-35px_rgba(11,18,32,0.8)]"
               style={{ background: "linear-gradient(165deg, #16284B 0%, #0D1A33 60%, #0A1426 100%)" }}
             >
-              {/* Header: what this is, and the score */}
-              <div className="relative flex items-start justify-between gap-4 mb-6">
-                <div>
-                  <p
-                    className="text-[10px] uppercase tracking-[0.18em]"
-                    style={{ fontFamily: "var(--font-mono)", color: "#8A9BB5" }}
-                  >
-                    Career signals
-                  </p>
-                  <p className="text-[#E8EEF7] text-base mt-1.5 tracking-tight">Senior Data Analyst</p>
-                  <p className="text-[#7186A3] text-xs mt-0.5">Aiming at ML Engineer</p>
+              {/* Header: fixed anchor, so only the readout below it moves */}
+              <div className="relative flex items-start justify-between gap-4 mb-5">
+                <div className="relative h-[52px] flex-1 min-w-0">
+                  {PANELS.map((panel, i) => (
+                    <div
+                      key={panel.id}
+                      className="xr-panel absolute inset-0"
+                      style={{ animationDelay: `${i * 4}s` }}
+                    >
+                      <p
+                        className="text-[10px] uppercase tracking-[0.18em]"
+                        style={{ fontFamily: "var(--font-mono)", color: "#8A9BB5" }}
+                      >
+                        {panel.label}
+                      </p>
+                      {panel.badge ? (
+                        <div className="flex items-center gap-2.5 mt-1.5">
+                          <img src={panel.badge.image} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[#E8EEF7] text-[15px] leading-tight tracking-tight truncate">{panel.badge.role}</p>
+                            <p className="text-[#7186A3] text-xs leading-tight truncate">{panel.badge.animal}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-[#E8EEF7] text-base mt-1.5 tracking-tight">Senior Data Analyst</p>
+                          <p className="text-[#7186A3] text-xs mt-0.5">Aiming at ML Engineer</p>
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
                 <div className="relative w-[68px] h-[68px] flex-shrink-0">
@@ -290,28 +343,46 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 </div>
               </div>
 
-              {/* Three things the scan found */}
-              <div className="relative space-y-2.5">
-                {SIGNALS.map((sig, i) => (
+              {/* The readout. Panels are stacked so the card never resizes. */}
+              <div className="relative h-[186px]">
+                {PANELS.map((panel, pi) => (
                   <div
-                    key={sig.label}
-                    className="xr-find flex items-center justify-between gap-4 rounded-xl px-4 py-3"
-                    style={{
-                      animationDelay: `${1.6 + i * 0.34}s`,
-                      background: "rgba(232,238,247,0.045)",
-                      border: "1px solid rgba(232,238,247,0.08)",
-                    }}
+                    key={panel.id}
+                    className="xr-panel absolute inset-0 space-y-2.5"
+                    style={{ animationDelay: `${pi * 4}s` }}
                   >
-                    <div className="min-w-0">
-                      <p className="text-[13px] text-[#E8EEF7] leading-tight">{sig.label}</p>
-                      <p className="text-[11px] text-[#7186A3] mt-0.5 leading-tight">{sig.note}</p>
-                    </div>
-                    <span
-                      className="text-[13px] flex-shrink-0"
-                      style={{ fontFamily: "var(--font-mono)", color: sig.tone }}
-                    >
-                      {sig.value}
-                    </span>
+                    {panel.rows.map(row => (
+                      <div
+                        key={row.label}
+                        className="flex items-center justify-between gap-4 rounded-xl px-4 py-3"
+                        style={{
+                          background: "rgba(232,238,247,0.045)",
+                          border: "1px solid rgba(232,238,247,0.08)",
+                        }}
+                      >
+                        <div className="min-w-0">
+                          <p className="text-[13px] text-[#E8EEF7] leading-tight">{row.label}</p>
+                          <p className="text-[11px] text-[#7186A3] mt-0.5 leading-tight truncate">{row.note}</p>
+                        </div>
+                        <span
+                          className="text-[13px] flex-shrink-0"
+                          style={{ fontFamily: "var(--font-mono)", color: row.tone }}
+                        >
+                          {row.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+
+              {/* Which of the three you are looking at */}
+              <div className="relative flex items-center gap-1.5 mt-5">
+                {PANELS.map((panel, i) => (
+                  <div key={panel.id} className="h-0.5 flex-1 rounded-full overflow-hidden"
+                       style={{ background: "rgba(232,238,247,0.10)" }}>
+                    <div className="xr-tick h-full rounded-full"
+                         style={{ background: "#D9C18A", animationDelay: `${i * 4}s` }} />
                   </div>
                 ))}
               </div>
