@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import {
-  AlertTriangle, ArrowRight, BarChart3, Briefcase, Check, FlaskConical,
+  AlertTriangle, ArrowLeft, ArrowRight, BarChart3, Briefcase, Check, FlaskConical,
   Fingerprint, Globe, Layers, Pill, Radar, Scale, ShieldCheck, Target, Video,
 } from "lucide-react";
 import { useCareerProfile } from "./careerProfile";
@@ -245,8 +245,8 @@ export function StageHub({ stage, onNavigate, children }: { stage: JourneyStage;
 }
 
 /* ── Next step ──
-   One component, used at the bottom of every tool page. Before this,
-   4 of 11 candidate pages had a forward button and 3 of those 4 jumped
+   One component, used at the bottom of every tool page on smaller screens.
+   Before this, 4 of 10 candidate tool pages had a forward button and 3 jumped
    over a page — the dashboard skipped Career DNA entirely. The order
    now comes from PAGE_ORDER, so a page cannot be skipped by accident. */
 
@@ -256,23 +256,103 @@ export function NextStep({ currentPage, onNavigate }: { currentPage: string; onN
 
   return (
     <div
-      className="bg-white border border-border rounded-xl shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+      className="2xl:hidden bg-white border border-border rounded-xl shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4"
       style={{ borderLeft: `3px solid ${next.stage.color}` }}
     >
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: next.stage.color }}>
-          Next · Stage {next.stage.num} {next.stage.label}
-        </p>
-        <p className="font-semibold text-foreground mt-1">{next.label}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{next.stage.question}</p>
-      </div>
-      <button
-        onClick={() => onNavigate(next.page)}
-        className="flex-shrink-0 inline-flex items-center justify-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-xl transition-opacity hover:opacity-90"
-        style={{ backgroundColor: next.stage.color }}
-      >
-        Continue to {next.label} <ArrowRight size={14} />
-      </button>
+      <NextDestinationCopy next={next} className="flex-1 min-w-0" />
+      <NextDestinationButton next={next} onNavigate={onNavigate} showLabel />
     </div>
+  );
+}
+
+type NextDestination = NonNullable<ReturnType<typeof nextPage>>;
+
+function NextDestinationCopy({ next, className = "" }: { next: NextDestination; className?: string }) {
+  return (
+    <div className={className}>
+      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: next.stage.color }}>
+        Next · Stage {next.stage.num} {next.stage.label}
+      </p>
+      <p className="font-semibold text-foreground mt-1">{next.label}</p>
+      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{next.stage.question}</p>
+    </div>
+  );
+}
+
+function NextDestinationButton({
+  next,
+  onNavigate,
+  showLabel = false,
+}: {
+  next: NextDestination;
+  onNavigate: (page: string) => void;
+  showLabel?: boolean;
+}) {
+  return (
+    <button
+      onClick={() => onNavigate(next.page)}
+      className="flex-shrink-0 inline-flex items-center justify-between gap-2 text-sm font-semibold text-white px-4 py-3 rounded-lg transition-opacity hover:opacity-90"
+      style={{ backgroundColor: next.stage.color }}
+      aria-label={`Continue to ${next.label}`}
+    >
+      {showLabel ? `Continue to ${next.label}` : "Continue"} <ArrowRight size={15} />
+    </button>
+  );
+}
+
+/* ── Desktop journey rail ──
+   Tool pages scroll inside their own content pane. This rail sits beside
+   that pane, so forward/back actions do not disappear below long reports. */
+export function JourneyPageRail({
+  currentPage,
+  onNavigate,
+  onBack,
+  canGoBack,
+}: {
+  currentPage: string;
+  onNavigate: (page: string) => void;
+  onBack: () => void;
+  canGoBack: boolean;
+}) {
+  if (!PAGE_ORDER.includes(currentPage)) return null;
+
+  const currentStage = stageForPage(currentPage)!;
+  const currentTool = currentStage.tools.find(tool => tool.page === currentPage)!;
+  const next = nextPage(currentPage);
+
+  return (
+    <aside className="hidden 2xl:flex order-last w-60 flex-shrink-0 border-l border-border bg-white/80 p-5 flex-col overflow-y-auto" aria-label="Journey navigation">
+      <div className="sticky top-0 flex min-h-full flex-col">
+        <button
+          onClick={onBack}
+          disabled={!canGoBack}
+          className="inline-flex items-center gap-2 self-start text-xs font-semibold text-muted-foreground hover:text-foreground disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+        >
+          <ArrowLeft size={14} /> Back
+        </button>
+
+        <div className="mt-8 border-l-2 pl-4" style={{ borderColor: currentStage.color }}>
+          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: currentStage.color }}>
+            Stage {currentStage.num} · {currentStage.label}
+          </p>
+          <p className="text-sm font-semibold text-foreground mt-1">{currentTool.label}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed mt-1">{currentStage.question}</p>
+        </div>
+
+        {next ? (
+          <div className="mt-auto pt-10">
+            <NextDestinationCopy next={next} />
+            <div className="mt-4 [&>button]:w-full">
+              <NextDestinationButton next={next} onNavigate={onNavigate} />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-auto pt-10 border-t border-border">
+            <p className="text-xs font-semibold text-emerald-700">Journey complete</p>
+            <p className="text-xs text-muted-foreground mt-1">You reached the final tool in Stage {currentStage.num}.</p>
+          </div>
+        )}
+      </div>
+    </aside>
   );
 }

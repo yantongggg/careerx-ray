@@ -30,7 +30,7 @@ import { HiringPipeline } from "./pages/HiringPipeline";
 import { IntelligenceProvider } from "./state/intelligence";
 import { CareerProfileProvider, useCareerProfile } from "./state/careerProfile";
 import { RoleSelect } from "./pages/RoleSelect";
-import { stageById, StageHub } from "./state/stages";
+import { JourneyPageRail, PAGE_ORDER, stageById, StageHub } from "./state/stages";
 import { SkillGraph } from "./pages/SkillGraph";
 import { ToastHost } from "./state/toast";
 import { AuthPage } from "./pages/Auth";
@@ -247,6 +247,8 @@ function AppRouter() {
     setAppState("app");
   };
 
+  const hasJourneyRail = role === "candidate" && PAGE_ORDER.includes(page);
+
   if (appState === "landing") {
     return <LandingPage onNavigate={navigate} />;
   }
@@ -318,7 +320,7 @@ function AppRouter() {
             {history.length > 0 && (
               <button
                 onClick={goBack}
-                className="flex items-center gap-1 text-xs font-semibold border border-border rounded-lg px-2 py-1.5 hover:bg-muted hover:text-foreground transition-colors mr-1"
+                className={`${hasJourneyRail ? "2xl:hidden" : ""} flex items-center gap-1 text-xs font-semibold border border-border rounded-lg px-2 py-1.5 hover:bg-muted hover:text-foreground transition-colors mr-1`}
               >
                 <ChevronLeft size={13} /> Back
               </button>
@@ -380,39 +382,49 @@ function AppRouter() {
         </header>
 
         {/* Page */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
-          {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
+        <div className="flex-1 overflow-hidden flex">
+          {hasJourneyRail && (
+            <JourneyPageRail
+              currentPage={page}
+              onNavigate={navigate}
+              onBack={goBack}
+              canGoBack={history.length > 0}
+            />
+          )}
+          <div className="flex-1 min-w-0 overflow-hidden flex flex-col">
+            {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
+            {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
           {/* Looked up by id, not array position — the journey order can
               change without silently pointing a route at the wrong stage. */}
-          {page === "stage-diagnose"  && <StageHub stage={stageById("stage-diagnose")} onNavigate={navigate} />}
-          {page === "stage-decide"    && <StageHub stage={stageById("stage-decide")} onNavigate={navigate} />}
-          {page === "stage-prepare"   && <StageHub stage={stageById("stage-prepare")} onNavigate={navigate}><SkillGraph targetRole={profile.targetRole} /></StageHub>}
-          {page === "stage-apply"     && <StageHub stage={stageById("stage-apply")} onNavigate={navigate} />}
-          {page === "stage-prove"     && <StageHub stage={stageById("stage-prove")} onNavigate={navigate} />}
-          {page === "dna"             && <CareerDna onNavigate={navigate} />}
-          {page === "dna-method"      && <DnaMethod onNavigate={navigate} />}
-          {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
-          {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
-          {page === "coach"           && <InterviewCoach jobId={prepJobId} onNavigate={navigate} />}
-          {page === "offers"          && <OfferDecisionDashboard onNavigate={navigate} />}
-          {page === "portfolio"       && <PortfolioBuilder onNavigate={navigate} />}
-          {page === "decisionlab"     && <DecisionLab onNavigate={navigate} />}
-          {page === "blindspots"      && <BlindSpots onNavigate={navigate} />}
-          {page === "prescription"    && <CareerPrescription onNavigate={navigate} />}
-          {page === "evidence"        && <CareerEvidence onNavigate={navigate} />}
-          {page === "profile"         && <UserProfile onNavigate={navigate} />}
-          {page === "employer"        && <EmployerDashboard />}
-          {page === "emp-matching"    && <SmartTalentMatching />}
-          {page === "emp-sla"         && <ReplySlaMonitor />}
-          {page === "emp-reengage"    && <TalentReengagement />}
-          {page === "emp-resilience"  && <WorkforceResilience />}
-          {page === "emp-pipeline"    && <HiringPipeline />}
-          {page === "insights"        && <EcosystemInsights onNavigate={navigate} />}
-          {page === "uni-outcomes"    && <OutcomeLoop />}
-          {page === "uni-curriculum"  && <CurriculumEngine />}
-          {page === "uni-internships" && <InternshipMarketplace />}
-          {page === "uni-wallet"      && <LearningWallet />}
+            {page === "stage-diagnose"  && <StageHub stage={stageById("stage-diagnose")} onNavigate={navigate} />}
+            {page === "stage-decide"    && <StageHub stage={stageById("stage-decide")} onNavigate={navigate} />}
+            {page === "stage-prepare"   && <StageHub stage={stageById("stage-prepare")} onNavigate={navigate}><SkillGraph targetRole={profile.targetRole} /></StageHub>}
+            {page === "stage-apply"     && <StageHub stage={stageById("stage-apply")} onNavigate={navigate} />}
+            {page === "stage-prove"     && <StageHub stage={stageById("stage-prove")} onNavigate={navigate} />}
+            {page === "dna"             && <CareerDna onNavigate={navigate} />}
+            {page === "dna-method"      && <DnaMethod onNavigate={navigate} />}
+            {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
+            {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
+            {page === "coach"           && <InterviewCoach jobId={prepJobId} onNavigate={navigate} />}
+            {page === "offers"          && <OfferDecisionDashboard onNavigate={navigate} />}
+            {page === "portfolio"       && <PortfolioBuilder onNavigate={navigate} />}
+            {page === "decisionlab"     && <DecisionLab onNavigate={navigate} />}
+            {page === "blindspots"      && <BlindSpots onNavigate={navigate} />}
+            {page === "prescription"    && <CareerPrescription onNavigate={navigate} />}
+            {page === "evidence"        && <CareerEvidence onNavigate={navigate} />}
+            {page === "profile"         && <UserProfile onNavigate={navigate} />}
+            {page === "employer"        && <EmployerDashboard />}
+            {page === "emp-matching"    && <SmartTalentMatching />}
+            {page === "emp-sla"         && <ReplySlaMonitor />}
+            {page === "emp-reengage"    && <TalentReengagement />}
+            {page === "emp-resilience"  && <WorkforceResilience />}
+            {page === "emp-pipeline"    && <HiringPipeline />}
+            {page === "insights"        && <EcosystemInsights onNavigate={navigate} />}
+            {page === "uni-outcomes"    && <OutcomeLoop />}
+            {page === "uni-curriculum"  && <CurriculumEngine />}
+            {page === "uni-internships" && <InternshipMarketplace />}
+            {page === "uni-wallet"      && <LearningWallet />}
+          </div>
         </div>
       </main>
       <ToastHost />
