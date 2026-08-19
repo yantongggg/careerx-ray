@@ -7,6 +7,135 @@ export const dimensions = [
   "Communication",
 ];
 
+export const careerDnaAxes = [
+  {
+    id: "craft",
+    label: "Work Signal",
+    left: "Technical",
+    right: "Communication",
+    leftLabel: "Build and analyze",
+    rightLabel: "Explain and connect",
+  },
+  {
+    id: "tempo",
+    label: "Operating Mode",
+    left: "Execution",
+    right: "Innovation",
+    leftLabel: "Ship reliably",
+    rightLabel: "Explore possibilities",
+  },
+  {
+    id: "scope",
+    label: "Influence Style",
+    left: "Strategic",
+    right: "Leadership",
+    leftLabel: "Set direction",
+    rightLabel: "Mobilize people",
+  },
+];
+
+export const calibrationQuestions = [
+  {
+    id: "ambiguity",
+    question: "When you receive a vague task, what do you usually do first?",
+    options: [
+      "Break it into technical steps and start building",
+      "Ask what outcome matters most before acting",
+      "Talk to people to understand expectations",
+      "Explore different creative directions first",
+    ],
+  },
+  {
+    id: "team",
+    question: "In a group project, which role do you naturally take?",
+    options: [
+      "Build the main solution",
+      "Organize everyone and set direction",
+      "Explain, present, or align the team",
+      "Bring new ideas when the team is stuck",
+    ],
+  },
+  {
+    id: "problem",
+    question: "When solving a difficult problem, what feels most natural?",
+    options: [
+      "Research deeply until I understand the system",
+      "Step back and rethink the whole approach",
+      "Discuss with others to find a practical answer",
+      "Try a quick prototype and improve from there",
+    ],
+  },
+  {
+    id: "motivation",
+    question: "Which outcome makes work feel most meaningful to you?",
+    options: [
+      "Building something that actually works",
+      "Leading a team toward a bigger goal",
+      "Helping people make better decisions",
+      "Creating something new",
+    ],
+  },
+  {
+    id: "communication",
+    question: "When explaining your work, what do you focus on most?",
+    options: [
+      "The technical logic behind it",
+      "The business or career impact",
+      "The story and user experience",
+      "The next action people should take",
+    ],
+  },
+  {
+    id: "environment",
+    question: "Which work environment would you prefer?",
+    options: [
+      "A stable team with clear tasks and systems",
+      "A deep technical role with complex problems",
+      "A people-facing role with lots of collaboration",
+      "A fast-moving startup where things change often",
+    ],
+  },
+];
+
+const responseModel = {
+  ambiguity: {
+    "Break it into technical steps and start building": { Technical: 2, Execution: 2, Strategic: 1, Leadership: 1 },
+    "Ask what outcome matters most before acting": { Strategic: 2, Communication: 1.5, Execution: 1.5, Technical: 1 },
+    "Talk to people to understand expectations": { Communication: 2, Leadership: 2, Strategic: 1, Execution: 1 },
+    "Explore different creative directions first": { Innovation: 2, Strategic: 1.5, Communication: 1.5, Technical: 1 },
+  },
+  team: {
+    "Build the main solution": { Technical: 2, Execution: 2, Leadership: 1, Strategic: 1 },
+    "Organize everyone and set direction": { Leadership: 2, Strategic: 2, Communication: 1, Execution: 1 },
+    "Explain, present, or align the team": { Communication: 2, Leadership: 1.5, Strategic: 1.5, Innovation: 1 },
+    "Bring new ideas when the team is stuck": { Innovation: 2, Communication: 1.5, Strategic: 1.5, Leadership: 1 },
+  },
+  problem: {
+    "Research deeply until I understand the system": { Technical: 2, Strategic: 2, Execution: 1, Communication: 1 },
+    "Step back and rethink the whole approach": { Strategic: 2, Innovation: 1.5, Technical: 1.5, Leadership: 1 },
+    "Discuss with others to find a practical answer": { Communication: 2, Execution: 1.5, Leadership: 1.5, Strategic: 1 },
+    "Try a quick prototype and improve from there": { Innovation: 2, Execution: 2, Technical: 1, Communication: 1 },
+  },
+  motivation: {
+    "Building something that actually works": { Execution: 2, Technical: 2, Strategic: 1, Leadership: 1 },
+    "Leading a team toward a bigger goal": { Leadership: 2, Strategic: 2, Communication: 1, Innovation: 1 },
+    "Helping people make better decisions": { Communication: 2, Strategic: 2, Leadership: 1, Execution: 1 },
+    "Creating something new": { Innovation: 2, Technical: 1.5, Communication: 1.5, Strategic: 1 },
+  },
+  communication: {
+    "The technical logic behind it": { Technical: 2, Strategic: 2, Execution: 1, Communication: 1 },
+    "The business or career impact": { Strategic: 2, Communication: 1.5, Leadership: 1.5, Execution: 1 },
+    "The story and user experience": { Communication: 2, Innovation: 2, Strategic: 1, Leadership: 1 },
+    "The next action people should take": { Execution: 2, Leadership: 2, Strategic: 1, Communication: 1 },
+  },
+  environment: {
+    "A stable team with clear tasks and systems": { Execution: 2, Leadership: 1.5, Technical: 1.5, Communication: 1 },
+    "A deep technical role with complex problems": { Technical: 2, Strategic: 1.5, Innovation: 1.5, Execution: 1 },
+    "A people-facing role with lots of collaboration": { Communication: 2, Leadership: 2, Strategic: 1, Innovation: 1 },
+    "A fast-moving startup where things change often": { Innovation: 2, Execution: 1.5, Technical: 1.5, Leadership: 1 },
+  },
+};
+
 const ANIMAL_IMAGES = {
   Beaver: "/dna/beaver.png",
   Owl: "/dna/owl.png",
@@ -209,7 +338,10 @@ export function getArchetypeForDimensions(first, second) {
 
 export function getTopDimensions(scores) {
   return Object.entries(scores)
-    .sort(([, a], [, b]) => b - a)
+    .sort(([aName, a], [bName, b]) => {
+      if (b !== a) return b - a;
+      return dimensions.indexOf(aName) - dimensions.indexOf(bName);
+    })
     .slice(0, 2)
     .map(([dimension]) => dimension);
 }
@@ -223,11 +355,108 @@ export function getArchetypeForScores(scores) {
    Walk down the ranking until a defined pair is found. */
 export function getArchetypeForScoresSafe(scores) {
   const ranked = Object.entries(scores)
-    .sort(([, a], [, b]) => b - a)
+    .sort(([aName, a], [bName, b]) => {
+      if (b !== a) return b - a;
+      return dimensions.indexOf(aName) - dimensions.indexOf(bName);
+    })
     .map(([dimension]) => dimension);
   for (let i = 1; i < ranked.length; i++) {
     const archetype = archetypeByDimensionPair.get(keyFor(ranked[0], ranked[i]));
     if (archetype) return archetype;
   }
   return archetypes[0];
+}
+
+const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+const fingerprint = (answers) => {
+  const text = calibrationQuestions.map((q) => answers[q.id] ?? "").join("|");
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+function chooseArchetypeFromEvidence(points, answers) {
+  const ranked = archetypes
+    .map((archetype) => ({
+      archetype,
+      score: archetype.core.reduce((sum, dimension) => sum + (points[dimension] ?? 0), 0),
+    }))
+    .sort((a, b) => b.score - a.score || a.archetype.name.localeCompare(b.archetype.name));
+
+  const top = ranked[0];
+  const close = ranked.filter((candidate) => top.score - candidate.score <= 1.25);
+  if (close.length === 1) return top.archetype;
+
+  return close[fingerprint(answers) % close.length].archetype;
+}
+
+const maxPointsByDimension = Object.fromEntries(
+  dimensions.map((dimension) => [
+    dimension,
+    calibrationQuestions.reduce((sum, question) => {
+      const best = Math.max(
+        ...question.options.map((option) => responseModel[question.id]?.[option]?.[dimension] ?? 0),
+      );
+      return sum + best;
+    }, 0),
+  ]),
+);
+
+export function calculateCareerDna(answers) {
+  const points = Object.fromEntries(dimensions.map((d) => [d, 0]));
+  const sources = Object.fromEntries(dimensions.map((d) => [d, []]));
+  const answered = [];
+
+  calibrationQuestions.forEach((question, qi) => {
+    const answer = answers[question.id];
+    const weights = responseModel[question.id]?.[answer];
+    if (!weights) return;
+
+    answered.push(question.id);
+    Object.entries(weights).forEach(([dimension, value]) => {
+      points[dimension] += value;
+      sources[dimension].push(`Q${qi + 1} · ${answer} (+${value})`);
+    });
+  });
+
+  const scores = Object.fromEntries(
+    dimensions.map((dimension) => [
+      dimension,
+      Math.round(clamp(30 + (points[dimension] / maxPointsByDimension[dimension]) * 65, 30, 95)),
+    ]),
+  );
+  const axisRows = careerDnaAxes.map((axis) => {
+    const leftPoints = points[axis.left];
+    const rightPoints = points[axis.right];
+    const total = leftPoints + rightPoints;
+    const leftPct = total ? leftPoints / total : 0.5;
+    const rightPct = 1 - leftPct;
+
+    return {
+      ...axis,
+      leftScore: scores[axis.left],
+      rightScore: scores[axis.right],
+      leftPercent: Math.round(leftPct * 100),
+      rightPercent: Math.round(rightPct * 100),
+      margin: Math.round(Math.abs(leftPct - rightPct) * 100),
+      winner: leftPct >= rightPct ? axis.left : axis.right,
+    };
+  });
+
+  const completion = answered.length / calibrationQuestions.length;
+  const clarity = axisRows.reduce((sum, axis) => sum + axis.margin, 0) / (axisRows.length * 50);
+  const confidence = Math.round(clamp(45 + completion * 35 + clarity * 20, 0, 96));
+
+  return {
+    scores,
+    points,
+    sources,
+    axisRows,
+    answeredCount: answered.length,
+    confidence,
+    archetype: chooseArchetypeFromEvidence(points, answers),
+  };
 }

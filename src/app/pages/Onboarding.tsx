@@ -5,7 +5,7 @@ import {
   Sparkles, FileText, Globe, Zap, Brain, GraduationCap,
   Trophy, FolderOpen, AlertCircle, ShieldCheck, X,
 } from "lucide-react";
-import { dimensions, getArchetypeForScoresSafe } from "../lib/careerDna.js";
+import { calculateCareerDna, calibrationQuestions, dimensions } from "../lib/careerDna.js";
 import { demoToast } from "../state/toast";
 import { detectRoleFamily, FAMILY_LABEL, type RoleFamily } from "../lib/roleFamily";
 import { analyzeResume, formatBytes, rejectReasonFor, type AiStatus } from "../lib/resumeParse";
@@ -17,21 +17,6 @@ interface OnboardingProps {
   /** Leaving the wizard from its first step. */
   onBack?: () => void;
 }
-
-/* Each calibration option contributes to one or two Career DNA dimensions
-   (indexed to match the option order in calibrationQuestions below).
-   Columns are balanced so no single archetype dominates positional answering:
-   all-1st → Technical+Execution (Forge Beaver), all-2nd → Strategic+Leadership
-   (Crown Eagle), all-3rd → Communication+Leadership (Bridge Dolphin),
-   all-4th → Innovation+Execution (Nova Otter). */
-const OPTION_DIMS: Record<string, string[][]> = {
-  ambiguity:     [["Technical", "Execution"], ["Strategic"], ["Communication"], ["Innovation"]],
-  team:          [["Technical", "Execution"], ["Leadership", "Strategic"], ["Communication", "Leadership"], ["Innovation"]],
-  problem:       [["Technical"], ["Strategic"], ["Communication"], ["Innovation", "Execution"]],
-  motivation:    [["Execution", "Technical"], ["Leadership"], ["Communication", "Strategic"], ["Innovation"]],
-  communication: [["Technical"], ["Strategic"], ["Communication", "Innovation"], ["Execution", "Leadership"]],
-  environment:   [["Execution"], ["Technical"], ["Communication", "Leadership"], ["Innovation", "Execution"]],
-};
 
 /* Reading a file is either a success or a different kind of success —
    never an error code shown to someone who just uploaded their CV. */
@@ -218,69 +203,6 @@ const scanSteps = [
   { id: "prescription", label: "Building Career Prescription", detail: "Synthesizing findings into a personalized 30/90-day action plan", duration: 1600 },
 ];
 
-const calibrationQuestions = [
-  {
-    id: "ambiguity",
-    question: "When you receive a vague task, what do you usually do first?",
-    options: [
-      "Break it into technical steps and start building",
-      "Ask what outcome matters most before acting",
-      "Talk to people to understand expectations",
-      "Explore different creative directions first",
-    ],
-  },
-  {
-    id: "team",
-    question: "In a group project, which role do you naturally take?",
-    options: [
-      "Build the main solution",
-      "Organize everyone and set direction",
-      "Explain, present, or align the team",
-      "Bring new ideas when the team is stuck",
-    ],
-  },
-  {
-    id: "problem",
-    question: "When solving a difficult problem, what feels most natural?",
-    options: [
-      "Research deeply until I understand the system",
-      "Step back and rethink the whole approach",
-      "Discuss with others to find a practical answer",
-      "Try a quick prototype and improve from there",
-    ],
-  },
-  {
-    id: "motivation",
-    question: "Which outcome makes work feel most meaningful to you?",
-    options: [
-      "Building something that actually works",
-      "Leading a team toward a bigger goal",
-      "Helping people make better decisions",
-      "Creating something new",
-    ],
-  },
-  {
-    id: "communication",
-    question: "When explaining your work, what do you focus on most?",
-    options: [
-      "The technical logic behind it",
-      "The business or career impact",
-      "The story and user experience",
-      "The next action people should take",
-    ],
-  },
-  {
-    id: "environment",
-    question: "Which work environment would you prefer?",
-    options: [
-      "A stable team with clear tasks and systems",
-      "A deep technical role with complex problems",
-      "A people-facing role with lots of collaboration",
-      "A fast-moving startup where things change often",
-    ],
-  },
-];
-
 type Step = "upload" | "connect" | "profile" | "calibration" | "scan" | "done";
 
 export function Onboarding({ onComplete, onBack }: OnboardingProps) {
@@ -329,47 +251,15 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
   };
 
   /* ── Career DNA scoring ──
-     Each answer contributes exactly 2 points, split across the one or
-     two dimensions that option maps to, so a single-dimension answer
-     carries the same total weight as a dual-dimension one. Six
-     questions therefore distribute a fixed 12-point budget.
-
-     score = 35 + round(55 × points / 6)
-
-     The earlier formula used a flat +42 baseline, which parked every
-     untouched dimension on exactly 42 and made half the radar look
-     identical for everyone. Scoring is fully deterministic — the same
-     answers always produce the same scores. */
-  const DNA_FLOOR = 35;
-  const DNA_RANGE = 55;
-  const DNA_MAX_POINTS = 6;
-
-  const dnaCounts: Record<string, number> = Object.fromEntries(dimensions.map((d: string) => [d, 0]));
-  const dnaSources: Record<string, string[]> = Object.fromEntries(dimensions.map((d: string) => [d, [] as string[]]));
-  calibrationQuestions.forEach((q, qi) => {
-    const idx = q.options.indexOf(calibrationAnswers[q.id]);
-    if (idx >= 0) {
-      const dims = OPTION_DIMS[q.id][idx];
-      dims.forEach(d => {
-        dnaCounts[d] += 2 / dims.length;
-        dnaSources[d].push(`Q${qi + 1} · ${q.options[idx]} (+${(2 / dims.length).toFixed(dims.length > 1 ? 1 : 0)})`);
-      });
-    }
-  });
-  const dnaScores: Record<string, number> = Object.fromEntries(
-    Object.entries(dnaCounts).map(([d, n]) => [
-      d,
-      Math.min(95, DNA_FLOOR + Math.round((DNA_RANGE * n) / DNA_MAX_POINTS)),
-    ])
-  );
-  /* A dimension no answer touched has no signal behind it. We say so
-     rather than presenting a floor score as a measurement. */
-  const dnaMeasured: Record<string, boolean> = Object.fromEntries(
-    Object.entries(dnaCounts).map(([d, n]) => [d, n > 0])
-  );
-  const archetype = getArchetypeForScoresSafe(dnaScores);
-  const measuredCount = Object.values(dnaMeasured).filter(Boolean).length;
-  const dnaConfidence = Math.round((measuredCount / (dimensions as string[]).length) * 100);
+     Career DNA now uses a psychometric-style preference matrix. Each
+     answer contributes evidence to three opposing axes:
+     Technical ↔ Communication, Execution ↔ Innovation, and Strategic ↔
+     Leadership. The result is deterministic, but no dimension is left
+     at an artificial floor simply because a question missed it. */
+  const dnaResult = calculateCareerDna(calibrationAnswers);
+  const dnaScores: Record<string, number> = dnaResult.scores;
+  const archetype = dnaResult.archetype;
+  const dnaConfidence = dnaResult.confidence;
 
   /* The completed scan, assembled once and handed to the app whole.
      The summary tiles below read from exactly the same object the rest
@@ -1131,26 +1021,37 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                 </summary>
                 <div className="px-5 pb-5 border-t border-border pt-4 space-y-3">
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Each of the 6 questions contributes 2 points, split across the dimensions its answer maps to.
-                    A dimension&apos;s score is <code className="text-[11px] bg-muted border border-border rounded px-1 py-0.5">35 + 55 × points / 6</code>.
-                    Same answers, same scores — every time.
+                    Career DNA uses three opposing preference axes, similar to a workplace psychometric model:
+                    work signal, operating mode, and influence style. Each answer contributes to all three axes,
+                    then the strongest two dimensions select the animal. Same answers, same result — every time.
                   </p>
+                  {dnaResult.axisRows.map(axis => (
+                    <div key={axis.id} className="bg-muted border border-border rounded-lg px-3 py-3">
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <span className="text-xs font-semibold text-foreground">{axis.label}</span>
+                        <span className="text-xs font-bold text-primary">{axis.winner}</span>
+                      </div>
+                      <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center text-xs">
+                        <span className="text-muted-foreground">{axis.leftLabel}</span>
+                        <span className="text-foreground font-semibold tabular-nums">
+                          {axis.leftPercent}% / {axis.rightPercent}%
+                        </span>
+                        <span className="text-muted-foreground text-right">{axis.rightLabel}</span>
+                      </div>
+                      <div className="mt-2 h-1.5 bg-white rounded-full overflow-hidden border border-border">
+                        <div className="h-full bg-primary rounded-full" style={{ width: `${axis.leftPercent}%` }} />
+                      </div>
+                    </div>
+                  ))}
                   {(dimensions as string[]).map(d => (
                     <div key={d} className="flex items-start gap-3">
                       <span className="text-xs font-semibold text-foreground w-28 flex-shrink-0">{d}</span>
                       <span className="text-xs font-bold tabular-nums text-primary w-8 flex-shrink-0">{dnaScores[d]}</span>
                       <span className="text-xs text-muted-foreground leading-relaxed">
-                        {dnaMeasured[d]
-                          ? dnaSources[d].join(" · ")
-                          : "No answer mapped to this dimension — floor score, not a measurement."}
+                        {(dnaResult.sources[d] ?? []).join(" · ")}
                       </span>
                     </div>
                   ))}
-                  {measuredCount < (dimensions as string[]).length && (
-                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                      {(dimensions as string[]).length - measuredCount} of {(dimensions as string[]).length} dimensions have no signal behind them yet. They sit at the floor score until more evidence or a re-scan fills them in.
-                    </p>
-                  )}
                 </div>
               </details>
 
