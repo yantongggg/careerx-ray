@@ -307,7 +307,7 @@ function NextDestinationButton({
 
 function JourneyEdge({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <aside className={`hidden xl:flex w-20 flex-shrink-0 items-center justify-center ${className}`} aria-label={label}>
+    <aside className={`hidden xl:flex w-24 flex-shrink-0 items-center justify-center ${className}`} aria-label={label}>
       <div className="text-center min-w-0">
         {children}
       </div>
@@ -334,6 +334,7 @@ export function JourneyBackControl({
 
   const backStage = backPage ? stageForPage(backPage) : undefined;
   const backDestination = backLabel ?? (backStage ? `Stage ${backStage.num} ${backStage.label}` : "previous page");
+  const visibleBackLabel = backLabel ?? backStage?.label ?? "Back";
 
   return (
     <JourneyEdge label="Back navigation">
@@ -346,8 +347,8 @@ export function JourneyBackControl({
       >
         <ArrowLeft size={16} />
       </button>
-      <p className="mt-2 text-[9px] font-semibold leading-none text-muted-foreground whitespace-nowrap">
-        {backStage ? `${backStage.num} · ${backStage.label}` : "Back"}
+      <p className="mt-2 text-[8px] font-semibold leading-none text-muted-foreground whitespace-nowrap">
+        {backStage ? `${backStage.num} · ${visibleBackLabel}` : visibleBackLabel}
       </p>
     </JourneyEdge>
   );
@@ -380,8 +381,8 @@ export function JourneyNextControl({
           <ArrowRight size={16} />
         </button>
       )}
-      <p className="mt-2 text-[9px] font-semibold leading-none text-slate-700 whitespace-nowrap">
-        {next ? `${next.stage.num} · ${next.stage.label}` : "Complete"}
+      <p className="mt-2 text-[8px] font-semibold leading-none text-slate-700 whitespace-nowrap">
+        {next ? `${next.stage.num} · ${next.label}` : "Complete"}
       </p>
     </JourneyEdge>
   );
