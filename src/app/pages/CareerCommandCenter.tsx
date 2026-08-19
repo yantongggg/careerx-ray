@@ -1,7 +1,6 @@
 import {
-  ArrowRight, BarChart3, Briefcase, CalendarClock, CheckCircle, FileText,
-  GraduationCap, MessageSquareText, Shield, Sparkles, Target, TrendingUp,
-  Video, Zap
+  ArrowRight, CalendarClock, FileText, GraduationCap, Shield, Sparkles, Target,
+  Video
 } from "lucide-react";
 import { SignalBanner, explainRoleGap } from "../state/intelligence";
 import { JourneyTracker } from "../state/stages";
@@ -64,24 +63,24 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <span className="inline-flex items-center gap-1.5 text-xs bg-white/10 border border-white/10 px-2.5 py-1 rounded-full text-slate-200">
-                  <Sparkles size={12} /> Your next best move
+                  <Sparkles size={12} /> Priority
                 </span>
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                {firstName ? `${firstName}, close ` : "Close "}your biggest gap first: {topGap}.
+                {firstName ? `${firstName}, close ` : "Close "}your biggest gap: {topGap}.
               </h1>
               <p className="text-sm text-slate-300 leading-relaxed mt-2 max-w-2xl">
                 {topRisks[0]?.detail ?? `You're moving from ${currentRole} to ${targetRole}. Start where the market filters hardest.`}
               </p>
               <div className="flex flex-wrap items-center gap-4 mt-5">
                 <button onClick={() => onNavigate("coach")} className="inline-flex items-center gap-2 bg-white text-slate-950 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
-                  Start rehearsal <ArrowRight size={14} />
+                  Rehearse now <ArrowRight size={14} />
                 </button>
                 <button onClick={() => onNavigate("jobs")} className="text-xs text-slate-400 hover:text-white transition-colors underline underline-offset-4">
-                  View job matches
+                  Job matches
                 </button>
                 <button onClick={() => onNavigate("onboarding")} className="text-xs text-slate-400 hover:text-white transition-colors underline underline-offset-4">
-                  Re-scan my X-Ray
+                  Re-scan
                 </button>
               </div>
             </div>
@@ -96,13 +95,11 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
         <JourneyTracker currentPage="command" onNavigate={onNavigate} />
 
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Why this matters · powered by Talentbank intelligence</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Market + role signals</p>
           <div className="space-y-3">
             <SignalBanner
               audience="candidate"
               onAction={() => onNavigate("prescription")}
-              currentRole={currentRole}
-              targetRole={targetRole}
             />
 
             {/* Role gap — what typically blocks this exact move */}
@@ -113,7 +110,7 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
                     Your role gap · {currentRole} <span className="text-muted-foreground">→</span> {targetRole}
                   </p>
                   <ul className="mt-2.5 grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                    {roleGap.gaps.map(gap => (
+                    {roleGap.gaps.slice(0, 2).map(gap => (
                       <li key={gap} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
                         <span className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: "#8A7038" }} />
                         {gap}
@@ -126,7 +123,7 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
                   className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg border transition-colors hover:bg-accent"
                   style={{ borderColor: "rgba(138,112,56,0.3)", color: "#8A7038" }}
                 >
-                  Close these gaps <ArrowRight size={12} />
+                  View plan <ArrowRight size={12} />
                 </button>
               </div>
             </section>
@@ -138,7 +135,6 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-semibold text-foreground">Application Readiness</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">How ready your applications look to employers — you're doing great</p>
             </div>
             <Shield size={17} className="text-primary" />
           </div>
@@ -179,10 +175,6 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-1.5 pt-2 border-t border-border text-xs">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-muted-foreground">Fast, consistent replies keep you fully visible to employers — keep it up.</span>
-              </div>
             </div>
           </div>
         </section>
@@ -193,7 +185,6 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-foreground">Top 3 risks</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">From your latest X-Ray scan.</p>
               </div>
               <button onClick={() => onNavigate("dashboard")} className="text-xs font-semibold text-primary hover:underline">All {risks.length} →</button>
             </div>
@@ -217,7 +208,6 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-foreground">Evidence strength</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">What your profile can prove — recommendations are built on this.</p>
               </div>
               <button onClick={() => onNavigate("evidence")} className="text-xs font-semibold text-primary hover:underline">Add evidence →</button>
             </div>
@@ -238,7 +228,7 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
             </div>
             <div className="px-5 py-3 bg-accent/60 border-t border-border">
               <p className="text-[11px] text-muted-foreground">
-                <span className="font-semibold text-foreground">Next best evidence:</span> one cloud project with measurable impact — unblocks 3 target roles.
+                <span className="font-semibold text-foreground">Next:</span> add one measurable cloud project to unlock 3 roles.
               </p>
             </div>
           </section>
@@ -249,7 +239,6 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-foreground">Today&apos;s next best actions</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Ranked by impact on getting hired.</p>
               </div>
               <Target size={17} className="text-muted-foreground" />
             </div>
@@ -272,7 +261,6 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="font-semibold text-foreground">Application snapshot</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Planning to interview, not just apply.</p>
               </div>
               <CalendarClock size={17} className="text-muted-foreground" />
             </div>

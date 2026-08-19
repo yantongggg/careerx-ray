@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { ArrowRight, Radio, Sparkles } from "lucide-react";
+import { ArrowRight, Radio } from "lucide-react";
 
 /* ────────────────────────────────────────────────────────────────
    Career Intelligence Graph — shared signal store.
@@ -210,15 +210,11 @@ export function explainRoleGap(current: string, target: string): { headline: str
 interface SignalBannerProps {
   audience: "candidate" | "university";
   onAction?: () => void;
-  currentRole?: string;
-  targetRole?: string;
 }
 
 export function SignalBanner({
   audience,
   onAction,
-  currentRole = "Senior Data Analyst",
-  targetRole = "ML Engineer",
 }: SignalBannerProps) {
   const { signals, liveCount } = useIntelligence();
 
@@ -240,48 +236,28 @@ export function SignalBanner({
   const gapShare = 34 + liveCount * 3;
   const outcomeCount = 218 + liveCount;
 
-  const roleGap = explainRoleGap(currentRole, targetRole);
-
   return (
     <div
       className="bg-white border border-border rounded-xl shadow-sm overflow-hidden"
       style={{ borderLeft: `3px solid ${isLive ? "#115E50" : "#8A7038"}` }}
     >
-      {/* Row 1 — aggregated market gap (no employer, no individual) */}
-      <div className="px-5 py-4">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="relative flex h-2.5 w-2.5">
-            {isLive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60" />}
-            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isLive ? "bg-emerald-600" : "bg-[#8A7038]"}`} />
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: isLive ? "#115E50" : "#8A7038" }}>
-            {isLive ? "Live market signal" : "Market signal"}
-          </span>
-          <span className="text-[10px] text-muted-foreground">· this week</span>
-        </div>
-        <p className="text-sm text-foreground leading-relaxed">
-          Across the Talentbank network this week, the #1 reason candidates for data roles don&apos;t
-          move forward: missing{" "}
-          <span className="font-semibold" style={{ color: "#8A7038" }}>{topSkill}</span> evidence —{" "}
-          <span className="font-semibold">{gapShare}% of applicants</span> share this gap.
-        </p>
-        <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1.5 flex-wrap">
-          <Radio size={11} />
-          Career Intelligence Graph · aggregated from {outcomeCount} anonymized hiring outcomes · no employers or individuals identified
-          {isLive && <span className="font-semibold text-emerald-700">· updated just now</span>}
-        </p>
-      </div>
-
-      {/* Row 2 — personal role gap */}
-      <div className="px-5 py-4 border-t border-border bg-accent/40 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground leading-relaxed">
-            <span className="font-semibold">Your path: {currentRole} → {targetRole}.</span>{" "}
-            {roleGap.headline}
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="relative flex h-2.5 w-2.5">
+              {isLive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60" />}
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isLive ? "bg-emerald-600" : "bg-[#8A7038]"}`} />
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: isLive ? "#115E50" : "#8A7038" }}>
+              {isLive ? "Live market signal" : "Market signal"}
+            </span>
+          </div>
+          <p className="text-sm text-foreground">
+            <span className="font-semibold">Top hiring gap: {topSkill} evidence</span> · {gapShare}% of data applicants
           </p>
-          <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1.5">
-            <Sparkles size={11} />
-            AI-generated from market + hiring-outcome data
+          <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1.5 flex-wrap">
+            <Radio size={11} /> {outcomeCount} anonymized outcomes · this week
+            {isLive && <span className="font-semibold text-emerald-700">· updated now</span>}
           </p>
         </div>
         {onAction && (
@@ -290,7 +266,7 @@ export function SignalBanner({
             className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg border transition-colors hover:bg-accent"
             style={{ borderColor: "rgba(138,112,56,0.3)", color: "#8A7038" }}
           >
-            Close this gap <ArrowRight size={12} />
+            View plan <ArrowRight size={12} />
           </button>
         )}
       </div>
