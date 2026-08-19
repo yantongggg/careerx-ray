@@ -305,60 +305,84 @@ function NextDestinationButton({
   );
 }
 
-/* ── Desktop journey rail ──
-   Tool pages scroll inside their own content pane. This rail sits beside
-   that pane, so forward/back actions do not disappear below long reports. */
-export function JourneyPageRail({
+function JourneyEdge({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
+  return (
+    <aside className={`hidden xl:flex w-20 flex-shrink-0 items-center justify-center ${className}`} aria-label={label}>
+      <div className="text-center min-w-0">
+        {children}
+      </div>
+    </aside>
+  );
+}
+
+/* Desktop journey controls flank the independently scrolling report:
+   Back | page content | Next. Smaller screens keep the header/footer pair. */
+export function JourneyBackControl({
   currentPage,
-  onNavigate,
   onBack,
   canGoBack,
   backPage,
+  backLabel,
 }: {
   currentPage: string;
-  onNavigate: (page: string) => void;
   onBack: () => void;
   canGoBack: boolean;
   backPage?: string;
+  backLabel?: string;
+}) {
+  if (!PAGE_ORDER.includes(currentPage)) return null;
+
+  const backStage = backPage ? stageForPage(backPage) : undefined;
+  const backDestination = backLabel ?? (backStage ? `Stage ${backStage.num} ${backStage.label}` : "previous page");
+
+  return (
+    <JourneyEdge label="Back navigation">
+      <button
+        onClick={onBack}
+        disabled={!canGoBack}
+        className="mx-auto w-10 h-10 rounded-full border border-border bg-white shadow-sm inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-slate-400 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        aria-label={`Back to ${backDestination}`}
+        title={`Back to ${backDestination}`}
+      >
+        <ArrowLeft size={16} />
+      </button>
+      <p className="mt-2 text-[9px] font-semibold leading-none text-muted-foreground whitespace-nowrap">
+        {backStage ? `${backStage.num} · ${backStage.label}` : "Back"}
+      </p>
+    </JourneyEdge>
+  );
+}
+
+export function JourneyNextControl({
+  currentPage,
+  onNavigate,
+}: {
+  currentPage: string;
+  onNavigate: (page: string) => void;
 }) {
   if (!PAGE_ORDER.includes(currentPage)) return null;
 
   const currentStage = stageForPage(currentPage)!;
   const next = nextPage(currentPage);
-  const backStage = backPage ? stageForPage(backPage) : undefined;
 
   return (
-    <aside className="hidden xl:flex order-last w-36 flex-shrink-0 items-center justify-center" aria-label="Journey navigation">
-      <div className="grid grid-cols-2 gap-x-5 gap-y-2 text-center">
+    <JourneyEdge label="Next navigation">
+      {next ? (
+        <NextDestinationButton next={next} onNavigate={onNavigate} compact />
+      ) : (
         <button
-          onClick={onBack}
-          disabled={!canGoBack}
-          className="mx-auto w-10 h-10 rounded-full border border-border bg-white shadow-sm inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-slate-400 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          aria-label="Back"
-          title="Back"
+          disabled
+          className="mx-auto w-10 h-10 rounded-full shadow-sm inline-flex items-center justify-center text-white opacity-35 cursor-not-allowed"
+          style={{ backgroundColor: currentStage.color }}
+          aria-label="Journey complete"
+          title="Journey complete"
         >
-          <ArrowLeft size={16} />
+          <ArrowRight size={16} />
         </button>
-        {next ? (
-          <NextDestinationButton next={next} onNavigate={onNavigate} compact />
-        ) : (
-          <button
-            disabled
-            className="mx-auto w-10 h-10 rounded-full shadow-sm inline-flex items-center justify-center text-white opacity-35 cursor-not-allowed"
-            style={{ backgroundColor: currentStage.color }}
-            aria-label="Journey complete"
-            title="Journey complete"
-          >
-            <ArrowRight size={16} />
-          </button>
-        )}
-        <p className="text-[9px] font-semibold leading-tight text-muted-foreground">
-          {backStage ? `Stage ${backStage.num} · ${backStage.label}` : "Back"}
-        </p>
-        <p className="text-[9px] font-semibold leading-tight text-slate-700">
-          {next ? `Stage ${next.stage.num} · ${next.stage.label}` : "Complete"}
-        </p>
-      </div>
-    </aside>
+      )}
+      <p className="mt-2 text-[9px] font-semibold leading-none text-slate-700 whitespace-nowrap">
+        {next ? `${next.stage.num} · ${next.stage.label}` : "Complete"}
+      </p>
+    </JourneyEdge>
   );
 }

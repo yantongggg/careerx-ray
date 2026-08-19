@@ -30,7 +30,7 @@ import { HiringPipeline } from "./pages/HiringPipeline";
 import { IntelligenceProvider } from "./state/intelligence";
 import { CareerProfileProvider, useCareerProfile } from "./state/careerProfile";
 import { RoleSelect } from "./pages/RoleSelect";
-import { JourneyPageRail, PAGE_ORDER, stageById, StageHub } from "./state/stages";
+import { JourneyBackControl, JourneyNextControl, PAGE_ORDER, stageById, StageHub } from "./state/stages";
 import { SkillGraph } from "./pages/SkillGraph";
 import { ToastHost } from "./state/toast";
 import { AuthPage } from "./pages/Auth";
@@ -384,12 +384,12 @@ function AppRouter() {
         {/* Page */}
         <div className="flex-1 overflow-hidden flex">
           {hasJourneyRail && (
-            <JourneyPageRail
+            <JourneyBackControl
               currentPage={page}
-              onNavigate={navigate}
               onBack={goBack}
               canGoBack={history.length > 0}
               backPage={history.at(-1)}
+              backLabel={history.at(-1) ? pageLabels[history.at(-1)!] : undefined}
             />
           )}
           <div className="flex-1 min-w-0 overflow-hidden flex flex-col">
@@ -426,6 +426,9 @@ function AppRouter() {
             {page === "uni-internships" && <InternshipMarketplace />}
             {page === "uni-wallet"      && <LearningWallet />}
           </div>
+          {hasJourneyRail && (
+            <JourneyNextControl currentPage={page} onNavigate={navigate} />
+          )}
         </div>
       </main>
       <ToastHost />
