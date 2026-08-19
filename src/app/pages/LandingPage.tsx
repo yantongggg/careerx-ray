@@ -259,21 +259,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           Are you <span className="xr-word text-primary italic">ready</span> for your next opportunity?
         </h1>
 
-        <div className="mt-10 lg:mt-12 grid lg:grid-cols-[1fr_1.3fr] gap-10 lg:gap-14 items-center">
-
-          <div>
-            <p className="text-xl lg:text-2xl leading-snug text-muted-foreground max-w-[22rem]">
-              Upload anything you have. Three minutes later you know.
-            </p>
-
-            <button
-              onClick={() => onNavigate("register")}
-              className="group mt-8 inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-4 rounded-full font-medium hover:opacity-90 transition-opacity"
-            >
-              Find out
-              <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-            </button>
-          </div>
+        {/* Plate first, then the ask — the scan is the evidence, the
+            button is what you do about it. */}
+        <div className="mt-10 lg:mt-12 grid lg:grid-cols-[1.3fr_1fr] gap-10 lg:gap-14 items-center">
 
           {/* ── The plate ── */}
           <div className="relative">
@@ -429,8 +417,21 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 style={{ boxShadow: "inset 0 0 90px rgba(0,0,0,0.55)" }}
               />
             </div>
+          </div>
 
+          {/* The ask, answering the scan */}
+          <div>
+            <p className="text-xl lg:text-2xl leading-snug text-muted-foreground max-w-[20rem]">
+              Upload anything you have. Three minutes later you know.
+            </p>
 
+            <button
+              onClick={() => onNavigate("register")}
+              className="group mt-8 inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-4 rounded-full font-medium hover:opacity-90 transition-opacity"
+            >
+              Find out
+              <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+            </button>
           </div>
         </div>
       </section>

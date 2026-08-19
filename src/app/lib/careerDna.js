@@ -378,16 +378,64 @@ const fingerprint = (answers) => {
   return hash;
 };
 
+/* Every archetype sits on a different pair of dimensions, and the
+   question set does not offer those pairs equally — across all 4096
+   possible answer sets the core totals differ by 4.0 points between the
+   highest and lowest archetype, while one person's variation around
+   their own profile is only about 2.3. The baseline gap was larger than
+   the signal, so a handful of archetypes won almost every time and
+   others were effectively unreachable.
+
+   Each archetype is therefore scored on how far ABOVE ITS OWN BASELINE
+   the person sits, in units of that archetype's own spread — a z-score.
+   That compares like with like: a strong Innovation + Execution profile
+   now beats a merely average Strategic + Communication one.
+
+   The baselines are computed from the question set itself at module
+   load, so they stay correct if the questions change. */
+const archetypeBaseline = (() => {
+  const totals = archetypes.map(() => ({ sum: 0, sumSq: 0 }));
+  let n = 0;
+
+  const walk = (qi, points) => {
+    if (qi === calibrationQuestions.length) {
+      n += 1;
+      archetypes.forEach((archetype, ai) => {
+        const score = archetype.core.reduce((sum, d) => sum + (points[d] ?? 0), 0);
+        totals[ai].sum += score;
+        totals[ai].sumSq += score * score;
+      });
+      return;
+    }
+    const question = calibrationQuestions[qi];
+    question.options.forEach((option) => {
+      const weights = responseModel[question.id]?.[option];
+      if (!weights) return walk(qi + 1, points);
+      const next = { ...points };
+      Object.entries(weights).forEach(([d, v]) => { next[d] = (next[d] ?? 0) + v; });
+      walk(qi + 1, next);
+    });
+  };
+  walk(0, Object.fromEntries(dimensions.map((d) => [d, 0])));
+
+  return totals.map(({ sum, sumSq }) => {
+    const mean = sum / n;
+    const variance = Math.max(sumSq / n - mean * mean, 0);
+    return { mean, sd: Math.sqrt(variance) || 1 };
+  });
+})();
+
 function chooseArchetypeFromEvidence(points, answers) {
   const ranked = archetypes
-    .map((archetype) => ({
-      archetype,
-      score: archetype.core.reduce((sum, dimension) => sum + (points[dimension] ?? 0), 0),
-    }))
+    .map((archetype, i) => {
+      const raw = archetype.core.reduce((sum, d) => sum + (points[d] ?? 0), 0);
+      const { mean, sd } = archetypeBaseline[i];
+      return { archetype, score: (raw - mean) / sd };
+    })
     .sort((a, b) => b.score - a.score || a.archetype.name.localeCompare(b.archetype.name));
 
   const top = ranked[0];
-  const close = ranked.filter((candidate) => top.score - candidate.score <= 1.25);
+  const close = ranked.filter((candidate) => top.score - candidate.score <= 0.12);
   if (close.length === 1) return top.archetype;
 
   return close[fingerprint(answers) % close.length].archetype;
