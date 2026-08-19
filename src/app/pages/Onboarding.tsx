@@ -1043,15 +1043,21 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                       </div>
                     </div>
                   ))}
-                  {(dimensions as string[]).map(d => (
-                    <div key={d} className="flex items-start gap-3">
-                      <span className="text-xs font-semibold text-foreground w-28 flex-shrink-0">{d}</span>
-                      <span className="text-xs font-bold tabular-nums text-primary w-8 flex-shrink-0">{dnaScores[d]}</span>
-                      <span className="text-xs text-muted-foreground leading-relaxed">
-                        {(dnaResult.sources[d] ?? []).join(" · ")}
-                      </span>
-                    </div>
-                  ))}
+                  {/* The six scores, plainly. Which question contributed
+                      what is the engine's business, not the reader's. */}
+                  <div className="grid sm:grid-cols-2 gap-x-5 gap-y-2 pt-1">
+                    {(dimensions as string[]).map(d => (
+                      <div key={d} className="flex items-center gap-2.5">
+                        <span className="text-xs text-muted-foreground w-24 flex-shrink-0">{d}</span>
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden border border-border">
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${dnaScores[d]}%` }} />
+                        </div>
+                        <span className="text-xs font-semibold tabular-nums text-foreground w-6 text-right">
+                          {dnaScores[d]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </details>
 
