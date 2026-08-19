@@ -146,9 +146,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           50%, 100% { transform: translateY(114%); opacity: 0; }
         }
         @keyframes xr-arc {
-          0%, 34%   { stroke-dashoffset: 176; }
-          56%, 88%  { stroke-dashoffset: 48; }
-          96%, 100% { stroke-dashoffset: 176; }
+          0%, 34%   { stroke-dashoffset: 151; }
+          56%, 88%  { stroke-dashoffset: 41; }
+          96%, 100% { stroke-dashoffset: 151; }
         }
         @keyframes xr-num {
           0%, 34%   { opacity: .2; filter: blur(6px); }
@@ -196,7 +196,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         @media (prefers-reduced-motion: reduce) {
           .xr-beam { display: none; }
           .xr-word, .xr-num { animation: none; opacity: 1; filter: none; transform: none; }
-          .xr-arc     { animation: none; stroke-dashoffset: 48; }
+          .xr-arc     { animation: none; stroke-dashoffset: 41; }
           .xr-reticle { animation: none; opacity: .4; }
           .xr-dot, .ls-breathe { animation: none; }
           /* Stacked panels would pile on top of each other without the
@@ -234,136 +234,123 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       </nav>
 
       {/* ── Hero ── */}
-      <section className="max-w-6xl mx-auto px-6 pt-12 pb-24 lg:pt-16 lg:pb-28">
-        <div className="grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 items-center">
+      {/* Centred question, then the readout under it as a wide plate —
+          you read the sentence, then look down at the evidence. */}
+      <section className="max-w-[1180px] mx-auto px-6 pt-8 pb-20 lg:pt-10 lg:pb-24">
 
-          {/* ── Left: the question ── */}
-          <div>
-            <p
-              className="flex items-center gap-2.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground mb-7"
-              style={{ fontFamily: "var(--font-mono)" }}
-            >
-              <span className="xr-dot w-1.5 h-1.5 rounded-full bg-primary inline-block" />
-              Career diagnostics
-            </p>
+        <div className="text-center">
+          <p
+            className="inline-flex items-center gap-2.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground mb-5"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            <span className="xr-dot w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+            Career diagnostics
+          </p>
 
-            <h1
-              className="leading-[0.98] tracking-[-0.035em]"
-              style={{ fontSize: "clamp(2.75rem, 5.4vw, 4.25rem)", textWrap: "balance" } as any}
-            >
-              Are you <span className="xr-word text-primary italic">ready</span> for your next opportunity?
-            </h1>
+          <h1
+            className="mx-auto leading-[0.98] tracking-[-0.038em] max-w-[15ch]"
+            style={{ fontSize: "clamp(2.5rem, 5.4vw, 4.5rem)", textWrap: "balance" } as any}
+          >
+            Are you <span className="xr-word text-primary italic">ready</span> for your next opportunity?
+          </h1>
 
-            <p className="mt-7 text-lg leading-relaxed text-muted-foreground max-w-[27rem]">
-              Bring a resume, a project, or just the job you&apos;re aiming at. We read what you have,
-              measure it against the role you want, and show you what stands in between.
-            </p>
+          <p className="mx-auto mt-5 text-base leading-relaxed text-muted-foreground max-w-[32rem]">
+            Bring a resume, a project, or just the job you&apos;re aiming at. We read what you have,
+            measure it against the role you want, and show you what stands in between.
+          </p>
 
-            <button
-              onClick={() => onNavigate("register")}
-              className="group mt-9 inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-4 rounded-full font-medium hover:opacity-90 transition-opacity"
-            >
-              Start your scan
-              <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-            </button>
+          <button
+            onClick={() => onNavigate("register")}
+            className="group mt-7 inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-3.5 rounded-full font-medium hover:opacity-90 transition-opacity"
+          >
+            Start your scan
+            <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+          </button>
 
-            <p
-              className="mt-5 text-xs text-muted-foreground"
-              style={{ fontFamily: "var(--font-mono)" }}
-            >
-              3 minutes · PDF or portfolio · AI-powered
-            </p>
-          </div>
+          <p
+            className="mt-4 text-xs text-muted-foreground"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            3 minutes · PDF or portfolio · AI-powered
+          </p>
+        </div>
 
-          {/* ── Right: what comes back ── */}
-          <div className="relative">
-            <div
-              className="absolute -inset-6 rounded-[1.75rem] blur-2xl pointer-events-none"
-              style={{ background: "radial-gradient(60% 50% at 65% 20%, rgba(138,112,56,0.22), transparent 70%)" }}
-            />
+        {/* ── The plate, landscape ── */}
+        <div className="relative mt-10 lg:mt-11">
+          <div
+            className="absolute -inset-6 rounded-[1.75rem] blur-2xl pointer-events-none"
+            style={{ background: "radial-gradient(50% 60% at 50% 25%, rgba(138,112,56,0.20), transparent 72%)" }}
+          />
 
-            <div
-              className="relative overflow-hidden rounded-[1.25rem] p-6 shadow-[0_30px_70px_-35px_rgba(11,18,32,0.8)]"
-              style={{ background: "linear-gradient(165deg, #16284B 0%, #0D1A33 60%, #0A1426 100%)" }}
-            >
-              {/* Header: fixed anchor, so only the readout below it moves */}
-              <div className="relative flex items-start justify-between gap-4 mb-5">
-                <div className="relative h-[52px] flex-1 min-w-0">
-                  {PANELS.map((panel, i) => (
-                    <div
-                      key={panel.id}
-                      className="xr-panel absolute inset-0"
-                      style={{ animationDelay: `${i * 4}s` }}
+          <div
+            className="relative overflow-hidden rounded-[1.25rem] px-7 py-6 shadow-[0_30px_70px_-35px_rgba(11,18,32,0.8)]"
+            style={{ background: "linear-gradient(150deg, #16284B 0%, #0D1A33 55%, #0A1426 100%)" }}
+          >
+            {/* Header row: label and role on the left, score on the right */}
+            <div className="relative flex items-center justify-between gap-6 mb-6">
+              <div className="relative h-[46px] flex-1 min-w-0">
+                {PANELS.map((panel, i) => (
+                  <div key={panel.id} className="xr-panel absolute inset-0" style={{ animationDelay: `${i * 4}s` }}>
+                    <p
+                      className="text-[10px] uppercase tracking-[0.18em]"
+                      style={{ fontFamily: "var(--font-mono)", color: "#8A9BB5" }}
                     >
-                      <p
-                        className="text-[10px] uppercase tracking-[0.18em]"
-                        style={{ fontFamily: "var(--font-mono)", color: "#8A9BB5" }}
-                      >
-                        {panel.label}
+                      {panel.label}
+                    </p>
+                    {panel.badge ? (
+                      <div className="flex items-center gap-2.5 mt-1.5">
+                        <img src={panel.badge.image} alt="" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+                        <p className="text-[#E8EEF7] text-[15px] leading-tight tracking-tight truncate">
+                          {panel.badge.role}
+                          <span className="text-[#7186A3]"> · {panel.badge.animal}</span>
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[#E8EEF7] text-[15px] mt-2 tracking-tight truncate">
+                        Senior Data Analyst
+                        <span className="text-[#7186A3]"> · aiming at ML Engineer</span>
                       </p>
-                      {panel.badge ? (
-                        <div className="flex items-center gap-2.5 mt-1.5">
-                          <img src={panel.badge.image} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-[#E8EEF7] text-[15px] leading-tight tracking-tight truncate">{panel.badge.role}</p>
-                            <p className="text-[#7186A3] text-xs leading-tight truncate">{panel.badge.animal}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <p className="text-[#E8EEF7] text-base mt-1.5 tracking-tight">Senior Data Analyst</p>
-                          <p className="text-[#7186A3] text-xs mt-0.5">Aiming at ML Engineer</p>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="relative w-[68px] h-[68px] flex-shrink-0">
-                  <svg viewBox="0 0 68 68" className="w-full h-full -rotate-90">
-                    <circle cx="34" cy="34" r="28" fill="none" stroke="rgba(232,238,247,0.10)" strokeWidth="4" />
-                    <circle
-                      className="xr-arc"
-                      cx="34" cy="34" r="28" fill="none"
-                      stroke="#D9C18A" strokeWidth="4" strokeLinecap="round"
-                      strokeDasharray="176" strokeDashoffset="176"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span
-                      className="xr-num text-[#E8EEF7] text-lg leading-none"
-                      style={{ fontFamily: "var(--font-mono)" }}
-                    >
-                      72
-                    </span>
-                    <span className="text-[9px] text-[#7186A3] mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>
-                      /100
-                    </span>
+                    )}
                   </div>
-                </div>
+                ))}
               </div>
 
-              {/* The readout. Panels are stacked so the card never resizes. */}
-              <div className="relative h-[186px]">
-                {PANELS.map((panel, pi) => (
-                  <div
-                    key={panel.id}
-                    className="xr-panel absolute inset-0 space-y-2.5"
-                    style={{ animationDelay: `${pi * 4}s` }}
-                  >
-                    {panel.rows.map(row => (
-                      <div
-                        key={row.label}
-                        className="flex items-center justify-between gap-4 rounded-xl px-4 py-3"
-                        style={{
-                          background: "rgba(232,238,247,0.045)",
-                          border: "1px solid rgba(232,238,247,0.08)",
-                        }}
-                      >
-                        <div className="min-w-0">
-                          <p className="text-[13px] text-[#E8EEF7] leading-tight">{row.label}</p>
-                          <p className="text-[11px] text-[#7186A3] mt-0.5 leading-tight truncate">{row.note}</p>
-                        </div>
+              <div className="relative w-[58px] h-[58px] flex-shrink-0">
+                <svg viewBox="0 0 58 58" className="w-full h-full -rotate-90">
+                  <circle cx="29" cy="29" r="24" fill="none" stroke="rgba(232,238,247,0.10)" strokeWidth="3.5" />
+                  <circle
+                    className="xr-arc"
+                    cx="29" cy="29" r="24" fill="none"
+                    stroke="#D9C18A" strokeWidth="3.5" strokeLinecap="round"
+                    strokeDasharray="151" strokeDashoffset="151"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="xr-num text-[#E8EEF7] text-base leading-none" style={{ fontFamily: "var(--font-mono)" }}>72</span>
+                  <span className="text-[8px] text-[#7186A3] mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>/100</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Three readings side by side */}
+            <div className="relative h-[246px] sm:h-[92px]">
+              {PANELS.map((panel, pi) => (
+                <div
+                  key={panel.id}
+                  className="xr-panel absolute inset-0 grid sm:grid-cols-3 gap-2.5"
+                  style={{ animationDelay: `${pi * 4}s` }}
+                >
+                  {panel.rows.map(row => (
+                    <div
+                      key={row.label}
+                      className="rounded-xl px-4 py-3 flex flex-col justify-center"
+                      style={{
+                        background: "rgba(232,238,247,0.045)",
+                        border: "1px solid rgba(232,238,247,0.08)",
+                      }}
+                    >
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="text-[13px] text-[#E8EEF7] leading-tight truncate">{row.label}</p>
                         <span
                           className="text-[13px] flex-shrink-0"
                           style={{ fontFamily: "var(--font-mono)", color: row.tone }}
@@ -371,54 +358,54 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                           {row.value}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-
-              {/* Which of the three you are looking at */}
-              <div className="relative flex items-center gap-1.5 mt-5">
-                {PANELS.map((panel, i) => (
-                  <div key={panel.id} className="h-0.5 flex-1 rounded-full overflow-hidden"
-                       style={{ background: "rgba(232,238,247,0.10)" }}>
-                    <div className="xr-tick h-full rounded-full"
-                         style={{ background: "#D9C18A", animationDelay: `${i * 4}s` }} />
-                  </div>
-                ))}
-              </div>
-
-              {/* The beam, kept faint — the card is a readout, not a light show */}
-              <div className="xr-beam pointer-events-none absolute inset-x-0 top-0 h-24">
-                <div
-                  className="h-full w-full"
-                  style={{
-                    background:
-                      "linear-gradient(to bottom, rgba(217,193,138,0) 0%, rgba(217,193,138,0.04) 60%, rgba(217,193,138,0.13) 94%, rgba(255,245,220,0.18) 100%)",
-                  }}
-                />
-                <div
-                  className="h-px w-full"
-                  style={{
-                    background: "linear-gradient(90deg, rgba(217,193,138,0) 0%, #F0E0B8 22%, #FFF8E6 50%, #F0E0B8 78%, rgba(217,193,138,0) 100%)",
-                    boxShadow: "0 0 10px 1px rgba(240,224,184,0.5)",
-                  }}
-                />
-              </div>
-
-              {/* Reticle corners, one weight lighter than before */}
-              {[
-                { pos: "top-3 left-3",     b: "border-t border-l" },
-                { pos: "top-3 right-3",    b: "border-t border-r" },
-                { pos: "bottom-3 left-3",  b: "border-b border-l" },
-                { pos: "bottom-3 right-3", b: "border-b border-r" },
-              ].map(c => (
-                <div
-                  key={c.pos}
-                  className={`xr-reticle pointer-events-none absolute ${c.pos} ${c.b} w-3.5 h-3.5`}
-                  style={{ borderColor: "#D9C18A" }}
-                />
+                      <p className="text-[11px] text-[#7186A3] mt-1 leading-tight">{row.note}</p>
+                    </div>
+                  ))}
+                </div>
               ))}
             </div>
+
+            {/* Which panel, and how long it has left */}
+            <div className="relative flex items-center gap-1.5 mt-5">
+              {PANELS.map((panel, i) => (
+                <div key={panel.id} className="h-0.5 flex-1 rounded-full overflow-hidden"
+                     style={{ background: "rgba(232,238,247,0.10)" }}>
+                  <div className="xr-tick h-full rounded-full"
+                       style={{ background: "#D9C18A", animationDelay: `${i * 4}s` }} />
+                </div>
+              ))}
+            </div>
+
+            {/* The beam */}
+            <div className="xr-beam pointer-events-none absolute inset-x-0 top-0 h-20">
+              <div
+                className="h-full w-full"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, rgba(217,193,138,0) 0%, rgba(217,193,138,0.04) 60%, rgba(217,193,138,0.13) 94%, rgba(255,245,220,0.18) 100%)",
+                }}
+              />
+              <div
+                className="h-px w-full"
+                style={{
+                  background: "linear-gradient(90deg, rgba(217,193,138,0) 0%, #F0E0B8 22%, #FFF8E6 50%, #F0E0B8 78%, rgba(217,193,138,0) 100%)",
+                  boxShadow: "0 0 10px 1px rgba(240,224,184,0.5)",
+                }}
+              />
+            </div>
+
+            {[
+              { pos: "top-3 left-3",     b: "border-t border-l" },
+              { pos: "top-3 right-3",    b: "border-t border-r" },
+              { pos: "bottom-3 left-3",  b: "border-b border-l" },
+              { pos: "bottom-3 right-3", b: "border-b border-r" },
+            ].map(c => (
+              <div
+                key={c.pos}
+                className={`xr-reticle pointer-events-none absolute ${c.pos} ${c.b} w-3.5 h-3.5`}
+                style={{ borderColor: "#D9C18A" }}
+              />
+            ))}
           </div>
         </div>
       </section>
