@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, ReactNode } from "react";
 import { EMPTY_PROFILE, type CareerProfile, type EvidenceItem, type ParsedResume } from "../lib/profileTypes";
-import { deriveRisks, deriveScorecard, deriveTargetGaps, type Risk, type Scorecard, type TargetGap } from "../lib/careerRisk";
+import { deriveRiskCategoryChecks, deriveRisks, deriveScorecard, deriveTargetGaps, getSalaryBenchmark, type Risk, type RiskCategoryCheck, type SalaryBenchmark, type Scorecard, type TargetGap } from "../lib/careerRisk";
 
 /* ────────────────────────────────────────────────────────────────
    The scan result, shared.
@@ -20,6 +20,8 @@ interface CareerProfileContextValue {
   profile: CareerProfile;
   hasScanned: boolean;
   risks: Risk[];
+  riskChecks: RiskCategoryCheck[];
+  salaryBenchmark: SalaryBenchmark;
   targetGaps: TargetGap[];
   scorecard: Scorecard;
   setProfile: (p: CareerProfile) => void;
@@ -60,6 +62,8 @@ export function CareerProfileProvider({ children }: { children: ReactNode }) {
     profile,
     hasScanned,
     risks: deriveRisks(profile),
+    riskChecks: deriveRiskCategoryChecks(profile),
+    salaryBenchmark: getSalaryBenchmark(profile),
     targetGaps: deriveTargetGaps(profile),
     scorecard: deriveScorecard(profile),
     setProfile: setProfileState,

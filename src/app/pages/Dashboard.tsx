@@ -1,12 +1,8 @@
 import { useState } from "react";
 import {
   Shield, Brain, TrendingUp, Award, AlertTriangle, CheckCircle,
-  ChevronRight, Info, X, Sparkles, BarChart3, Eye, FlaskConical,
-  Pill, ArrowRight, Zap, Clock
+  Info, X, Sparkles, ArrowRight, Zap, Clock
 } from "lucide-react";
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot
-} from "recharts";
 import { useCareerProfile } from "../state/careerProfile";
 import { NextStep } from "../state/stages";
 
@@ -62,18 +58,6 @@ function ScoreModal({ k, value, lines, onClose }: { k: MetricKey; value: string;
   );
 }
 
-/* Monthly salary (RM '000/mo). Personal pay is a step function — it only moves
-   at the annual increment — while the market median drifts up every month. */
-const salaryData = [
-  { month: "Jul", salary: 9.8,  market: 10.4 },
-  { month: "Aug", salary: 9.8,  market: 10.6 },
-  { month: "Sep", salary: 9.8,  market: 10.8 },
-  { month: "Oct", salary: 9.8,  market: 11.0 },
-  { month: "Nov", salary: 9.8,  market: 11.2 },
-  { month: "Dec", salary: 9.8,  market: 11.5 },
-  { month: "Jan", salary: 10.1, market: 11.7 },
-];
-
 // ─── Component ──────────────────────────────────────────────────────────────
 
 interface DashboardProps {
@@ -81,7 +65,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
-  const { profile, risks, scorecard } = useCareerProfile();
+  const { profile, risks, riskChecks, salaryBenchmark: salary, scorecard } = useCareerProfile();
   const [modal, setModal] = useState<MetricKey | null>(null);
 
   /* Every number on this page comes from the one derivation. There used
@@ -93,7 +77,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     { key: "ai"        as MetricKey, label: "AI Exposure",     value: scorecard.aiExposure.label, unit: "",
       color: scorecard.aiExposure.percent >= 55 ? "text-red-500" : "text-amber-500", bg: scorecard.aiExposure.percent >= 55 ? "bg-red-50" : "bg-amber-50", icon: Brain },
     { key: "salary"    as MetricKey, label: "vs Market",       value: scorecard.vsMarket.label, unit: "",
-      color: scorecard.vsMarket.percent < 0 ? "text-red-500" : "text-emerald-600", bg: scorecard.vsMarket.percent < 0 ? "bg-red-50" : "bg-emerald-50", icon: TrendingUp },
+      color: !scorecard.vsMarket.conclusive ? "text-amber-600" : scorecard.vsMarket.percent < 0 ? "text-red-500" : "text-emerald-600", bg: !scorecard.vsMarket.conclusive ? "bg-amber-50" : scorecard.vsMarket.percent < 0 ? "bg-red-50" : "bg-emerald-50", icon: TrendingUp },
     { key: "promotion" as MetricKey, label: "Promotion Ready", value: `${scorecard.promotionReady}%`, unit: "",
       color: scorecard.promotionReady >= 70 ? "text-emerald-600" : "text-amber-500", bg: scorecard.promotionReady >= 70 ? "bg-emerald-50" : "bg-amber-50", icon: Award },
   ];
@@ -164,7 +148,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
 
         {/* ── Strengths & Risks narrative ── */}
-        <div className="grid lg:grid-cols-2 gap-4">
+        <div className="grid lg:grid-cols-[0.8fr_1.2fr] gap-4">
           <div className="bg-white border border-border rounded-xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <CheckCircle size={16} className="text-emerald-500" />
@@ -183,58 +167,111 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </div>
 
           <div className="bg-white border border-border rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle size={16} className="text-red-500" />
-              <h3 className="font-semibold text-foreground">What's putting you at risk</h3>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={16} className="text-red-500" />
+                <div>
+                  <h3 className="font-semibold text-foreground">Open risk categories</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Up to four categories. Only breached thresholds appear.</p>
+                </div>
+              </div>
+              <span className="text-xs font-semibold bg-red-50 text-red-700 border border-red-100 px-2 py-1 rounded-md whitespace-nowrap">{risks.length} open</span>
             </div>
-            <div className="space-y-3">
-              {risks.map(r => (
-                <div key={r.id} className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-xl">
-                  <AlertTriangle size={13} className="text-red-400 flex-shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="text-sm text-foreground">{r.headline}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <span className="font-semibold uppercase tracking-wide">{r.severity}</span> · {r.metric} · {r.horizon}
-                    </p>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {riskChecks.map(check => {
+                const tone = check.status === "open"
+                  ? "bg-red-50 border-red-200 text-red-700"
+                  : check.status === "clear"
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                    : "bg-muted border-border text-muted-foreground";
+                return (
+                  <div key={check.id} className={`border rounded-lg p-2.5 ${tone}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold">{check.label}</p>
+                      <span className="text-[9px] uppercase font-bold whitespace-nowrap">{check.status.replace("-", " ")}</span>
+                    </div>
+                    <p className="text-[10px] mt-1 leading-snug opacity-80">{check.summary}</p>
                   </div>
+                );
+              })}
+            </div>
+            <div className="space-y-4">
+              {risks.map(r => (
+                <div key={r.id} className="p-4 bg-red-50/60 border border-red-100 rounded-xl">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-red-700 uppercase tracking-wide">{r.category}</p>
+                      <p className="text-sm font-medium text-foreground mt-1">{r.headline}</p>
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-red-700 border border-red-200 bg-white px-2 py-1 rounded-md">{r.severity}</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+                    {[
+                      ["Your current", r.comparison.current],
+                      ["Benchmark", r.comparison.benchmark],
+                      ["Shortfall", r.comparison.shortfall],
+                    ].map(([label, value]) => (
+                      <div key={label} className="bg-white border border-red-100 rounded-lg p-2.5 min-w-0">
+                        <p className="text-[10px] text-muted-foreground">{label}</p>
+                        <p className="text-xs font-semibold text-foreground mt-1 leading-snug break-words">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <details className="mt-3 group">
+                    <summary className="cursor-pointer list-none text-xs font-semibold text-primary flex items-center gap-1.5">
+                      <Info size={12} /> How this was calculated
+                    </summary>
+                    <div className="mt-2 bg-white border border-red-100 rounded-lg p-3 space-y-2">
+                      {r.calculation.map(line => (
+                        <p key={line} className="text-xs text-muted-foreground leading-relaxed">{line}</p>
+                      ))}
+                      <div className="pt-2 border-t border-border">
+                        <p className="text-xs text-foreground"><span className="font-semibold">What closes it:</span> {r.fix}</p>
+                        <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1"><Clock size={11} /> Estimated {r.timeToFix}</p>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* ── Salary trend ── */}
+        {/* ── Salary benchmark ── */}
         <div className="grid grid-cols-1 gap-4">
           <div className="bg-white border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-semibold text-foreground">Salary vs market trend</h3>
-              <button onClick={() => setModal("salary")} className={`text-xs px-2 py-1 rounded-full font-medium transition-colors inline-flex items-center gap-1 ${scorecard.vsMarket.percent < 0 ? "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100" : "bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100"}`}>
+              <h3 className="font-semibold text-foreground">Salary vs market benchmark</h3>
+              <button onClick={() => setModal("salary")} className={`text-xs px-2 py-1 rounded-full font-medium transition-colors inline-flex items-center gap-1 ${!scorecard.vsMarket.conclusive ? "bg-amber-50 text-amber-700 border border-amber-100 hover:bg-amber-100" : scorecard.vsMarket.percent < 0 ? "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100" : "bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100"}`}>
                 {scorecard.vsMarket.label} vs market <Info size={11} /> <span className="underline underline-offset-2">why?</span>
               </button>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Monthly salary in RM. Your pay only moves at the annual increment (+3% in Jan), while the market median moves every month — that is how the gap quietly widens.</p>
-            <div className="flex items-center gap-4 mb-2">
-              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><span className="w-3 h-0.5 rounded-full inline-block" style={{ backgroundColor: "#2563EB" }} /> Your salary</span>
-              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><span className="w-3 h-0.5 rounded-full inline-block border-b border-dashed" style={{ borderColor: "#B45309" }} /> Market median (KL)</span>
-            </div>
-            <div style={{ width: "100%", height: 180 }}>
-              <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={salaryData}>
-                  <defs>
-                    <linearGradient id="db-salGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#2563EB" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#2563EB" stopOpacity={0}    />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM ${v}k`} domain={[9.5, 12]} />
-                  <Tooltip formatter={(v: number, name: string) => [`RM ${v}k/mo`, name === "market" ? "Market median" : "Your salary"]} />
-                  <Area key="area-db-market" type="monotone" dataKey="market" stroke="#B45309" strokeWidth={2} strokeDasharray="5 4" fill="none" isAnimationActive={false} />
-                  <Area key="area-db-sal" type="stepAfter" dataKey="salary" stroke="#2563EB" strokeWidth={2} fill="url(#db-salGrad)" isAnimationActive={false} />
-                  <ReferenceDot x="Jan" y={10.1} r={5} fill="#2563EB" stroke="white" strokeWidth={2} label={{ value: "annual increment +3%", position: "left", fontSize: 10, fill: "#2563EB", fontWeight: 600 }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <p className="text-xs text-muted-foreground mb-4">Closed salary and experience ranges use their midpoint. Open-ended salary ranges use the stated boundary, and only produce a gap when that boundary proves which side of the benchmark you are on.</p>
+            {salary.current === null ? (
+              <div className="border border-dashed border-border rounded-xl p-5 text-sm text-muted-foreground">No salary was provided, so we did not calculate a salary gap.</div>
+            ) : (
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground">Your stated {salary.basis.replace("-", " ")}</p>
+                  <p className="text-xl font-bold text-blue-700 mt-1">{salary.basis === "upper-bound" ? "<" : salary.basis === "lower-bound" ? "≥" : ""}RM {salary.current.toLocaleString()}<span className="text-xs font-normal">/mo</span></p>
+                </div>
+                <div className="bg-muted border border-border rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground">Market median</p>
+                  <p className="text-xl font-bold text-foreground mt-1">RM {salary.median.toLocaleString()}<span className="text-xs font-normal">/mo</span></p>
+                  <p className="text-[10px] text-muted-foreground mt-1 capitalize">{salary.family} · experience {salary.experienceBasis.replace("-", " ")}</p>
+                </div>
+                <div className={`${!salary.conclusive ? "bg-amber-50 border-amber-100" : salary.gap! > 0 ? "bg-red-50 border-red-100" : "bg-emerald-50 border-emerald-100"} border rounded-xl p-4`}>
+                  <p className="text-xs text-muted-foreground">{!salary.conclusive ? "Difference" : salary.basis === "midpoint" || salary.basis === "exact" ? "Exact difference" : "Minimum difference"}</p>
+                  {!salary.conclusive ? (
+                    <><p className="text-base font-bold text-amber-700 mt-1">Cannot determine</p><p className="text-[10px] text-muted-foreground mt-1">Open-ended range crosses the median</p></>
+                  ) : (
+                    <><p className={`text-xl font-bold mt-1 ${salary.gap! > 0 ? "text-red-600" : "text-emerald-700"}`}>
+                      {salary.gap === 0 ? "RM 0" : <>{salary.gap! > 0 ? "−" : "+"}RM {Math.abs(salary.gap!).toLocaleString()}</>}<span className="text-xs font-normal">/mo</span>
+                    </p><p className="text-[10px] text-muted-foreground mt-1">{salary.gap === 0 ? "At market median" : `${Math.abs(salary.percent!)}% ${salary.gap! > 0 ? "below" : "above"} median`}</p></>
+                  )}
+                </div>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground mt-3">
               {scorecard.explain.salary[0]}
             </p>

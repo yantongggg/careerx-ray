@@ -33,6 +33,14 @@ export interface Risk {
   horizon: string;
   /** Which inputs produced it — shown verbatim in "why this score?". */
   evidence: string;
+  /** The comparison shown on the dashboard: observed value, bar, and distance to it. */
+  comparison: {
+    current: string;
+    benchmark: string;
+    shortfall: string;
+  };
+  /** A short, auditable derivation. No hidden model reasoning. */
+  calculation: string[];
   fix: string;
   timeToFix: string;
 }
@@ -52,11 +60,29 @@ export interface TargetGap {
 export interface Scorecard {
   careerHealth: number;
   aiExposure: { label: string; percent: number };
-  vsMarket: { label: string; percent: number };
+  vsMarket: { label: string; percent: number; conclusive: boolean };
   promotionReady: number;
   /** Per-metric plain-English derivation, for the "Why this?" panels. */
   explain: Record<"health" | "ai" | "salary" | "promotion", string[]>;
 }
+
+export type RiskCheckStatus = "open" | "clear" | "not-measured" | "not-applicable";
+
+export interface RiskCategoryCheck {
+  id: "automation" | "salary" | "readiness" | "leadership";
+  label: string;
+  status: RiskCheckStatus;
+  summary: string;
+}
+
+const RISK_POLICY = {
+  automationLowRiskCeiling: 35,
+  automationHighRiskFloor: 55,
+  leadershipReady: 65,
+  roleGateMinimum: 1,
+  proofMinimum: 2,
+  salaryRiskFloorPct: -5,
+} as const;
 
 /* ── Authored reference data ─────────────────────────────────────
    These are the only magic numbers in this file, and they are all in
@@ -93,6 +119,29 @@ const KEY_CREDENTIAL: Record<RoleFamily, string> = {
   generic:   "a role-relevant certification",
 };
 
+/** Evidence kinds that satisfy the main hiring gate for each role family. */
+const ROLE_GATE_KINDS: Record<RoleFamily, string[]> = {
+  data: ["certificate"],
+  software: ["certificate"],
+  design: ["portfolio", "project"],
+  marketing: ["certificate"],
+  product: ["portfolio", "project"],
+  business: ["certificate"],
+  service: ["certificate"],
+  generic: ["certificate"],
+};
+
+const ROLE_GATE_TERMS: Record<RoleFamily, string[]> = {
+  data: ["aws", "azure", "gcp", "cloud", "data", "snowflake", "databricks", "dbt", "cka"],
+  software: ["aws", "azure", "gcp", "cloud", "security", "cyber", "kubernetes", "cka", "cissp", "comptia"],
+  design: [],
+  marketing: ["google ads", "meta", "hubspot", "marketing", "analytics"],
+  product: [],
+  business: ["licence", "license", "registration", "professional", "chartered"],
+  service: ["food", "safety", "first aid", "hospitality", "barista", "training"],
+  generic: [],
+};
+
 /* ── Helpers ─────────────────────────────────────────────────── */
 
 const avg = (ns: number[]) => (ns.length ? ns.reduce((a, b) => a + b, 0) / ns.length : 0);
@@ -112,9 +161,8 @@ export function parseMonthlyRM(input: string | undefined): number | null {
 
 /** junior | mid | senior, from years of experience. */
 function seniorityIndex(profile: CareerProfile): 0 | 1 | 2 {
-  const years =
-    profile.resume?.yearsExperience ??
-    parseFloat((profile.experience.match(/\d+/) ?? ["0"])[0]);
+  const statedYears = [...profile.experience.matchAll(/\d+(?:\.\d+)?/g)].map(m => parseFloat(m[0]));
+  const years = profile.resume?.yearsExperience ?? avg(statedYears);
   if (!years || years < 2) return 0;
   if (years < 6) return 1;
   return 2;
@@ -135,6 +183,118 @@ function sev(score: number): Severity {
   return "low";
 }
 
+export interface SalaryBenchmark {
+  current: number | null;
+  median: number;
+  gap: number | null;
+  percent: number | null;
+  family: RoleFamily;
+  basis: "midpoint" | "upper-bound" | "lower-bound" | "exact";
+  conclusive: boolean;
+  experienceBasis: "resume" | "range-midpoint" | "stated";
+}
+
+interface AutomationBenchmark {
+  family: RoleFamily;
+  baselinePct: number;
+  dimensionAverage: number;
+  dimensionAdjustmentPct: number;
+  evidenceAdjustmentPct: number;
+  exposurePct: number;
+}
+
+function getAutomationBenchmark(profile: CareerProfile): AutomationBenchmark {
+  const family = detectRoleFamily(profile.currentRole, profile.targetRole);
+  const dimensionAverage = avg([dim(profile, "Innovation"), dim(profile, "Strategic")]);
+  const dimensionAdjustment = ((dimensionAverage - 55) / 100) * 0.35;
+  const evidenceAdjustment = hasEvidenceOf(profile, ["project", "portfolio"]) ? 0.04 : 0;
+  const exposure = Math.max(
+    0.12,
+    Math.min(0.85, AUTOMATION_BASE[family] - dimensionAdjustment - evidenceAdjustment),
+  );
+  return {
+    family,
+    baselinePct: Math.round(AUTOMATION_BASE[family] * 100),
+    dimensionAverage,
+    dimensionAdjustmentPct: Math.round(dimensionAdjustment * 100),
+    evidenceAdjustmentPct: Math.round(evidenceAdjustment * 100),
+    exposurePct: Math.round(exposure * 100),
+  };
+}
+
+/** The exact salary comparison used by both the risk and the dashboard. */
+export function getSalaryBenchmark(profile: CareerProfile): SalaryBenchmark {
+  const family = detectRoleFamily(profile.currentRole, profile.targetRole);
+  const median = MARKET_MEDIAN[family][seniorityIndex(profile)];
+  const current = parseMonthlyRM(profile.salaryRange);
+  const salaryInput = profile.salaryRange.toLowerCase();
+  const numberCount = [...salaryInput.matchAll(/\d+(?:\.\d+)?/g)].length;
+  const basis: SalaryBenchmark["basis"] = /<|below|under|less than|up to|maximum|max\b/.test(salaryInput)
+    ? "upper-bound"
+    : /\+|above|over|more than|at least|minimum|min\b/.test(salaryInput)
+      ? "lower-bound"
+      : numberCount > 1
+        ? "midpoint"
+        : "exact";
+  const gap = current === null ? null : median - current;
+  const boundaryPercent = current === null ? null : Math.round(((current - median) / median) * 100);
+  const conclusive = current !== null && (
+    basis === "midpoint" || basis === "exact" ||
+    (basis === "upper-bound" && boundaryPercent! <= RISK_POLICY.salaryRiskFloorPct) ||
+    (basis === "lower-bound" && boundaryPercent! > RISK_POLICY.salaryRiskFloorPct)
+  );
+  const experienceNumbers = [...profile.experience.matchAll(/\d+(?:\.\d+)?/g)];
+  return {
+    current,
+    median,
+    gap,
+    percent: current === null ? null : Math.round(((current - median) / median) * 100),
+    family,
+    basis,
+    conclusive,
+    experienceBasis: profile.resume?.yearsExperience !== undefined
+      ? "resume"
+      : experienceNumbers.length > 1
+        ? "range-midpoint"
+        : "stated",
+  };
+}
+
+interface ReadinessBenchmark {
+  family: RoleFamily;
+  gateCount: number;
+  proofCount: number;
+  missingGate: boolean;
+  missingProof: boolean;
+  additionsNeeded: number;
+}
+
+function getReadinessBenchmark(profile: CareerProfile): ReadinessBenchmark {
+  // Readiness is about the role being pursued, unlike automation and salary,
+  // which describe the role held today.
+  const family = detectRoleFamily(profile.targetRole || profile.currentRole);
+  const gateKinds = ROLE_GATE_KINDS[family];
+  const terms = ROLE_GATE_TERMS[family];
+  const textMatchesFamily = (text: string) => !terms.length || terms.some(term => text.toLowerCase().includes(term));
+  const uploadedGateCount = profile.evidence.filter(e => {
+    if (!gateKinds.includes(e.kind)) return false;
+    return textMatchesFamily([e.label, e.source, ...e.skills].join(" "));
+  }).length;
+  const resumeCredentialCount = gateKinds.includes("certificate")
+    ? (profile.resume?.certifications.filter(textMatchesFamily).length ?? 0)
+    : 0;
+  const gateCount = uploadedGateCount + resumeCredentialCount;
+  const proofCount = profile.evidence.length;
+  const missingGate = gateCount < RISK_POLICY.roleGateMinimum;
+  const missingProof = proofCount < RISK_POLICY.proofMinimum;
+  // A new gate item is also a new proof source, so these requirements overlap.
+  const additionsNeeded = Math.max(
+    missingGate ? RISK_POLICY.roleGateMinimum - gateCount : 0,
+    missingProof ? RISK_POLICY.proofMinimum - proofCount : 0,
+  );
+  return { family, gateCount, proofCount, missingGate, missingProof, additionsNeeded };
+}
+
 /* ── Risks: the role you are in today ────────────────────────── */
 
 export function deriveRisks(profile: CareerProfile): Risk[] {
@@ -145,56 +305,91 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
      Base rate for the family, reduced by the two dimensions that most
      reliably survive automation (Innovation, Strategic) and by having
      shipped project evidence. */
-  const creativeShield = (avg([dim(profile, "Innovation"), dim(profile, "Strategic")]) - 55) / 100;
-  const evidenceShield = hasEvidenceOf(profile, ["project", "portfolio"]) ? 0.04 : 0;
-  const exposure = Math.max(
-    0.12,
-    Math.min(0.85, AUTOMATION_BASE[family] - creativeShield * 0.35 - evidenceShield),
-  );
-  const exposurePct = Math.round(exposure * 100);
-  risks.push({
+  const automation = getAutomationBenchmark(profile);
+  const exposurePct = automation.exposurePct;
+  if (exposurePct >= RISK_POLICY.automationLowRiskCeiling) risks.push({
     id: "automation",
     category: "AI Automation Exposure",
     headline: `${exposurePct}% of your routine task time is exposed to automation.`,
     severity: sev(exposurePct),
     metric: `${exposurePct}%`,
     horizon: exposurePct >= 55 ? "within 24 months" : "within 3–5 years",
-    evidence: `Baseline for ${family} roles (${Math.round(AUTOMATION_BASE[family] * 100)}%), adjusted for your Innovation ${Math.round(dim(profile, "Innovation"))} and Strategic ${Math.round(dim(profile, "Strategic"))} scores${evidenceShield ? " and your shipped project evidence" : ""}.`,
+    evidence: `Baseline for ${family} roles (${automation.baselinePct}%), adjusted for your Innovation ${Math.round(dim(profile, "Innovation"))} and Strategic ${Math.round(dim(profile, "Strategic"))} scores${automation.evidenceAdjustmentPct ? " and your shipped project evidence" : ""}.`,
+    comparison: {
+      current: `${exposurePct}% exposed`,
+      benchmark: `<${RISK_POLICY.automationLowRiskCeiling}% low-risk band`,
+      shortfall: `${exposurePct - (RISK_POLICY.automationLowRiskCeiling - 1)} pts above low-risk band`,
+    },
+    calculation: [
+      `${automation.baselinePct}% baseline for ${family} roles`,
+      `Innovation ${Math.round(dim(profile, "Innovation"))} and Strategic ${Math.round(dim(profile, "Strategic"))} average to ${Math.round(automation.dimensionAverage)}; adjustment: ${automation.dimensionAdjustmentPct >= 0 ? "−" : "+"}${Math.abs(automation.dimensionAdjustmentPct)} points`,
+      automation.evidenceAdjustmentPct ? `Reduced ${automation.evidenceAdjustmentPct} points for shipped project or portfolio evidence` : "No shipped project shield applied",
+      `${automation.baselinePct} ${automation.dimensionAdjustmentPct >= 0 ? "−" : "+"} ${Math.abs(automation.dimensionAdjustmentPct)} − ${automation.evidenceAdjustmentPct} = ${exposurePct}% exposure`,
+    ],
     fix: "Move task time toward work that sets direction rather than executes it.",
     timeToFix: "3–6 months",
   });
 
-  /* 2 · Credential gap — only a risk if there is genuinely no credential
-     evidence on file. */
-  if (!hasEvidenceOf(profile, ["certificate"])) {
+  /* 2 · Proof and credential readiness. A role-specific hiring gate and
+     general evidence depth are one market-readiness category, not two risks. */
+  const readiness = getReadinessBenchmark(profile);
+  const { gateCount, proofCount, missingGate, missingProof } = readiness;
+  if (missingGate || missingProof) {
+    const missing: string[] = [];
+    if (missingGate) missing.push(`a role-relevant gate (${KEY_CREDENTIAL[readiness.family]})`);
+    if (missingProof) missing.push(`proof depth of ${RISK_POLICY.proofMinimum} sources`);
     risks.push({
-      id: "credential",
-      category: "Credential Gap",
-      headline: `You have no verified credential on file. Most ${profile.targetRole || "target"} postings ask for ${KEY_CREDENTIAL[family]}.`,
-      severity: "high",
-      metric: "0 on file",
+      id: "readiness",
+      category: "Proof & Credential Readiness",
+      headline: `You need ${readiness.additionsNeeded} more evidence item${readiness.additionsNeeded === 1 ? "" : "s"}; ${missing.join(" and ")} must be covered.`,
+      severity: missingGate ? "high" : "medium",
+      metric: `${gateCount}/${RISK_POLICY.roleGateMinimum} gate · ${proofCount}/${RISK_POLICY.proofMinimum} sources`,
       horizon: "blocks applications today",
-      evidence: "No evidence item of type 'certificate' was provided during your scan.",
-      fix: `Add ${KEY_CREDENTIAL[family]} — and attach the issuer verification link, not just the PDF.`,
-      timeToFix: "6–12 weeks",
+      evidence: `Counted ${gateCount} role-relevant gate item${gateCount === 1 ? "" : "s"} and ${proofCount} evidence source${proofCount === 1 ? "" : "s"} from your scan.`,
+      comparison: {
+        current: `${gateCount}/${RISK_POLICY.roleGateMinimum} gate · ${proofCount}/${RISK_POLICY.proofMinimum} proof`,
+        benchmark: `${RISK_POLICY.roleGateMinimum} role gate · ${RISK_POLICY.proofMinimum} proof sources`,
+        shortfall: `${readiness.additionsNeeded} item${readiness.additionsNeeded === 1 ? "" : "s"} total`,
+      },
+      calculation: [
+        `Role gate for target ${readiness.family}: ${KEY_CREDENTIAL[readiness.family]}`,
+        `Accepted gate evidence on file: ${gateCount}`,
+        `All evidence sources on file: ${proofCount}; minimum useful depth: ${RISK_POLICY.proofMinimum}`,
+        "A gate item also counts as a proof source, so overlapping requirements are not double-counted.",
+      ],
+      fix: missingGate
+        ? `Add ${KEY_CREDENTIAL[readiness.family]} and attach a source an employer can check.`
+        : "Add one more distinct source that proves an outcome, qualification, or responsibility.",
+      timeToFix: missingGate ? "6–12 weeks" : "1 week",
     });
   }
 
   /* 3 · Salary position against the market band for family + seniority. */
-  const band = MARKET_MEDIAN[family][seniorityIndex(profile)];
-  const current = parseMonthlyRM(profile.salaryRange);
-  if (current) {
-    const deltaPct = Math.round(((current - band) / band) * 100);
-    if (deltaPct <= -5) {
+  const salary = getSalaryBenchmark(profile);
+  const band = salary.median;
+  const current = salary.current;
+  if (current && salary.conclusive) {
+    const deltaPct = salary.percent!;
+    if (deltaPct <= RISK_POLICY.salaryRiskFloorPct) {
       const gap = band - current;
       risks.push({
         id: "salary",
         category: "Salary Drift",
-        headline: `You are RM ${gap.toLocaleString()}/mo below the market median for your level.`,
+        headline: `You are ${salary.basis === "upper-bound" ? "at least " : ""}RM ${gap.toLocaleString()}/mo below the market median for your level.`,
         severity: sev(Math.abs(deltaPct) * 2.5),
         metric: `${deltaPct}%`,
         horizon: "widens every year you stay",
         evidence: `Your stated RM ${current.toLocaleString()}/mo against the RM ${band.toLocaleString()}/mo median for ${family} roles at your experience level.`,
+        comparison: {
+          current: `${salary.basis === "upper-bound" ? "<" : salary.basis === "lower-bound" ? "≥" : ""}RM ${current.toLocaleString()}/mo`,
+          benchmark: `RM ${band.toLocaleString()}/mo median`,
+          shortfall: `${salary.basis === "upper-bound" ? "At least " : ""}RM ${gap.toLocaleString()}/mo (${Math.abs(deltaPct)}%)`,
+        },
+        calculation: [
+          `Used the ${salary.basis.replace("-", " ")} of your stated salary range: RM ${current.toLocaleString()}/mo`,
+          `Matched ${family} role family and experience band to RM ${band.toLocaleString()}/mo`,
+          `Shortfall = RM ${band.toLocaleString()} − RM ${current.toLocaleString()} = RM ${gap.toLocaleString()}/mo`,
+        ],
         fix: "Benchmark before your next review, or move — a correction at offer stage is worth years of increments.",
         timeToFix: "1 review cycle",
       });
@@ -204,7 +399,7 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
   /* 4 · Leadership gap — only raised when the target role implies leading. */
   const leadership = dim(profile, "Leadership");
   const targetWantsLeadership = /manager|lead|head|director|principal|senior/i.test(profile.targetRole);
-  if (targetWantsLeadership && leadership < 65) {
+  if (targetWantsLeadership && leadership < RISK_POLICY.leadershipReady) {
     risks.push({
       id: "leadership",
       category: "Leadership Gap",
@@ -213,28 +408,62 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
       metric: `${Math.round(leadership)}/100`,
       horizon: "blocks the next promotion cycle",
       evidence: `Leadership scored ${Math.round(leadership)} from your Career Calibration answers, against a target role of "${profile.targetRole}".`,
+      comparison: {
+        current: `${Math.round(leadership)}/100`,
+        benchmark: `${RISK_POLICY.leadershipReady}/100 leadership signal`,
+        shortfall: `${Math.ceil(RISK_POLICY.leadershipReady - leadership)} points`,
+      },
+      calculation: [
+        `Target title "${profile.targetRole}" matched a leadership-level role`,
+        `Leadership signal from Career Calibration: ${Math.round(leadership)}/100`,
+        `Readiness threshold: ${RISK_POLICY.leadershipReady}/100; shortfall: ${Math.ceil(RISK_POLICY.leadershipReady - leadership)} points`,
+      ],
       fix: "Take one piece of visible scope — a project, a mentee, a cross-team decision — and make the outcome attributable to you.",
       timeToFix: "6–9 months",
     });
   }
 
-  /* 5 · Evidence thinness — a real risk for people with nothing to show. */
-  if (profile.evidence.length < 2 && !profile.resume) {
-    risks.push({
-      id: "evidence",
-      category: "Thin Evidence Record",
-      headline: "There is almost nothing on file for an employer to check.",
-      severity: "medium",
-      metric: `${profile.evidence.length} item${profile.evidence.length === 1 ? "" : "s"}`,
-      horizon: "affects every application you send",
-      evidence: "Counted directly from the evidence you added during the scan.",
-      fix: "Add any two things you can point at — a project, a reference letter, a record of results.",
-      timeToFix: "1 week",
-    });
-  }
-
   const order: Severity[] = ["critical", "high", "medium", "low"];
   return risks.sort((a, b) => order.indexOf(a.severity) - order.indexOf(b.severity));
+}
+
+export function deriveRiskCategoryChecks(profile: CareerProfile): RiskCategoryCheck[] {
+  const risks = deriveRisks(profile);
+  const byId = new Map(risks.map(r => [r.id, r]));
+  const automation = getAutomationBenchmark(profile);
+  const salary = getSalaryBenchmark(profile);
+  const readiness = getReadinessBenchmark(profile);
+  const leadership = dim(profile, "Leadership");
+  const leadershipApplies = /manager|lead|head|director|principal|senior/i.test(profile.targetRole);
+
+  return [
+    {
+      id: "automation", label: "AI exposure",
+      status: byId.has("automation") ? "open" : "clear",
+      summary: byId.get("automation")?.comparison.shortfall ?? `${automation.exposurePct}% · below ${RISK_POLICY.automationLowRiskCeiling}% threshold`,
+    },
+    {
+      id: "salary", label: "Salary position",
+      status: salary.current === null || !salary.conclusive ? "not-measured" : byId.has("salary") ? "open" : "clear",
+      summary: salary.current === null
+        ? "Salary not provided"
+        : !salary.conclusive
+          ? "Open-ended range crosses the benchmark"
+          : byId.get("salary")?.comparison.shortfall ?? `${salary.percent! >= 0 ? "+" : ""}${salary.percent}% vs median`,
+    },
+    {
+      id: "readiness", label: "Proof & credential",
+      status: byId.has("readiness") ? "open" : "clear",
+      summary: byId.get("readiness")?.comparison.shortfall ?? `${readiness.gateCount}/${RISK_POLICY.roleGateMinimum} gate · ${readiness.proofCount}/${RISK_POLICY.proofMinimum} proof`,
+    },
+    {
+      id: "leadership", label: "Leadership progression",
+      status: leadershipApplies ? (byId.has("leadership") ? "open" : "clear") : "not-applicable",
+      summary: leadershipApplies
+        ? byId.get("leadership")?.comparison.shortfall ?? `${Math.round(leadership)}/100 · threshold met`
+        : "Target role does not require a leadership gate",
+    },
+  ];
 }
 
 /* ── Target gaps: the role you want ──────────────────────────── */
@@ -276,11 +505,13 @@ export function deriveScorecard(profile: CareerProfile): Scorecard {
   const risks = deriveRisks(profile);
   const family = detectRoleFamily(profile.currentRole, profile.targetRole);
 
-  const automation = risks.find(r => r.id === "automation");
-  const exposurePct = automation ? parseInt(automation.metric, 10) : 40;
+  const automationRisk = risks.find(r => r.id === "automation");
+  const automation = getAutomationBenchmark(profile);
+  const exposurePct = automation.exposurePct;
 
   const salaryRisk = risks.find(r => r.id === "salary");
-  const salaryPct = salaryRisk ? parseInt(salaryRisk.metric, 10) : 0;
+  const salaryBenchmark = getSalaryBenchmark(profile);
+  const salaryPct = salaryBenchmark.percent;
 
   // Career health: start at 100, subtract a weighted penalty per open risk.
   const penalty: Record<Severity, number> = { critical: 14, high: 9, medium: 5, low: 2 };
@@ -307,12 +538,13 @@ export function deriveScorecard(profile: CareerProfile): Scorecard {
   return {
     careerHealth: Math.round(careerHealth),
     aiExposure: {
-      label: exposurePct >= 55 ? "High" : exposurePct >= 35 ? "Moderate" : "Low",
+      label: exposurePct >= RISK_POLICY.automationHighRiskFloor ? "High" : exposurePct >= RISK_POLICY.automationLowRiskCeiling ? "Moderate" : "Low",
       percent: exposurePct,
     },
     vsMarket: {
-      label: salaryPct === 0 ? "At market" : `${salaryPct > 0 ? "+" : ""}${salaryPct}%`,
-      percent: salaryPct,
+      label: salaryPct === null ? "No data" : !salaryBenchmark.conclusive ? "Inconclusive" : Math.abs(salaryPct) < Math.abs(RISK_POLICY.salaryRiskFloorPct) ? "At market" : `${salaryPct > 0 ? "+" : ""}${salaryPct}%`,
+      percent: salaryPct ?? 0,
+      conclusive: salaryBenchmark.conclusive,
     },
     promotionReady,
     explain: {
@@ -321,10 +553,19 @@ export function deriveScorecard(profile: CareerProfile): Scorecard {
         ...risks.map(r => `${r.category} (${r.severity}) — ${penalty[r.severity]} points`),
         `Added back +${evidenceBonus} for the ${profile.evidence.length} evidence item${profile.evidence.length === 1 ? "" : "s"} on file.`,
       ],
-      ai: automation ? [automation.evidence, automation.headline] : ["No automation signal available."],
+      ai: automationRisk
+        ? [automationRisk.evidence, automationRisk.headline]
+        : [
+            `${automation.baselinePct}% ${automation.family} baseline adjusted to ${automation.exposurePct}% by your Innovation, Strategic and project evidence signals.`,
+            "This is below the 35% threshold, so it is not counted as an open risk.",
+          ],
       salary: salaryRisk
         ? [salaryRisk.evidence, salaryRisk.headline]
-        : [`Your stated range sits within the market band for ${family} roles at your level.`],
+        : salaryPct === null
+          ? ["No salary was provided, so no salary-position conclusion was calculated."]
+          : !salaryBenchmark.conclusive
+            ? ["The open-ended salary range crosses the benchmark, so an exact salary-position conclusion cannot be calculated."]
+          : [`Your stated range sits within 5% of, or above, the market median for ${family} roles at your level.`],
       promotion: [
         `Averaged your Leadership ${Math.round(dim(profile, "Leadership"))}, Strategic ${Math.round(dim(profile, "Strategic"))} and Communication ${Math.round(dim(profile, "Communication"))} scores, weighted at 0.8.`,
         `Added +${evidenceBonus * 1.5} for evidence on file.`,
