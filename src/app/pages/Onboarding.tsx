@@ -984,15 +984,15 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                 <Check size={36} className="text-emerald-600" />
               </div>
               <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Your Career DNA is ready</h1>
-              <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">After combining profile evidence with your Career Calibration answers, we found your primary archetype: <strong className="text-foreground">{archetype.name} — {archetype.type}</strong>.</p>
+              <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">After combining profile evidence with your Career Calibration answers, your career reads as a <strong className="text-foreground">{archetype.type}</strong>.</p>
 
               <div className="bg-slate-950 text-white rounded-2xl p-5 mb-6 text-left">
                 <div className="flex items-start gap-4">
                   <img src={archetype.image} alt={archetype.animal} className="w-16 h-16 rounded-xl object-cover shadow-md flex-shrink-0" />
                   <div>
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Primary Career DNA Animal</p>
-                    <h2 className="text-2xl font-bold mt-1">{archetype.name}</h2>
-                    <p className="text-sm text-blue-200 font-semibold mt-1">{archetype.core.join(" + ")}</p>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Your Career DNA</p>
+                    <h2 className="text-2xl font-bold mt-1">{archetype.type}</h2>
+                    <p className="text-sm text-blue-200 font-semibold mt-1">{archetype.name} · {archetype.core.join(" + ")}</p>
                   </div>
                 </div>
                 <p className="text-sm text-slate-300 leading-relaxed mt-3">{archetype.copy}</p>

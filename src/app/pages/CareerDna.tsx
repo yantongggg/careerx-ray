@@ -167,11 +167,11 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
               <div className="flex items-center gap-4 mb-3">
                 <img src={primary.image} alt={primary.animal} className="w-16 h-16 rounded-xl object-cover shadow-md" />
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Primary Type</p>
-                  <h2 className="text-2xl font-bold mt-0.5">{primary.name}</h2>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Career DNA</p>
+                  <h2 className="text-2xl font-bold mt-0.5">{primary.type}</h2>
                 </div>
               </div>
-              <p className="text-sm font-semibold text-primary">{primary.type}</p>
+              <p className="text-sm font-semibold text-primary">{primary.name} · {primary.core.join(" + ")}</p>
               <p className="text-sm text-muted-foreground leading-relaxed mt-2">{primary.oneLiner}</p>
             </div>
           </div>
@@ -216,9 +216,9 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
                 <div className="flex items-center gap-4">
                   <img src={primary.image} alt={primary.animal} className="w-14 h-14 rounded-xl object-cover shadow-sm" />
                   <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Archetype</p>
-                    <h2 className="text-2xl font-bold text-foreground mt-1">{primary.name}</h2>
-                    <p className="text-primary font-semibold text-sm mt-0.5">{primary.careerStyle}</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Career DNA</p>
+                    <h2 className="text-2xl font-bold text-foreground mt-1">{primary.type}</h2>
+                    <p className="text-primary font-semibold text-sm mt-0.5">{primary.name}</p>
                   </div>
                 </div>
               </div>
@@ -321,9 +321,9 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
                 <div className="flex items-center gap-3">
                   <img src={archetype.image} alt={archetype.animal} className="w-11 h-11 rounded-lg object-cover shadow-sm flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-foreground truncate">{archetype.name}</p>
+                    <p className="text-sm font-bold text-foreground truncate">{archetype.type}</p>
                     <p className="text-xs text-primary font-semibold mt-0.5">{archetype.core.join(" + ")}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{archetype.type}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{archetype.name}</p>
                   </div>
                 </div>
               </div>
@@ -368,12 +368,12 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
               <div className="grid grid-cols-2 gap-3 mt-2">
                 <div className="border border-blue-100 bg-blue-50/50 rounded-lg p-3 text-center">
                   <img src={primary.image} alt={primary.animal} className="w-10 h-10 rounded-lg object-cover shadow-sm mx-auto mb-1.5" />
-                  <p className="text-xs font-bold text-foreground">{primary.name}</p>
+                  <p className="text-xs font-bold text-foreground">{primary.type}</p>
                   <p className="text-xs text-blue-600 font-semibold">Who you are now</p>
                 </div>
                 <div className="border border-amber-100 bg-amber-50/50 rounded-lg p-3 text-center">
                   <img src={aspirationPrimary.image} alt={aspirationPrimary.animal} className="w-10 h-10 rounded-lg object-cover shadow-sm mx-auto mb-1.5" />
-                  <p className="text-xs font-bold text-foreground">{aspirationPrimary.name}</p>
+                  <p className="text-xs font-bold text-foreground">{aspirationPrimary.type}</p>
                   <p className="text-xs text-amber-700 font-semibold">Who you're becoming</p>
                 </div>
               </div>
@@ -422,7 +422,7 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
                   <div>
                     <p className="text-xs font-bold text-amber-200 uppercase tracking-wider mb-1">AI Insight</p>
                     <p className="text-sm leading-relaxed text-slate-200">
-                      You are a <span className="text-blue-300 font-semibold">{primary.name}</span> transitioning toward <span className="text-amber-300 font-semibold">{aspirationPrimary.name}</span>.
+                      You read as a <span className="text-blue-300 font-semibold">{primary.type}</span> moving toward <span className="text-amber-300 font-semibold">{aspirationPrimary.type}</span>.
                       This isn't confusion — it's evolution. Your strongest conflicts ({conflicts.slice(0, 2).map(c => c.dimension).join(", ")}) point to a career identity that's outgrowing its current container.
                       The move: seek roles that reward {conflicts[0]?.gap > 0 ? "your emerging" : "your proven"} {conflicts[0]?.dimension.toLowerCase()} while giving you room to grow.
                     </p>
