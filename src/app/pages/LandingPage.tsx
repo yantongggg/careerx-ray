@@ -12,22 +12,13 @@ const DOORS = [
   { label: "University", desc: "Gaps caught before they cost offers.", target: "insights" },
 ];
 
-/* What the plate exposes, in the order the beam reaches it. */
-const FINDINGS = [
-  { label: "AI exposure", value: "58%", risk: true },
-  { label: "Pay vs market", value: "−14%", risk: true },
-  { label: "No credential on file", value: "0", risk: true },
-  { label: "Communication", value: "84", risk: false },
-];
-
-/* The record the beam reads. Each row is a real line off a CV, so the
-   scan is visibly working on evidence rather than on placeholder bars. */
-const RECORD: { k: string; v: string; flag?: boolean }[] = [
-  { k: "ROLE",   v: "Senior Data Analyst · 5 yrs" },
-  { k: "SKILLS", v: "SQL · Python · Tableau · dbt" },
-  { k: "PAY",    v: "RM 8,500 / month" },
-  { k: "CERTS",  v: "None on file", flag: true },
-  { k: "TARGET", v: "ML Engineer" },
+/* Three readings, in the order the beam reaches them. One thing to fix,
+   one to watch, one already working — a page of red reads as a verdict,
+   which is not what a diagnostic is for. */
+const SIGNALS = [
+  { label: "No cloud credential",  note: "Asked for in most ML Engineer postings", value: "Gap",   tone: "#E8927C" },
+  { label: "Pay vs market",        note: "Against your level in Kuala Lumpur",     value: "−14%",  tone: "#D9C18A" },
+  { label: "Communication",        note: "Your strongest calibrated dimension",    value: "84",    tone: "#7BC9A4" },
 ];
 
 /* The skill system, as it appears inside the product: the target role is
@@ -133,17 +124,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           12%, 80%  { opacity: 1; transform: none; filter: brightness(1); }
           88%, 100% { opacity: 0; transform: translateY(7px) scale(.96); }
         }
-        /* Each line of the record flares as the beam crosses it. */
-        @keyframes xr-bone {
-          0%, 5%    { opacity: .10; }
-          13%       { opacity: 1; }
-          32%, 80%  { opacity: .48; }
-          90%, 100% { opacity: .10; }
-        }
         @keyframes xr-arc {
-          0%, 34%   { stroke-dashoffset: 190; }
-          56%, 82%  { stroke-dashoffset: 52; }
-          90%, 100% { stroke-dashoffset: 190; }
+          0%, 34%   { stroke-dashoffset: 176; }
+          56%, 88%  { stroke-dashoffset: 48; }
+          96%, 100% { stroke-dashoffset: 176; }
         }
         @keyframes xr-num {
           0%, 34%   { opacity: .2; filter: blur(6px); }
@@ -162,34 +146,13 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           60%, 82%  { opacity: .4; }
           90%, 100% { opacity: .16; }
         }
-        @keyframes xr-read {
-          0%, 3%    { opacity: 0; transform: scaleX(0);   transform-origin: left; }
-          8%        { opacity: 1; transform: scaleX(1);   transform-origin: left; }
-          16%       { opacity: 1; transform: scaleX(1);   transform-origin: right; }
-          22%, 100% { opacity: 0; transform: scaleX(0);   transform-origin: right; }
-        }
-        /* The gap the whole product exists to find, flagged on completion. */
-        @keyframes xr-flag {
-          0%, 46%          { color: #DCE7F5; text-shadow: 0 0 14px rgba(190,215,255,.35); }
-          52%, 58%, 64%    { color: #FF8A8A; text-shadow: 0 0 16px rgba(255,138,138,.9); }
-          55%, 61%         { color: #FFC4C4; text-shadow: 0 0 22px rgba(255,138,138,1); }
-          72%, 84%         { color: #FF8A8A; text-shadow: 0 0 14px rgba(255,138,138,.5); }
-          92%, 100%        { color: #DCE7F5; text-shadow: none; }
-        }
-        @keyframes xr-scanning { 0%, 42% { opacity: 1; } 48%, 100% { opacity: 0; } }
-        @keyframes xr-exposed  { 0%, 44% { opacity: 0; } 52%, 84% { opacity: 1; } 92%, 100% { opacity: 0; } }
         @keyframes xr-pulse    { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
         .xr-beam     { animation: xr-travel   4s cubic-bezier(.4,0,.2,1) infinite; }
         .xr-find     { animation: xr-expose   4s cubic-bezier(.2,.9,.3,1) infinite both; }
-        .xr-bone     { animation: xr-bone     4s ease-out infinite both; }
         .xr-arc      { animation: xr-arc      4s cubic-bezier(.3,0,.2,1) infinite both; }
         .xr-num      { animation: xr-num      4s ease-out infinite both; }
         .xr-reticle  { animation: xr-reticle  4s ease-out infinite both; }
-        .xr-read     { animation: xr-read     4s ease-out infinite both; }
-        .xr-flag     { animation: xr-flag     4s steps(1,end) infinite both; }
-        .xr-scanning { animation: xr-scanning 4s steps(1,end) infinite both; }
-        .xr-exposed  { animation: xr-exposed  4s steps(1,end) infinite both; }
         /* The italic's right sidebearing is tight against the roman that
            follows it, so the word carries its own trailing space. */
         .xr-word     { animation: xr-focus 4s ease-out infinite both; display: inline-block; padding-right: .1em; }
@@ -238,200 +201,153 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       </nav>
 
       {/* ── Hero ── */}
-      {/* The headline runs the full width and the plate sits under it, so
-          the sentence is the thing you remember and the scan is the proof
-          you scroll into. */}
-      <section className="max-w-[1400px] mx-auto px-6 pt-10 pb-20 lg:pt-12 lg:pb-24">
-        <p
-          className="flex items-center gap-2.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground mb-7"
-          style={{ fontFamily: "var(--font-mono)" }}
-        >
-          <span className="xr-dot w-1.5 h-1.5 rounded-full bg-primary inline-block" />
-          Career diagnostics
-        </p>
+      <section className="max-w-6xl mx-auto px-6 pt-12 pb-24 lg:pt-16 lg:pb-28">
+        <div className="grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 items-center">
 
-        {/* Sized off the viewport so it fills the width at every breakpoint
-            without a fixed no-wrap phrase pushing the page sideways. */}
-        <h1
-          className="leading-[0.9] tracking-[-0.045em]"
-          style={{ fontSize: "clamp(2.75rem, 8.4vw, 7.5rem)", textWrap: "balance" } as any}
-        >
-          Are you <span className="xr-word text-primary italic">ready</span> for your next opportunity?
-        </h1>
-
-        {/* Plate first, then the ask — the scan is the evidence, the
-            button is what you do about it. */}
-        <div className="mt-10 lg:mt-12 grid lg:grid-cols-[1.3fr_1fr] gap-10 lg:gap-14 items-center">
-
-          {/* ── The plate ── */}
-          <div className="relative">
-            {/* Light leaking out from behind the film */}
-            <div
-              className="absolute -inset-8 rounded-[2rem] blur-2xl pointer-events-none"
-              style={{ background: "radial-gradient(60% 50% at 65% 20%, rgba(138,112,56,0.28), transparent 70%)" }}
-            />
-
-            <div
-              className="relative overflow-hidden rounded-[1.25rem] p-7 shadow-[0_40px_90px_-40px_rgba(11,18,32,0.85)]"
-              style={{ background: "linear-gradient(165deg, #142033 0%, #0A1120 55%, #070D18 100%)" }}
-            >
-              {/* Radiograph texture: fine scan lines, held well back */}
-              <div
-                className="absolute inset-0 pointer-events-none opacity-[0.16]"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(to bottom, rgba(220,231,245,0.25) 0px, rgba(220,231,245,0.25) 1px, transparent 1px, transparent 4px)",
-                }}
-              />
-
-              <div className="relative flex items-start justify-between mb-7">
-                <div>
-                  <p className="relative text-[10px] uppercase tracking-[0.2em]" style={{ fontFamily: "var(--font-mono)", color: "#5E738F" }}>
-                    <span className="xr-scanning">Scanning</span>
-                    <span className="xr-exposed absolute left-0 top-0" style={{ color: "#F2C75A" }}>Exposed</span>
-                  </p>
-                  <p className="text-[#DCE7F5] text-lg mt-1 tracking-tight">Senior Data Analyst</p>
-                </div>
-
-                {/* Health score, drawn as the beam finishes */}
-                <div className="relative w-[72px] h-[72px] flex-shrink-0">
-                  <svg viewBox="0 0 72 72" className="w-full h-full -rotate-90">
-                    <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(220,231,245,0.12)" strokeWidth="5" />
-                    <circle
-                      className="xr-arc"
-                      cx="36" cy="36" r="30" fill="none"
-                      stroke="#E9B949" strokeWidth="5" strokeLinecap="round"
-                      strokeDasharray="190" strokeDashoffset="190"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="xr-num text-[#DCE7F5] text-lg leading-none" style={{ fontFamily: "var(--font-mono)" }}>72</span>
-                    <span className="text-[9px] text-[#5E738F] mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>/100</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* The record, read line by line as the beam crosses it */}
-              <div className="relative mb-6">
-                {RECORD.map((r, i) => (
-                  <div
-                    key={r.k}
-                    className="xr-bone relative grid grid-cols-[64px_1fr] items-baseline gap-3 py-[7px]"
-                    style={{
-                      animationDelay: `${i * 0.07}s`,
-                      borderTop: i ? "1px solid rgba(159,180,206,0.12)" : "none",
-                    }}
-                  >
-                    <span className="text-[9.5px] tracking-[0.14em]"
-                          style={{ fontFamily: "var(--font-mono)", color: "#5E738F" }}>
-                      {r.k}
-                    </span>
-                    <span
-                      className={`text-[13px] ${r.flag ? "xr-flag" : "text-[#DCE7F5]"}`}
-                      style={r.flag ? undefined : { textShadow: "0 0 14px rgba(190,215,255,0.35)" }}
-                    >
-                      {r.v}
-                    </span>
-                    <span
-                      className="xr-read pointer-events-none absolute inset-y-0 -inset-x-2 rounded"
-                      style={{
-                        animationDelay: `${i * 0.07}s`,
-                        background: "linear-gradient(90deg, rgba(242,199,90,0.22), rgba(242,199,90,0.05))",
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* What the exposure reveals */}
-              <div className="relative space-y-2">
-                {FINDINGS.map((f, i) => (
-                  <div
-                    key={f.label}
-                    className="xr-find flex items-center justify-between rounded-lg px-3.5 py-2.5"
-                    style={{
-                      animationDelay: `${1.7 + i * 0.34}s`,
-                      background: f.risk ? "rgba(255,107,107,0.09)" : "rgba(91,227,176,0.09)",
-                      border: `1px solid ${f.risk ? "rgba(255,107,107,0.28)" : "rgba(91,227,176,0.28)"}`,
-                    }}
-                  >
-                    <span className="flex items-center gap-2.5 text-[13px] text-[#C6D4E6]">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                        style={{
-                          background: f.risk ? "#FF6B6B" : "#5BE3B0",
-                          boxShadow: `0 0 8px ${f.risk ? "rgba(255,107,107,0.8)" : "rgba(91,227,176,0.8)"}`,
-                        }}
-                      />
-                      {f.label}
-                    </span>
-                    <span
-                      className="text-[13px]"
-                      style={{ fontFamily: "var(--font-mono)", color: f.risk ? "#FF8A8A" : "#5BE3B0" }}
-                    >
-                      {f.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* The beam */}
-              <div className="xr-beam pointer-events-none absolute inset-x-0 top-0 h-32">
-                <div
-                  className="h-full w-full"
-                  style={{
-                    background:
-                      "linear-gradient(to bottom, rgba(233,185,73,0) 0%, rgba(233,185,73,0.04) 55%, rgba(233,185,73,0.20) 94%, rgba(255,240,200,0.30) 100%)",
-                  }}
-                />
-                <div
-                  className="h-[1.5px] w-full"
-                  style={{
-                    background: "linear-gradient(90deg, rgba(242,199,90,0) 0%, #FFF3D0 18%, #FFF9E8 50%, #FFF3D0 82%, rgba(242,199,90,0) 100%)",
-                    boxShadow: "0 0 6px 1px rgba(255,243,208,0.95), 0 0 26px 6px rgba(242,199,90,0.55)",
-                  }}
-                />
-                <div
-                  className="h-6 w-full"
-                  style={{ background: "linear-gradient(to bottom, rgba(242,199,90,0.16), rgba(242,199,90,0))" }}
-                />
-              </div>
-
-              {/* Reticle corners */}
-              {[
-                { pos: "top-3 left-3",     b: "border-t-2 border-l-2" },
-                { pos: "top-3 right-3",    b: "border-t-2 border-r-2" },
-                { pos: "bottom-3 left-3",  b: "border-b-2 border-l-2" },
-                { pos: "bottom-3 right-3", b: "border-b-2 border-r-2" },
-              ].map(c => (
-                <div
-                  key={c.pos}
-                  className={`xr-reticle pointer-events-none absolute ${c.pos} ${c.b} w-4 h-4`}
-                  style={{ borderColor: "#F2C75A" }}
-                />
-              ))}
-
-              {/* Vignette, so the film has edges */}
-              <div
-                className="absolute inset-0 pointer-events-none rounded-[1.25rem]"
-                style={{ boxShadow: "inset 0 0 90px rgba(0,0,0,0.55)" }}
-              />
-            </div>
-          </div>
-
-          {/* The ask, answering the scan */}
+          {/* ── Left: the question ── */}
           <div>
-            <p className="text-xl lg:text-2xl leading-snug text-muted-foreground max-w-[20rem]">
-              Upload anything you have. Three minutes later you know.
+            <p
+              className="flex items-center gap-2.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground mb-7"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              <span className="xr-dot w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+              Career diagnostics
+            </p>
+
+            <h1
+              className="leading-[0.98] tracking-[-0.035em]"
+              style={{ fontSize: "clamp(2.75rem, 5.4vw, 4.25rem)", textWrap: "balance" } as any}
+            >
+              Are you <span className="xr-word text-primary italic">ready</span> for your next opportunity?
+            </h1>
+
+            <p className="mt-7 text-lg leading-relaxed text-muted-foreground max-w-[27rem]">
+              Bring a resume, a project, or just the job you&apos;re aiming at. We read what you have,
+              measure it against the role you want, and show you what stands in between.
             </p>
 
             <button
               onClick={() => onNavigate("register")}
-              className="group mt-8 inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-4 rounded-full font-medium hover:opacity-90 transition-opacity"
+              className="group mt-9 inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-4 rounded-full font-medium hover:opacity-90 transition-opacity"
             >
-              Find out
+              Start your scan
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
+
+            <p
+              className="mt-5 text-xs text-muted-foreground"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              3 minutes · PDF or portfolio · AI-powered
+            </p>
+          </div>
+
+          {/* ── Right: what comes back ── */}
+          <div className="relative">
+            <div
+              className="absolute -inset-6 rounded-[1.75rem] blur-2xl pointer-events-none"
+              style={{ background: "radial-gradient(60% 50% at 65% 20%, rgba(138,112,56,0.22), transparent 70%)" }}
+            />
+
+            <div
+              className="relative overflow-hidden rounded-[1.25rem] p-6 shadow-[0_30px_70px_-35px_rgba(11,18,32,0.8)]"
+              style={{ background: "linear-gradient(165deg, #16284B 0%, #0D1A33 60%, #0A1426 100%)" }}
+            >
+              {/* Header: what this is, and the score */}
+              <div className="relative flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <p
+                    className="text-[10px] uppercase tracking-[0.18em]"
+                    style={{ fontFamily: "var(--font-mono)", color: "#8A9BB5" }}
+                  >
+                    Career signals
+                  </p>
+                  <p className="text-[#E8EEF7] text-base mt-1.5 tracking-tight">Senior Data Analyst</p>
+                  <p className="text-[#7186A3] text-xs mt-0.5">Aiming at ML Engineer</p>
+                </div>
+
+                <div className="relative w-[68px] h-[68px] flex-shrink-0">
+                  <svg viewBox="0 0 68 68" className="w-full h-full -rotate-90">
+                    <circle cx="34" cy="34" r="28" fill="none" stroke="rgba(232,238,247,0.10)" strokeWidth="4" />
+                    <circle
+                      className="xr-arc"
+                      cx="34" cy="34" r="28" fill="none"
+                      stroke="#D9C18A" strokeWidth="4" strokeLinecap="round"
+                      strokeDasharray="176" strokeDashoffset="176"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span
+                      className="xr-num text-[#E8EEF7] text-lg leading-none"
+                      style={{ fontFamily: "var(--font-mono)" }}
+                    >
+                      72
+                    </span>
+                    <span className="text-[9px] text-[#7186A3] mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>
+                      /100
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Three things the scan found */}
+              <div className="relative space-y-2.5">
+                {SIGNALS.map((sig, i) => (
+                  <div
+                    key={sig.label}
+                    className="xr-find flex items-center justify-between gap-4 rounded-xl px-4 py-3"
+                    style={{
+                      animationDelay: `${1.6 + i * 0.34}s`,
+                      background: "rgba(232,238,247,0.045)",
+                      border: "1px solid rgba(232,238,247,0.08)",
+                    }}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[13px] text-[#E8EEF7] leading-tight">{sig.label}</p>
+                      <p className="text-[11px] text-[#7186A3] mt-0.5 leading-tight">{sig.note}</p>
+                    </div>
+                    <span
+                      className="text-[13px] flex-shrink-0"
+                      style={{ fontFamily: "var(--font-mono)", color: sig.tone }}
+                    >
+                      {sig.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* The beam, kept faint — the card is a readout, not a light show */}
+              <div className="xr-beam pointer-events-none absolute inset-x-0 top-0 h-24">
+                <div
+                  className="h-full w-full"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, rgba(217,193,138,0) 0%, rgba(217,193,138,0.04) 60%, rgba(217,193,138,0.13) 94%, rgba(255,245,220,0.18) 100%)",
+                  }}
+                />
+                <div
+                  className="h-px w-full"
+                  style={{
+                    background: "linear-gradient(90deg, rgba(217,193,138,0) 0%, #F0E0B8 22%, #FFF8E6 50%, #F0E0B8 78%, rgba(217,193,138,0) 100%)",
+                    boxShadow: "0 0 10px 1px rgba(240,224,184,0.5)",
+                  }}
+                />
+              </div>
+
+              {/* Reticle corners, one weight lighter than before */}
+              {[
+                { pos: "top-3 left-3",     b: "border-t border-l" },
+                { pos: "top-3 right-3",    b: "border-t border-r" },
+                { pos: "bottom-3 left-3",  b: "border-b border-l" },
+                { pos: "bottom-3 right-3", b: "border-b border-r" },
+              ].map(c => (
+                <div
+                  key={c.pos}
+                  className={`xr-reticle pointer-events-none absolute ${c.pos} ${c.b} w-3.5 h-3.5`}
+                  style={{ borderColor: "#D9C18A" }}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
