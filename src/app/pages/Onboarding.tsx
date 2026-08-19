@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { BrandMark } from "../layout/BrandMark";
 import {
   Upload, Linkedin, ChevronRight, ChevronLeft,
   BarChart3, Check, Loader2, Briefcase, Target, DollarSign,
@@ -405,10 +406,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
       {/* Nav */}
       <nav className="h-16 border-b border-border bg-white/80 backdrop-blur-md flex items-center px-8">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <BarChart3 size={16} className="text-white" />
-          </div>
-          <span className="font-semibold text-foreground tracking-tight">CareerX-Ray</span>
+          <BrandMark size={32} />
         </div>
       </nav>
 

@@ -1,4 +1,5 @@
 import { ArrowRight, BarChart3 } from "lucide-react";
+import { BrandMark } from "../layout/BrandMark";
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
@@ -211,10 +212,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <BarChart3 size={16} className="text-white" />
-            </div>
-            <span className="font-semibold tracking-tight">CareerX-Ray</span>
+            <BrandMark size={34} />
           </div>
           <div className="flex items-center gap-2">
             <button

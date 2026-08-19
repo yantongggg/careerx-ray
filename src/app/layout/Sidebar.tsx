@@ -6,6 +6,7 @@ import {
   ShieldCheck, Handshake, School, BookOpenCheck, WalletCards, HeartPulse,
   Globe, Users
 } from "lucide-react";
+import { BrandMark } from "./BrandMark";
 
 type Role = "candidate" | "employer" | "university";
 
@@ -53,9 +54,7 @@ export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) 
       {/* Logo */}
       <div className="h-16 px-5 flex items-center border-b border-border">
         <button onClick={() => onNavigate("command")} className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <BarChart3 size={16} className="text-white" />
-          </div>
+          <BrandMark size={32} hideWordmark />
           <div>
             <p className="font-semibold text-foreground tracking-tight text-sm leading-none">CareerX-Ray</p>
             <p className="text-xs text-muted-foreground mt-0.5">{roleSubtitle}</p>

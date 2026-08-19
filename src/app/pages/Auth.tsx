@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BrandMark } from "../layout/BrandMark";
 import { ArrowRight, BarChart3, Lock, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { demoToast } from "../state/toast";
 
@@ -66,10 +67,7 @@ export function AuthPage({ mode, onAuthed, onBack, onSwitchMode }: AuthPageProps
       <nav className="bg-white/95 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <button onClick={onBack} className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <BarChart3 size={16} className="text-white" />
-            </div>
-            <span className="font-semibold text-foreground tracking-tight">CareerX-Ray</span>
+            <BrandMark size={32} />
           </button>
           <button onClick={onBack} className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</button>
         </div>
