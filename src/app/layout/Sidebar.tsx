@@ -41,7 +41,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, currentRole, onNavigate, onAskTapir }: SidebarProps) {
-  const { profile, risks, scorecard } = useCareerProfile();
+  const { profile, risks, scorecard, displayName } = useCareerProfile();
   const scoreValue = scorecard.careerHealth;
   const roleTitle = currentRole === "candidate" ? "Candidates" : currentRole === "employer" ? "Employers" : "Universities";
   const roleSubtitle = currentRole === "candidate"
@@ -180,10 +180,10 @@ export function Sidebar({ currentPage, currentRole, onNavigate, onAskTapir }: Si
         ))}
         <button onClick={() => onNavigate("profile")} className="w-full flex items-center gap-3 px-3 py-2.5 mt-1 rounded-lg hover:bg-muted transition-colors text-left">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D9C18A] to-[#8A7038] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-            {(profile.resume?.name ?? "You").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
+            {displayName.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-foreground truncate">{profile.resume?.name ?? "Your profile"}</p>
+            <p className="text-xs font-semibold text-foreground truncate">{displayName}</p>
             <p className="text-xs text-muted-foreground truncate">
               {profile.currentRole ? `${profile.currentRole}${profile.targetRole ? ` → ${profile.targetRole}` : ""}` : "Complete your scan"}
             </p>

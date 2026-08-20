@@ -42,11 +42,11 @@ const DEFAULT_ANGLE: JobAngle = {
 /* ── Helpers ─────────────────────────────────────────────────── */
 
 function candidateName(profile: CareerProfile): string {
-  return profile.resume?.name?.toUpperCase() ?? "YOUR NAME";
+  return (profile.resume?.name || profile.displayName || "Your name").toUpperCase();
 }
 
 function contactLine(profile: CareerProfile): string | null {
-  const parts = [profile.resume?.name, profile.resume?.phone, profile.resume?.email].filter(Boolean);
+  const parts = [profile.resume?.name || profile.displayName, profile.resume?.phone, profile.resume?.email].filter(Boolean);
   return parts.length ? parts.join(" · ") : null;
 }
 
@@ -128,7 +128,7 @@ export function buildResumeForJob(profile: CareerProfile, job: JobTarget): strin
 /** A cover letter for one specific job posting. */
 export function buildCoverLetterForJob(profile: CareerProfile, job: JobTarget): string {
   const angle = job.angle ?? DEFAULT_ANGLE;
-  const name = profile.resume?.name ?? "Your name";
+  const name = profile.resume?.name || profile.displayName || "Your name";
   const contact = [profile.resume?.phone, profile.resume?.email].filter(Boolean).join(" · ");
   const skills = profile.resume?.skills ?? [];
   return compact([

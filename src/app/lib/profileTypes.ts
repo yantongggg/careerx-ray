@@ -83,6 +83,8 @@ export interface CareerProfile {
      is a gap between what is measured and what the person believes.
      One of the risk ids, or "none", or "" if never asked. */
   selfAssessment: string;
+  /** What to call this person on screen, when the résumé did not say. */
+  displayName: string;
   resume: ParsedResume | null;
   evidence: EvidenceItem[];
   scannedAt: string;
@@ -99,6 +101,7 @@ export const EMPTY_PROFILE: CareerProfile = {
   archetypeName: "",
   calibrationAnswers: {},
   selfAssessment: "",
+  displayName: "",
   resume: null,
   evidence: [],
   scannedAt: "",

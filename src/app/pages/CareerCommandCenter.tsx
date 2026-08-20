@@ -117,12 +117,12 @@ function buildEvidenceStrength(profile: CareerProfile, corpus: Corpus) {
 }
 
 export function CareerCommandCenter({ onNavigate, appliedJobs = {} }: CareerCommandCenterProps) {
-  const { profile, risks, targetGaps, scorecard } = useCareerProfile();
+  const { profile, risks, targetGaps, scorecard, displayName } = useCareerProfile();
   const corpus = corpusFor(profile);
   const nextActions = buildNextActions(profile, risks, corpus);
   const applications = buildApplications(profile, corpus, appliedJobs);
   const evidenceStrength = buildEvidenceStrength(profile, corpus);
-  const firstName = profile.resume?.name?.split(" ")[0];
+  const firstName = displayName === "Your name" ? "" : displayName.split(" ")[0];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const topGap = targetGaps[0]?.skill ?? risks[0]?.category.toLowerCase() ?? "your evidence record";

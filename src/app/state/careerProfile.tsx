@@ -68,7 +68,7 @@ export function CareerProfileProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<CareerProfileContextValue>(() => ({
     profile,
-    displayName: profile.resume?.name?.trim() || accountName.trim() || "Your name",
+    displayName: profile.resume?.name?.trim() || profile.displayName?.trim() || accountName.trim() || "Your name",
     setAccountName,
     hasScanned,
     risks: deriveRisks(profile),

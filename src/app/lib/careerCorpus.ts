@@ -28,6 +28,19 @@ import { automationBase, keyCredential, marketMedian, seniorityBand, type Senior
 
 /* ── Shapes ──────────────────────────────────────────────────── */
 
+export type JobLevel = "entry" | "mid" | "senior" | "lead";
+
+const LEVEL_RANK: Record<JobLevel, number> = { entry: 0, mid: 1, senior: 2, lead: 3 };
+
+/** Read the level out of a role title. */
+export function levelOf(title: string): JobLevel {
+  const t = title.toLowerCase();
+  if (/manager|lead\b|head of|director|principal|vp\b|chief/.test(t)) return "lead";
+  if (/senior|snr\b|staff\b/.test(t)) return "senior";
+  if (/junior|intern|graduate|trainee|assistant/.test(t)) return "entry";
+  return "mid";
+}
+
 export interface CorpusHiringContact {
   name: string;
   title: string;
@@ -57,6 +70,9 @@ export interface CorpusJob {
   position: string;
   location: string;
   type: string;
+  /** Where this posting sits on the ladder, used to keep the list at
+      the level the person is actually aiming for. */
+  level: JobLevel;
   /** Monthly RM. Rendered by the pages; never stored pre-formatted. */
   salaryLow: number;
   salaryHigh: number;
@@ -140,6 +156,7 @@ const SOFTWARE: FamilyContent = {
       company: "Grab", companyId: "grab",
       title: "Software Engineer, Payments",
       position: "Software Engineer",
+      level: "mid",
       location: "Petaling Jaya / Hybrid",
       type: "Full-time",
       salaryLow: 6500, salaryHigh: 9000,
@@ -166,6 +183,7 @@ const SOFTWARE: FamilyContent = {
       company: "TNG Digital", companyId: "tng",
       title: "Backend Engineer, Wallet Platform",
       position: "Backend Engineer",
+      level: "mid",
       location: "Kuala Lumpur",
       type: "Full-time",
       salaryLow: 6000, salaryHigh: 8500,
@@ -192,6 +210,7 @@ const SOFTWARE: FamilyContent = {
       company: "Carsome", companyId: "carsome",
       title: "Frontend Engineer, Marketplace",
       position: "Frontend Engineer",
+      level: "mid",
       location: "Kuala Lumpur / Hybrid",
       type: "Full-time",
       salaryLow: 5500, salaryHigh: 8000,
@@ -214,10 +233,38 @@ const SOFTWARE: FamilyContent = {
       },
     },
     {
+      id: "sw-shopee-snr",
+      company: "Shopee Malaysia", companyId: "shopee",
+      title: "Senior Software Engineer, Platform",
+      position: "Senior Software Engineer",
+      level: "senior",
+      location: "Kuala Lumpur",
+      type: "Full-time",
+      salaryLow: 10000, salaryHigh: 15000,
+      description: "The senior engineer on a platform team: you set the technical direction others build against, and you are the one called when it breaks at 2am.",
+      requirements: ["4+ years shipping production systems", "System design across services", "Mentoring engineers", "Production ownership and on-call"],
+      strengths: ["System design", "Production ownership"],
+      gaps: ["Cross-team influence", "Formal mentoring"],
+      companyColors: pal("shopee").colors, companyGlow: pal("shopee").glow,
+      hr: { name: "Sarah Tan", title: "Talent Acquisition, Platform", replyRate: 87, avgReply: "~2 hrs", responseHours: "9 AM – 6 PM", lastSeen: "25 min ago" },
+      interview: {
+        questions: [
+          "Design a service the rest of the company builds on. Where does it break first?",
+          "Tell me about a technical decision you got wrong and had to unwind.",
+          "How do you review code from someone more junior without rewriting it?",
+          "What would you fix in the first month?",
+        ],
+        aiFrame: "Senior means your judgement is the product. The unwinding question is the real one — say what the early signal was that you ignored, and what you watch for now.",
+        activeQ: 0,
+        promptLabel: "Question 1 · System design",
+      },
+    },
+    {
       id: "sw-grab-lead",
       company: "Grab", companyId: "grab",
       title: "Engineering Team Lead, Payments",
       position: "Engineering Team Lead",
+      level: "lead",
       location: "Petaling Jaya / Hybrid",
       type: "Full-time",
       salaryLow: 12000, salaryHigh: 17000,
@@ -244,6 +291,7 @@ const SOFTWARE: FamilyContent = {
       company: "PayNet", companyId: "paynet",
       title: "Software Engineer in Test",
       position: "QA Engineer",
+      level: "mid",
       location: "Kuala Lumpur",
       type: "Full-time",
       salaryLow: 5000, salaryHigh: 7200,
@@ -291,6 +339,7 @@ const DATA: FamilyContent = {
       company: "Maybank", companyId: "maybank",
       title: "Data Analyst, Digital Banking",
       position: "Data Analyst",
+      level: "mid",
       location: "Kuala Lumpur",
       type: "Full-time",
       salaryLow: 5500, salaryHigh: 8000,
@@ -317,6 +366,7 @@ const DATA: FamilyContent = {
       company: "Grab", companyId: "grab",
       title: "Analytics Engineer",
       position: "Analytics Engineer",
+      level: "mid",
       location: "Petaling Jaya / Hybrid",
       type: "Full-time",
       salaryLow: 7500, salaryHigh: 11000,
@@ -339,10 +389,65 @@ const DATA: FamilyContent = {
       },
     },
     {
+      id: "da-airasia-dsm",
+      company: "AirAsia MOVE", companyId: "axiata",
+      title: "Data Science Manager",
+      position: "Data Science Manager",
+      level: "lead",
+      location: "Sepang, Selangor",
+      type: "Full-time",
+      salaryLow: 13000, salaryHigh: 18000,
+      description: "Own the data science function for the travel platform: a team of six, the roadmap, and the argument for what gets modelled and what does not.",
+      requirements: ["Managed or led a data team", "Strong statistical and ML grounding", "Roadmap ownership", "Executive-level communication"],
+      strengths: ["Analytical depth", "Roadmap thinking"],
+      gaps: ["Team leadership at scale", "Budget ownership"],
+      companyColors: pal("axiata").colors, companyGlow: pal("axiata").glow,
+      hr: { name: "Aisha Rahman", title: "HR Business Partner, Digital", replyRate: 70, avgReply: "~6 hrs", responseHours: "9 AM – 5 PM", lastSeen: "2 hrs ago" },
+      interview: {
+        questions: [
+          "How do you decide which problems deserve a model and which do not?",
+          "Tell me about a project you killed. Why, and how did the team take it?",
+          "How do you hire an analyst when you cannot test them for two years of judgement?",
+          "What does your team do in the first month after you join?",
+        ],
+        aiFrame: "Every candidate says they are data-driven. Say what you chose not to build and why — the ability to kill work is the clearest signal that you can run a function rather than staff one.",
+        activeQ: 0,
+        promptLabel: "Question 1 · Judgement",
+      },
+    },
+    {
+      id: "da-cimb-snr",
+      company: "CIMB", companyId: "maybank",
+      title: "Senior Data Analyst, Risk",
+      position: "Senior Data Analyst",
+      level: "senior",
+      location: "Kuala Lumpur",
+      type: "Full-time",
+      salaryLow: 8500, salaryHigh: 12000,
+      description: "The most senior analyst on the risk team, setting how the function measures credit exposure and mentoring two juniors. The usual last step before managing.",
+      requirements: ["4+ years in analytics", "Statistical modelling", "Mentoring experience", "Regulated-industry exposure preferred"],
+      strengths: ["Analytical depth", "Mentoring"],
+      gaps: ["Formal people management", "Regulatory reporting"],
+      companyColors: pal("maybank").colors, companyGlow: pal("maybank").glow,
+      hr: { name: "Sarah Tan", title: "Talent Acquisition, Risk & Analytics", replyRate: 91, avgReply: "~1 hr", responseHours: "9 AM – 6 PM", lastSeen: "10 min ago" },
+      interview: {
+        questions: [
+          "How would you explain a model's limitations to a regulator?",
+          "Tell me about a time you mentored someone through work you could have done faster yourself.",
+          "How do you set what the team measures rather than just answering requests?",
+          "Walk me through a number you refused to publish.",
+        ],
+        aiFrame: "This is the step where you stop being measured on your own output. Both the mentoring question and the refusing question are asking the same thing: can you be trusted with other people's work.",
+        activeQ: 1,
+        promptLabel: "Question 2 · Growing others",
+      },
+    },
+    {
       id: "da-shopee-mgr",
       company: "Shopee Malaysia", companyId: "shopee",
       title: "Analytics Manager, Marketplace",
       position: "Analytics Manager",
+      level: "lead",
       location: "Kuala Lumpur",
       type: "Full-time",
       salaryLow: 11000, salaryHigh: 16000,
@@ -369,6 +474,7 @@ const DATA: FamilyContent = {
       company: "Petronas Digital", companyId: "petronas",
       title: "AI Product Analyst",
       position: "AI Product Analyst",
+      level: "mid",
       location: "Kuala Lumpur",
       type: "Full-time",
       salaryLow: 6500, salaryHigh: 9500,
@@ -516,6 +622,7 @@ function buildGeneric(profile: CareerProfile, family: RoleFamily, band: Seniorit
       companyId: t.companyId,
       title: `${target}${t.suffix}`,
       position: target,
+      level: levelOf(target),
       location: t.location,
       type: "Full-time",
       salaryLow: Math.round((median * t.band[0]) / 100) * 100,
@@ -962,7 +1069,14 @@ export function corpusFor(profile: CareerProfile): Corpus {
   const band = seniorityBand(profile);
   const content = AUTHORED[family] ?? buildGeneric(profile, family, band);
 
-  const rankedJobs = content.jobs
+  /* A list aimed one or more rungs below the target is not a list of
+     jobs they want — it is the job they already have, three times. Keep
+     the target level and the one below it; drop the rest. */
+  const targetLevel = levelOf(profile.targetRole || profile.currentRole);
+  const atLevel = content.jobs.filter(j => LEVEL_RANK[j.level] >= LEVEL_RANK[targetLevel] - 1);
+  const pool = atLevel.length >= 3 ? atLevel : content.jobs;
+
+  const rankedJobs = pool
     .map(job => ({
       ...job,
       fit: fitFor(profile, job),

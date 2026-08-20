@@ -175,7 +175,7 @@ export default function App() {
 }
 
 function AppRouter() {
-  const { profile, hasScanned, risks, setProfile, reset: resetProfile, setAccountName } = useCareerProfile();
+  const { profile, hasScanned, risks, setProfile, reset: resetProfile, setAccountName, displayName } = useCareerProfile();
   const [appState, setAppState] = useState<AppState>("landing");
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
   const [authed, setAuthed]     = useState(false);
@@ -378,10 +378,10 @@ function AppRouter() {
             )}
             <button
               onClick={() => navigate("profile")}
-              title={user?.name ?? "Profile"}
+              title={displayName}
               className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D9C18A] to-[#8A7038] flex items-center justify-center text-white text-xs font-bold"
             >
-              {(user?.name || profile.resume?.name || "You").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
+              {displayName.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
             </button>
             <button
               onClick={signOut}

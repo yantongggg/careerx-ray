@@ -34,7 +34,7 @@ interface CandidateView {
 
 const UNKNOWN = "Not on file";
 
-function candidateFrom(profile: CareerProfile): CandidateView {
+function candidateFrom(profile: CareerProfile, displayName: string): CandidateView {
   const r = profile.resume;
   const certs = [
     ...(r?.certifications ?? []),
@@ -53,7 +53,7 @@ function candidateFrom(profile: CareerProfile): CandidateView {
   ].filter(Boolean).join(", ").replace(/,([^,]*)$/, ".$1");
 
   return {
-    name: r?.name || UNKNOWN,
+    name: displayName,
     email: r?.email || UNKNOWN,
     phone: r?.phone || UNKNOWN,
     location: "Malaysia",
@@ -101,7 +101,7 @@ interface ApplicationPrepProps {
 }
 
 export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: ApplicationPrepProps) {
-  const { profile } = useCareerProfile();
+  const { profile, displayName } = useCareerProfile();
   const [submitted, setSubmitted] = useState(false);
   // Per-job edits: undefined = still on the AI draft
   const [docEdits, setDocEdits] = useState<Record<string, { resume?: string; cover?: string }>>({});
@@ -113,7 +113,7 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
   // carries that through the type checker.
   const key = job.id;
 
-  const candidate = candidateFrom(profile);
+  const candidate = candidateFrom(profile, displayName);
   const fit = fitFor(profile, job);
   const successChance = successChanceFor(profile, job);
   const salaryBand = `RM ${job.salaryLow.toLocaleString()} – ${job.salaryHigh.toLocaleString()}`;

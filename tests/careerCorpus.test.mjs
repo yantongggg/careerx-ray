@@ -137,6 +137,21 @@ assert.ok(
   "advancement must be a 0–1 factor",
 );
 
+/* Aiming at a lead role must not return a list of the jobs they already
+   outgrew. One rung below the target is useful; two is noise. */
+assert.ok(
+  managerBound.rankedJobs.every(j => ["senior", "lead"].includes(j.level)),
+  `a lead target returned: ${managerBound.rankedJobs.map(j => `${j.position} (${j.level})`).join(", ")}`,
+);
+assert.ok(
+  managerBound.rankedJobs.length >= 3,
+  "filtering by level must not leave the list too short to be useful",
+);
+assert.equal(
+  managerBound.rankedJobs[0].position, "Data Science Manager",
+  "the literal target role should top the list when the corpus has one",
+);
+
 assert.ok(devCorpus.rankedJobs[0].fit >= devCorpus.rankedJobs.at(-1).fit, "jobs must be ranked best fit first");
 
 /* ── Lookup by id ─────────────────────────────────────────────── */

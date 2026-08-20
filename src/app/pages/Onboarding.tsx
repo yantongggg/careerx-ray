@@ -231,6 +231,9 @@ const DEMO_PRESET = {
      says the proof gap is what actually blocks them. That mismatch is
      the blind spot. */
   selfAssessment: "leadership",
+  /* Used when the uploaded résumé has no readable name — otherwise the
+     portfolio and profile fall back to "Guest". */
+  displayName: "Jordan",
   calibration: {
     ambiguity:     "Break it into technical steps and start building",
     team:          "Build the main solution",
@@ -330,6 +333,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
     experience,
     goals: selectedGoals,
     selfAssessment,
+    displayName: parsedResume?.name?.trim() || DEMO_PRESET.displayName,
     dnaScores,
     archetypeName: archetype.name,
     calibrationAnswers,

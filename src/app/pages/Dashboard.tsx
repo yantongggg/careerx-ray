@@ -74,7 +74,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
-  const { profile, risks, riskChecks, salaryBenchmark: salary, scorecard } = useCareerProfile();
+  const { profile, risks, riskChecks, salaryBenchmark: salary, scorecard, displayName } = useCareerProfile();
   const [modal, setModal] = useState<MetricKey | null>(null);
   /* One category open at a time — the whole point of the accordion is
      that the page is quiet until you ask it something. */
@@ -120,7 +120,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   }));
   const openCount = attentionRows.filter(r => r.risk).length;
 
-  const firstName = profile.resume?.name?.split(" ")[0];
+  const firstName = displayName === "Your name" ? "" : displayName.split(" ")[0];
   const activeMetric = modal ? metricCards.find(m => m.key === modal) : undefined;
 
   return (
