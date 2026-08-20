@@ -18,7 +18,7 @@
    ──────────────────────────────────────────────────────────────── */
 
 import type { CareerProfile } from "./profileTypes";
-import { detectRoleFamily, FAMILY_LABEL, type RoleFamily } from "./roleFamily";
+import { detectRoleFamily, type RoleFamily } from "./roleFamily";
 import { explainRoleGap } from "../state/intelligence";
 
 export type Severity = "critical" | "high" | "medium" | "low";
@@ -69,7 +69,7 @@ export interface Scorecard {
 export type RiskCheckStatus = "open" | "clear" | "not-measured" | "not-applicable";
 
 export interface RiskCategoryCheck {
-  id: "automation" | "salary" | "readiness" | "skills";
+  id: "automation" | "salary" | "readiness" | "leadership";
   label: string;
   status: RiskCheckStatus;
   summary: string;
@@ -79,8 +79,6 @@ const RISK_POLICY = {
   automationLowRiskCeiling: 35,
   automationHighRiskFloor: 55,
   leadershipReady: 65,
-  /** Share of a target role's core skills you should be able to show. */
-  skillCoverageFloor: 0.6,
   roleGateMinimum: 1,
   proofMinimum: 2,
   salaryRiskFloorPct: -5,
@@ -143,48 +141,6 @@ const ROLE_GATE_TERMS: Record<RoleFamily, string[]> = {
   service: ["food", "safety", "first aid", "hospitality", "barista", "training"],
   generic: [],
 };
-
-interface SkillCoverage {
-  familyLabel: string;
-  required: string[];
-  covered: string[];
-  missing: string[];
-}
-
-/* What the target role asks for, against what this person can show.
-   Kept here rather than in the corpus because careerRisk must not
-   depend on it — the corpus already depends on this file. */
-const TARGET_SKILLS: Record<RoleFamily, string[]> = {
-  software:  ["System design", "Automated testing", "CI/CD", "Cloud deployment", "Code review"],
-  data:      ["Data modelling", "Pipeline orchestration", "Cloud warehouse", "Experiment design", "Stakeholder communication"],
-  design:    ["Design systems", "User research", "Prototyping", "Accessibility", "Case studies"],
-  marketing: ["Paid acquisition", "Analytics", "Copywriting", "Campaign planning", "Marketing automation"],
-  product:   ["Discovery", "Roadmapping", "Metrics", "Stakeholder management", "Prioritisation"],
-  business:  ["Pipeline management", "Negotiation", "CRM discipline", "Forecasting", "Account planning"],
-  service:   ["Team scheduling", "Service standards", "Stock control", "Cost control", "Training others"],
-  generic:   ["Planning", "Communication", "Ownership", "Problem solving", "Working with data"],
-};
-
-function getSkillCoverage(profile: CareerProfile): SkillCoverage {
-  const family = detectRoleFamily(profile.targetRole, profile.currentRole);
-  const required = profile.targetRole ? TARGET_SKILLS[family] : [];
-  const held = [
-    ...(profile.resume?.skills ?? []),
-    ...profile.evidence.flatMap(e => e.skills),
-    ...profile.evidence.map(e => e.label),
-  ].map(x => x.toLowerCase());
-
-  const covered = required.filter(req => {
-    const words = req.toLowerCase().split(/\s+/);
-    return held.some(h => words.some(w => w.length > 3 && h.includes(w)) || req.toLowerCase().includes(h));
-  });
-  return {
-    familyLabel: FAMILY_LABEL[family],
-    required,
-    covered,
-    missing: required.filter(r => !covered.includes(r)),
-  };
-}
 
 /* ── Benchmark accessors ─────────────────────────────────────
    The corpus layer builds its salary trajectories and AI-risk figures
@@ -468,37 +424,29 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
   }
 
   /* 4 · Leadership gap — only raised when the target role implies leading. */
-  /* Skill currency. This slot used to hold a leadership gate, which only
-     applied when the target title contained "manager" or "lead" — so for
-     most people the fourth category read "not applicable" and said
-     nothing. What everyone actually faces is the distance between the
-     skills their target role asks for and the ones they can show. */
-  const skills = getSkillCoverage(profile);
-  if (skills.required.length && skills.covered.length / skills.required.length < RISK_POLICY.skillCoverageFloor) {
-    const missingCount = skills.missing.length;
+  const leadership = dim(profile, "Leadership");
+  const targetWantsLeadership = /manager|lead|head|director|principal|senior/i.test(profile.targetRole);
+  if (targetWantsLeadership && leadership < RISK_POLICY.leadershipReady) {
     risks.push({
-      id: "skills",
-      category: "Skill Stagnation",
-      headline: `Your evidence covers ${skills.covered.length} of the ${skills.required.length} skills ${profile.targetRole} postings ask for.`,
-      severity: skills.covered.length === 0 ? "critical" : skills.covered.length / skills.required.length < 0.4 ? "high" : "medium",
-      metric: `${skills.covered.length}/${skills.required.length}`,
-      horizon: "filters you out before a human reads anything",
-      evidence: `Matched against the ${skills.familyLabel} skill set, using the skills on your résumé and the evidence you added.`,
+      id: "leadership",
+      category: "Leadership Gap",
+      headline: `Your target role is a leadership role, but your Leadership signal is ${Math.round(leadership)}.`,
+      severity: leadership < 50 ? "high" : "medium",
+      metric: `${Math.round(leadership)}/100`,
+      horizon: "blocks the next promotion cycle",
+      evidence: `Leadership scored ${Math.round(leadership)} from your Career Calibration answers, against a target role of "${profile.targetRole}".`,
       comparison: {
-        current: `${skills.covered.length} of ${skills.required.length} covered`,
-        benchmark: `${Math.ceil(skills.required.length * RISK_POLICY.skillCoverageFloor)} of ${skills.required.length} expected`,
-        shortfall: `${missingCount} skill${missingCount === 1 ? "" : "s"} missing`,
+        current: `${Math.round(leadership)}/100`,
+        benchmark: `${RISK_POLICY.leadershipReady}/100 needed`,
+        shortfall: `${Math.ceil(RISK_POLICY.leadershipReady - leadership)} points short`,
       },
       calculation: [
-        `${profile.targetRole} postings in the ${skills.familyLabel} family ask for: ${skills.required.join(", ")}`,
-        skills.covered.length
-          ? `Found on your résumé or in your evidence: ${skills.covered.join(", ")}`
-          : `Nothing on your résumé or in your evidence matched these`,
-        `Missing: ${skills.missing.join(", ")}`,
-        `Coverage ${Math.round((skills.covered.length / skills.required.length) * 100)}%, below the ${Math.round(RISK_POLICY.skillCoverageFloor * 100)}% these roles screen at`,
+        `Target title "${profile.targetRole}" matched a leadership-level role`,
+        `Leadership signal from Career Calibration: ${Math.round(leadership)}/100`,
+        `Readiness threshold: ${RISK_POLICY.leadershipReady}/100; shortfall: ${Math.ceil(RISK_POLICY.leadershipReady - leadership)} points`,
       ],
-      fix: `Ship one piece of work that demonstrates ${skills.missing[0]}, and put the link on your profile.`,
-      timeToFix: missingCount >= 3 ? "4–6 months" : "2–3 months",
+      fix: "Take one piece of visible scope — a project, a mentee, a cross-team decision — and make the outcome attributable to you.",
+      timeToFix: "6–9 months",
     });
   }
 
@@ -512,7 +460,8 @@ export function deriveRiskCategoryChecks(profile: CareerProfile): RiskCategoryCh
   const automation = getAutomationBenchmark(profile);
   const salary = getSalaryBenchmark(profile);
   const readiness = getReadinessBenchmark(profile);
-  const skills = getSkillCoverage(profile);
+  const leadership = dim(profile, "Leadership");
+  const leadershipApplies = /manager|lead|head|director|principal|senior/i.test(profile.targetRole);
 
   return [
     {
@@ -535,11 +484,11 @@ export function deriveRiskCategoryChecks(profile: CareerProfile): RiskCategoryCh
       summary: byId.get("readiness")?.comparison.shortfall ?? `${readiness.gateCount}/${RISK_POLICY.roleGateMinimum} gate · ${readiness.proofCount}/${RISK_POLICY.proofMinimum} proof`,
     },
     {
-      id: "skills", label: "Skill Stagnation",
-      status: !skills.required.length ? "not-measured" : byId.has("skills") ? "open" : "clear",
-      summary: !skills.required.length
-        ? "Set a target role to measure this"
-        : byId.get("skills")?.comparison.shortfall ?? `${skills.covered.length} of ${skills.required.length} covered`,
+      id: "leadership", label: "Leadership progression",
+      status: leadershipApplies ? (byId.has("leadership") ? "open" : "clear") : "not-applicable",
+      summary: leadershipApplies
+        ? byId.get("leadership")?.comparison.shortfall ?? `${Math.round(leadership)}/100 · threshold met`
+        : "Target role does not require a leadership gate",
     },
   ];
 }

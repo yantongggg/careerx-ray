@@ -12,7 +12,7 @@ const RISK_ACTION: Record<string, { label: string; page: string }> = {
   readiness:  { label: "Add evidence",   page: "evidence" },
   automation: { label: "See the plan",   page: "prescription" },
   salary:     { label: "Compare paths",  page: "decisionlab" },
-  skills:     { label: "Close the gap",  page: "blindspots" },
+  leadership: { label: "See the plan",   page: "prescription" },
 };
 
 // ─── Score explanation modals ───────────────────────────────────────────────
