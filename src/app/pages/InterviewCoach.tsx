@@ -2,109 +2,114 @@ import { useState } from "react";
 import { demoToast } from "../state/toast";
 import { Brain, CheckCircle, MessageSquareText, Mic, Play, Sparkles, Star, Video, Wand2 } from "lucide-react";
 import { NextStep } from "../state/stages";
+import { useCareerProfile } from "../state/careerProfile";
+import { corpusFor, fitFor, type CorpusJob } from "../lib/careerCorpus";
+import type { CareerProfile } from "../lib/profileTypes";
 
-interface RoleCoachData {
-  title: string;
-  company: string;
-  readiness: number;
-  readyAfter: string;
-  questions: string[];
-  feedback: { label: string; score: number; note: string }[];
-  aiFrame: string;
-  activeQ: number;
-  promptLabel: string;
+/* ────────────────────────────────────────────────────────────────
+   The rehearsal is built from the posting the user picked.
+
+   ROLE_DATA used to key three fixed data-analytics jobs, so anyone
+   rehearsing for anything else was asked about dbt pipelines and star
+   schemas. Questions now come from the corpus posting, and the panel
+   scores come from the user's own DNA and evidence rather than four
+   numbers typed into the file.
+   ──────────────────────────────────────────────────────────────── */
+
+interface PanelScore {
+  label: string;
+  score: number;
+  note: string;
 }
 
-const ROLE_DATA: Record<string, RoleCoachData> = {
-  "maybank-da": {
-    title: "Data Analyst, Digital Banking",
-    company: "Maybank",
-    readiness: 71,
-    readyAfter: "Ready after 2 focused rehearsals",
-    questions: [
-      "Walk me through a dashboard you built that changed a business decision.",
-      "How would you detect unusual transaction behavior in SQL?",
-      "Tell me about a time you influenced stakeholders without authority.",
-      "Why do you want to move from analyst work into ML-adjacent analytics?",
-    ],
-    feedback: [
-      { label: "Evidence quality", score: 82, note: "Good metrics. Add before/after business impact." },
-      { label: "Technical depth", score: 74, note: "Explain trade-offs, not just tools used." },
-      { label: "Conciseness", score: 68, note: "Answer is strong but 40 seconds too long." },
-      { label: "Confidence", score: 79, note: "Clear structure. Stronger closing sentence needed." },
-    ],
-    aiFrame: "Start with the business goal, define baseline behavior by segment, use rolling windows and z-scores to flag anomalies, then explain how you would validate false positives with fraud ops.",
-    activeQ: 1,
-    promptLabel: "Question 2 · SQL case interview",
-  },
-  "grab-ae": {
-    title: "Analytics Engineer",
-    company: "Grab",
-    readiness: 58,
-    readyAfter: "Ready after 3 focused rehearsals",
-    questions: [
-      "How do you ensure data quality in a dbt pipeline?",
-      "Explain your approach to designing a star schema for ride-hailing metrics.",
-      "Tell me about a time you debugged a data pipeline under production pressure.",
-      "How would you handle conflicting metric definitions between product and finance?",
-    ],
-    feedback: [
-      { label: "Evidence quality", score: 70, note: "Add specific pipeline scale numbers (rows/day)." },
-      { label: "Technical depth", score: 81, note: "Strong dbt knowledge. Add BigQuery optimization." },
-      { label: "Conciseness", score: 72, note: "Good structure but needs tighter transitions." },
-      { label: "Confidence", score: 65, note: "Hesitation on Spark questions. Practice those." },
-    ],
-    aiFrame: "Lead with the business metric the pipeline serves, walk through your dbt model layers (staging → marts), then explain testing strategy: schema tests, freshness checks, and how you alert on failures.",
-    activeQ: 0,
-    promptLabel: "Question 1 · dbt pipeline design",
-  },
-  "petronas-pm": {
-    title: "AI Product Analyst",
-    company: "Petronas Digital",
-    readiness: 44,
-    readyAfter: "Ready after 4 focused rehearsals",
-    questions: [
-      "How would you measure whether an ML model is delivering business value?",
-      "Walk us through how you'd prioritize features for an AI-powered dashboard.",
-      "Describe a time you translated technical findings for non-technical stakeholders.",
-      "What's your approach to running A/B tests on an AI recommendation engine?",
-    ],
-    feedback: [
-      { label: "Evidence quality", score: 55, note: "Need concrete AI product metrics examples." },
-      { label: "Technical depth", score: 62, note: "Strengthen ML evaluation vocabulary." },
-      { label: "Conciseness", score: 75, note: "Good brevity. Add more STAR structure." },
-      { label: "Confidence", score: 58, note: "Product sense is emerging. Practice case studies." },
-    ],
-    aiFrame: "Frame around business KPIs the model impacts (not just accuracy), explain your monitoring approach for model drift, and describe how you'd communicate trade-offs between precision and recall to stakeholders.",
-    activeQ: 0,
-    promptLabel: "Question 1 · ML product evaluation",
-  },
-};
+const clamp = (n: number) => Math.max(35, Math.min(95, Math.round(n)));
 
-const DEFAULT_DATA: RoleCoachData = ROLE_DATA["maybank-da"];
+/** What a panel would say about this person before they open their mouth. */
+function panelScores(profile: CareerProfile): PanelScore[] {
+  const dim = (name: string) => profile.dnaScores[name] ?? 55;
+  const evidence = profile.evidence.length;
+
+  const evidenceScore = clamp(48 + evidence * 8 + (profile.resume ? 10 : 0));
+  const technical = clamp(dim("Technical") * 0.7 + dim("Execution") * 0.3);
+  const conciseness = clamp(dim("Communication") * 0.8 + 12);
+  const confidence = clamp(dim("Leadership") * 0.5 + dim("Communication") * 0.5);
+
+  return [
+    {
+      label: "Evidence quality", score: evidenceScore,
+      note: evidence === 0
+        ? "Nothing verified yet — every claim currently rests on your word."
+        : `${evidence} item${evidence > 1 ? "s" : ""} on file. Name the before and after, not just the tool.`,
+    },
+    {
+      label: "Technical depth", score: technical,
+      note: technical >= 75
+        ? "Strong. Spend your airtime on trade-offs rather than tool lists."
+        : "Explain why you chose an approach over the alternative — that is what gets probed.",
+    },
+    {
+      label: "Conciseness", score: conciseness,
+      note: conciseness >= 75
+        ? "Well structured. Land the closing sentence rather than trailing off."
+        : "Answer, then stop. Most rejected answers are right but forty seconds too long.",
+    },
+    {
+      label: "Confidence", score: confidence,
+      note: confidence >= 75
+        ? "Reads as assured. Keep the hedging out of the first sentence."
+        : "Open with the answer, then the reasoning. Leading with caveats reads as uncertainty.",
+    },
+  ];
+}
+
+/** How ready this person is for this specific posting. */
+function readinessFor(profile: CareerProfile, job: CorpusJob): number {
+  return clamp(fitFor(profile, job) * 0.85 + profile.evidence.length * 3);
+}
+
+function readyAfter(readiness: number): string {
+  const rehearsals = readiness >= 78 ? 1 : readiness >= 62 ? 2 : readiness >= 48 ? 3 : 4;
+  return `Ready after ${rehearsals} focused rehearsal${rehearsals > 1 ? "s" : ""}`;
+}
 
 interface InterviewCoachProps {
   jobId?: string | null;
   onNavigate?: (page: string) => void;
 }
 
-const ROLE_IDS = Object.keys(ROLE_DATA);
-
 export function InterviewCoach({ jobId, onNavigate }: InterviewCoachProps) {
+  const { profile } = useCareerProfile();
+  const jobs = corpusFor(profile).rankedJobs;
+
   const [pickedQ, setPickedQ] = useState<number | null>(null);
   /* Arriving from a job card preselects that job, but the coach is also
      a sidebar destination — landing here with no job used to silently
      show one company's questions with no way to change them. */
   const [roleId, setRoleId] = useState<string>(
-    jobId && ROLE_DATA[jobId] ? jobId : ROLE_IDS[0],
+    jobId && jobs.some(j => j.id === jobId) ? jobId : jobs[0]?.id ?? "",
   );
-  const data = ROLE_DATA[roleId] ?? DEFAULT_DATA;
-  const activeQ = pickedQ ?? data.activeQ;
+
+  const job = jobs.find(j => j.id === roleId) ?? jobs[0];
+  const feedback = panelScores(profile);
 
   const selectRole = (id: string) => {
     setRoleId(id);
     setPickedQ(null);
   };
+
+  if (!job) return null;
+
+  const readiness = readinessFor(profile, job);
+  const data = {
+    company: job.company,
+    title: job.title,
+    readiness,
+    readyAfter: readyAfter(readiness),
+    questions: job.interview.questions,
+    aiFrame: job.interview.aiFrame,
+    feedback,
+  };
+  const activeQ = pickedQ ?? job.interview.activeQ;
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -120,8 +125,8 @@ export function InterviewCoach({ jobId, onNavigate }: InterviewCoachProps) {
                 The coach turns your resume, job description, and X-Ray gaps into likely questions, then scores your answer like a hiring panel.
               </p>
               <div className="flex flex-wrap gap-2 mt-4">
-                {ROLE_IDS.map(id => {
-                  const role = ROLE_DATA[id];
+                {jobs.map(j => {
+                  const id = j.id;
                   const active = id === roleId;
                   return (
                     <button
@@ -133,8 +138,8 @@ export function InterviewCoach({ jobId, onNavigate }: InterviewCoachProps) {
                           : "bg-white text-foreground border-border hover:border-primary/40"
                       }`}
                     >
-                      {role.company}
-                      <span className={`ml-2 tabular-nums ${active ? "text-blue-200" : "text-muted-foreground"}`}>{role.readiness}%</span>
+                      {j.company}
+                      <span className={`ml-2 tabular-nums ${active ? "text-blue-200" : "text-muted-foreground"}`}>{readinessFor(profile, j)}%</span>
                     </button>
                   );
                 })}

@@ -40,12 +40,23 @@ export function AuthPage({ mode, onAuthed, onBack, onSwitchMode }: AuthPageProps
     return Object.keys(next).length === 0;
   };
 
+  /* "aisha.rahman@gmail.com" → "Aisha Rahman". Better than a placeholder
+     name belonging to someone who is not signing in. */
+  const nameFromEmail = (address: string): string => {
+    const local = address.split("@")[0] ?? "";
+    const words = local.split(/[._\-+\d]+/).filter(Boolean);
+    if (!words.length) return "Guest";
+    return words.map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (termsBlocked) return;
     if (!validate()) return;
     onAuthed({
-      name: isRegister ? name.trim() : "Jordan Kim",
+      /* Signing in has no account behind it in the demo, so the name is
+         read off the address rather than borrowed from a stock persona. */
+      name: isRegister ? name.trim() : nameFromEmail(email),
       email: email.trim(),
       isNew: isRegister,
     });
@@ -53,7 +64,8 @@ export function AuthPage({ mode, onAuthed, onBack, onSwitchMode }: AuthPageProps
 
   const handleGoogle = () => {
     if (termsBlocked) return;
-    onAuthed({ name: "Jordan Kim", email: "jordan.kim@gmail.com", isNew: isRegister });
+    const address = email.trim() || "guest@careerxray.my";
+    onAuthed({ name: nameFromEmail(address), email: address, isNew: isRegister });
   };
 
   const inputClass = (hasError?: string) =>

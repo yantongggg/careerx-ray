@@ -72,6 +72,17 @@ const defaultSections = [
 export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const { profile } = useCareerProfile();
 
+  const previewName = profile.resume?.name || "Your name";
+  const previewContact = [profile.resume?.email, profile.resume?.phone].filter(Boolean).join(" · ");
+  const previewSlug = (profile.resume?.name || "your-name")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const resumeText = buildResumeForRole(profile, profile.targetRole || "your target role");
+  /* Pulled from a connected source rather than assumed — an unconnected
+     GitHub link on a published portfolio is a dead link. */
+  const githubHandle = profile.evidence
+    .map(e => /github\.com\/([A-Za-z0-9_-]+)/.exec(e.source ?? ""))
+    .find(Boolean)?.[1];
+
   /* Whatever the user added during their scan is already imported. This
      page used to start every source at false, so someone who had just
      uploaded a resume and linked their profile was asked to do it all
@@ -628,45 +639,21 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
             {/* Resume preview */}
             {resumeGenerated && (
               <div className="rounded-xl border border-border bg-white p-6 mt-4 shadow-sm">
+                {/* The preview is the real generated document. It used to be
+                    a mock-up of Jordan Kim at Maybank and Grab, which meant
+                    the thing you previewed was never the thing you would
+                    download. */}
                 <div className="max-w-[600px] mx-auto space-y-4">
                   <div className="text-center border-b border-gray-200 pb-4">
-                    <h3 className="text-lg font-bold text-slate-800">Jordan Kim</h3>
-                    <p className="text-sm text-slate-600">Senior Data Analyst · Kuala Lumpur, Malaysia</p>
-                    <p className="text-xs text-slate-500 mt-1">jordan.kim@email.com · linkedin.com/in/jordankim · github.com/jordankim</p>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Professional Summary</h4>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Data analyst with 5+ years of experience in digital banking and fintech. Skilled in SQL, Python, and Tableau with a track record of delivering actionable insights that drove 23% revenue growth. Career DNA verified by CareerX-Ray — evidence-backed strengths, updated automatically.
+                    <h3 className="text-lg font-bold text-slate-800">{previewName}</h3>
+                    <p className="text-sm text-slate-600">
+                      {[profile.resume?.currentTitle || profile.currentRole, "Malaysia"].filter(Boolean).join(" · ")}
                     </p>
+                    {previewContact && <p className="text-xs text-slate-500 mt-1">{previewContact}</p>}
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Experience</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <div className="flex justify-between items-baseline">
-                          <p className="text-xs font-semibold text-slate-800">Senior Data Analyst — Maybank</p>
-                          <p className="text-xs text-slate-500">2022 – Present</p>
-                        </div>
-                        <p className="text-xs text-slate-600 mt-0.5">Led analytics for digital banking products, built dashboards serving 200+ stakeholders.</p>
-                      </div>
-                      <div>
-                        <div className="flex justify-between items-baseline">
-                          <p className="text-xs font-semibold text-slate-800">Data Analyst — Grab</p>
-                          <p className="text-xs text-slate-500">2020 – 2022</p>
-                        </div>
-                        <p className="text-xs text-slate-600 mt-0.5">Owned rider-demand forecasting models, reducing supply mismatch by 18%.</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Skills</h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {["SQL", "Python", "Tableau", "Power BI", "dbt", "BigQuery", "Stakeholder Storytelling"].map(s => (
-                        <span key={s} className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{s}</span>
-                      ))}
-                    </div>
-                  </div>
+                  <pre className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap font-sans">
+                    {resumeText}
+                  </pre>
                 </div>
               </div>
             )}
@@ -689,7 +676,7 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
                 </div>
                 <div className="flex-1 ml-3 h-7 rounded-md bg-slate-800 flex items-center px-3">
                   <Globe className="w-3 h-3 text-slate-500 mr-2" />
-                  <span className="text-xs text-slate-400">careerxray.me/johndoe</span>
+                  <span className="text-xs text-slate-400">careerxray.me/{previewSlug}</span>
                 </div>
               </div>
               {/* Mock site content */}
@@ -725,7 +712,7 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
               <Download className="w-4 h-4" />
               Download as PDF
             </button>
-            <button onClick={() => demoToast("Published to careerxray.me/jordankim \u2713 \u2014 link is live")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 text-white font-medium text-sm hover:bg-violet-700 transition-colors">
+            <button onClick={() => demoToast(`Published to careerxray.me/${previewSlug} \u2713 \u2014 link is live`)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 text-white font-medium text-sm hover:bg-violet-700 transition-colors">
               <ExternalLink className="w-4 h-4" />
               Publish to careerxray.me/username
             </button>
@@ -836,10 +823,10 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
                       Available for opportunities
                     </div>
                     <h1 className="text-5xl sm:text-7xl font-bold text-white mb-4 tracking-tight">
-                      Jordan Kim
+                      {previewName}
                     </h1>
                     <p className="text-xl sm:text-2xl text-violet-300 font-medium mb-6">
-                      Data Analyst & Analytics Professional
+                      {profile.targetRole || profile.currentRole || "Your professional headline"}
                     </p>
                     <p className="text-lg text-slate-400 leading-relaxed max-w-2xl mb-10">
                       Transforming complex data into actionable business insights. 5+ years of experience
@@ -1050,21 +1037,21 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
                         <Mail className="w-5 h-5 text-violet-400" />
                       </div>
                       <h3 className="text-sm font-semibold text-white mb-1">Email</h3>
-                      <p className="text-sm text-slate-400">jordan.kim@email.com</p>
+                      <p className="text-sm text-slate-400">{profile.resume?.email || "Add an email to your resume"}</p>
                     </div>
                     <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-6 text-center hover:border-slate-700 transition-colors group">
                       <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                         <Linkedin className="w-5 h-5 text-blue-400" />
                       </div>
                       <h3 className="text-sm font-semibold text-white mb-1">LinkedIn</h3>
-                      <p className="text-sm text-slate-400">linkedin.com/in/jordankim</p>
+                      <p className="text-sm text-slate-400">{linkedinConnected ? `linkedin.com/in/${previewSlug}` : "Not connected"}</p>
                     </div>
                     <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-6 text-center hover:border-slate-700 transition-colors group">
                       <div className="w-12 h-12 rounded-xl bg-slate-500/10 border border-slate-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                         <Github className="w-5 h-5 text-slate-300" />
                       </div>
                       <h3 className="text-sm font-semibold text-white mb-1">GitHub</h3>
-                      <p className="text-sm text-slate-400">github.com/jordankim</p>
+                      <p className="text-sm text-slate-400">{githubHandle ? `github.com/${githubHandle}` : "Not connected"}</p>
                     </div>
                   </div>
                 </div>
@@ -1077,7 +1064,7 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
                     Built with <span className="text-violet-400">CareerX-Ray</span> Portfolio Builder
                   </span>
                   <span className="text-sm text-slate-600">
-                    &copy; 2026 Jordan Kim. All rights reserved.
+                    &copy; 2026 {previewName}. All rights reserved.
                   </span>
                 </div>
               </footer>

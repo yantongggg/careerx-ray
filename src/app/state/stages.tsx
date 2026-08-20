@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import {
   AlertTriangle, ArrowLeft, ArrowRight, BarChart3, Briefcase, Check, FlaskConical,
-  Fingerprint, Globe, Layers, Pill, Radar, Scale, ShieldCheck, Target, Video,
+  Fingerprint, FileText, Globe, Layers, MessagesSquare, Pill, Radar, Scale, ShieldCheck, Target, Video,
 } from "lucide-react";
 import { useCareerProfile } from "./careerProfile";
 
@@ -56,20 +56,19 @@ export const JOURNEY: JourneyStage[] = [
     id: "stage-decide", num: "02", label: "Decide",
     color: "#4F46E5", tint: "rgba(79,70,229,0.06)", icon: Scale,
     question: "Which move should I make?",
-    desc: "Compare possible paths and offers with evidence and market data — before committing.",
+    desc: "Compare the paths open to you with evidence and market data — before committing to one.",
     tools: [
-      { page: "decisionlab", label: "Decision Lab", desc: "Simulate three future career paths: salary, growth, and satisfaction.", icon: FlaskConical },
-      { page: "offers",      label: "Offer Decision AI", desc: "Compare offers by long-term fit, not just starting salary.", icon: Scale },
+      { page: "decisionlab", label: "Decision Lab", desc: "Three futures from where you are to where you're aiming, year by year.", icon: FlaskConical },
+      { page: "whatif",      label: "What-If Lab",  desc: "Ask about a specific move — two offers, a pay cut, a detour — and get it argued both ways.", icon: MessagesSquare },
     ],
   },
   {
     id: "stage-prepare", num: "03", label: "Prepare",
     color: "#B45309", tint: "rgba(180,83,9,0.07)", icon: Target,
     question: "Am I ready for it?",
-    desc: "Close the gaps that block your target roles, then rehearse until you're interview-ready.",
+    desc: "Close the gaps that block your target role before you start applying.",
     tools: [
       { page: "prescription", label: "Career Prescription", desc: "Your 30/90-day action plan to close the gaps that matter.", icon: Pill },
-      { page: "coach",        label: "Interview Coach", desc: "Rehearse the exact interview you have coming up.", icon: Video },
     ],
   },
   {
@@ -86,9 +85,12 @@ export const JOURNEY: JourneyStage[] = [
     id: "stage-apply", num: "05", label: "Apply",
     color: "#0D9488", tint: "rgba(13,148,136,0.07)", icon: Briefcase,
     question: "Where can I get hired today?",
-    desc: "Apply to roles your evidence already supports, and track every application to interview.",
+    desc: "Find the job, tailor for it, rehearse it, and choose between what comes back.",
     tools: [
-      { page: "jobs", label: "Jobs + Applications", desc: "Matched roles from Talentbank, ranked by your real readiness.", icon: Briefcase },
+      { page: "jobs",       label: "Jobs + Applications", desc: "Matched roles ranked by your real readiness, not keyword overlap.", icon: Briefcase },
+      { page: "apply-prep", label: "Application Prep",    desc: "Resume and cover letter tailored to the job you picked.", icon: FileText },
+      { page: "coach",      label: "Interview Coach",     desc: "Rehearse that job's interview, built from its actual requirements.", icon: Video },
+      { page: "offers",     label: "Offer Decision AI",   desc: "Once offers land, compare them on long-term fit, not starting salary.", icon: Scale },
     ],
   },
 ];

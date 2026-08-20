@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { NextStep } from "../state/stages";
+import { useCareerProfile } from "../state/careerProfile";
+import { corpusFor, TIMELINE_LABELS, type CorpusFuture, type LandscapePosition } from "../lib/careerCorpus";
 import {
   ChevronRight, Brain, Star, DollarSign, Clock, Zap, ArrowRight,
   TrendingUp, AlertTriangle, CheckCircle, Sparkles, Users,
@@ -9,128 +11,49 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
 
-// ─── Future Self data ────────────────────────────────────────────────────────
+/* The three futures, the salary curves, and the market landscape all
+   come from the corpus now. This page used to hold its own copy of them,
+   fixed to a data analyst weighing a move into ML engineering — which is
+   what everyone saw regardless of what they had scanned as. */
 
-interface Future {
-  id: string;
-  label: string;
-  tagline: string;
-  color: string;
-  dotColor: string;
-  borderColor: string;
-  bgColor: string;
-  emoji: string;
-  story: string;         // The narrative "If you choose this path..."
-  oneYear: string;       // What year 1 looks like
-  threeYear: string;     // What year 3 looks like
-  fiveYear: string;      // What year 5 looks like
-  salary5yr: string;
-  aiRisk: string;
-  aiRiskColor: string;
-  promotionOdds: string;
-  satisfaction: string;
-  satisfactionColor: string;
-  salaryData: number[];
-  pros: string[];
-  cons: string[];
-  aiVerdict: string;
-  confidence: number;
+const fmtRM = (n: number) => `RM ${(n / 1000).toFixed(1)}k/mo`;
+
+function riskTone(pct: number): string {
+  return pct >= 55 ? "text-red-500" : pct >= 38 ? "text-amber-500" : "text-emerald-500";
 }
 
-const futures: Future[] = [
-  {
-    id: "stay",
-    label: "Future A",
-    tagline: "You stay on your current path.",
-    color: "#3B82F6",
-    dotColor: "bg-blue-500",
-    borderColor: "border-blue-200",
-    bgColor: "bg-blue-50",
-    emoji: "⏸️",
-    story: "You continue as a Senior Data Analyst where you are. No dramatic changes. Reasonable raises. Familiar work. On the surface, it's safe.",
-    oneYear: "Salary grows to RM 9.7k/mo with a standard review cycle. The work feels manageable. You're good at it. But the AI tools your team adopted are now handling 40% of what you used to own.",
-    threeYear: "Your role has been quietly restructured. The BI function consolidated. You're still employed — but your title hasn't changed, your scope has narrowed, and two analysts junior to you were promoted into different tracks.",
-    fiveYear: "You're earning RM 10.7k/mo. The market rate for your peers who made moves is RM 13.5k/mo and up. You're good at your job — but you're no longer growing. And you know it.",
-    salary5yr: "RM 10.7k/mo",
-    aiRisk: "High (62%)",
-    aiRiskColor: "text-red-500",
-    promotionOdds: "22% over 5 years",
-    satisfaction: "Declining",
-    satisfactionColor: "text-amber-500",
-    salaryData: [9.2, 9.4, 9.7, 10.0, 10.3, 10.4, 10.5, 10.6, 10.6, 10.7],
-    pros: ["Zero transition risk", "Familiar environment", "Strong team relationships"],
-    cons: ["Compounding AI risk", "A salary gap that widens yearly", "A hardening promotion ceiling"],
-    aiVerdict: "This path is not as safe as it feels. Stability is an illusion in a role with 62% AI risk. The career regret risk is highest here — because the decline is gradual and easy to miss, and hard to reverse by the time it isn't.",
-    confidence: 88,
-  },
-  {
-    id: "ml",
-    label: "Future B",
-    tagline: "You transition into ML Engineering.",
-    color: "#22C55E",
-    dotColor: "bg-emerald-500",
-    borderColor: "border-emerald-200",
-    bgColor: "bg-emerald-50",
-    emoji: "🚀",
-    story: "You spend the next 9–14 months closing the skill gap. It's uncomfortable at first. Then it accelerates. Your Python + SQL foundation reduces the learning curve by months.",
-    oneYear: "You complete the AWS cert and two ML portfolio projects. You start applying. The interviews are harder than your current role. You get rejected twice. Then you get an offer at RM 10.0k/mo — an ML Engineer role at a fintech company.",
-    threeYear: "You're 18 months into the new role. Your skills are compounding faster than they ever did as an analyst. You're building things that ship. Your salary is RM 12.3k/mo. You're being sponsored for a Staff role.",
-    fiveYear: "You're earning RM 13.5k/mo, with equity. AI risk is 28% — you're building the automation, not being replaced by it. Career satisfaction is at its highest point in your professional life.",
-    salary5yr: "RM 13.5k/mo",
-    aiRisk: "Low (28%)",
-    aiRiskColor: "text-emerald-500",
-    promotionOdds: "68% over 5 years",
-    satisfaction: "High",
-    satisfactionColor: "text-emerald-500",
-    salaryData: [9.2, 9.5, 10.0, 10.7, 11.3, 11.8, 12.3, 12.8, 13.2, 13.5],
-    pros: ["Highest long-term earnings", "AI-proof skill set", "RM 2.8k/mo salary jump potential"],
-    cons: ["9–14 months of transition investment", "Rejection risk in interviews", "Imposter syndrome during the switch"],
-    aiVerdict: "This path delivers the best risk-adjusted outcome. Your Python and SQL foundation means your transition timeline is 4 months shorter than average. The skill gap is real but closable. This is the path where career regret is least likely.",
-    confidence: 84,
-  },
-  {
-    id: "manager",
-    label: "Future C",
-    tagline: "You pursue promotion to Data Science Manager.",
-    color: "#A855F7",
-    dotColor: "bg-purple-500",
-    borderColor: "border-purple-200",
-    bgColor: "bg-purple-50",
-    emoji: "📈",
-    story: "You decide the technical ladder isn't where you want to go long-term. You want to lead. You spend the next 12–18 months building leadership scope — deliberately, visibly, strategically.",
-    oneYear: "You lead a cross-functional project that ships. You formally mentor two analysts. Your manager starts including you in planning conversations you weren't in before. No title change yet. But the narrative is shifting.",
-    threeYear: "You're promoted to Data Science Manager. Your salary jumps to RM 12.3k/mo. You manage a team of 4. It's harder than you expected. You have less time for the technical work you love — but more influence than you've ever had.",
-    fiveYear: "You're earning RM 14.6k/mo as a senior manager overseeing a team of 8. AI risk is 18% — leadership roles are highly protected. But you sometimes miss the craft of building things yourself.",
-    salary5yr: "RM 14.6k/mo",
-    aiRisk: "Very Low (18%)",
-    aiRiskColor: "text-emerald-500",
-    promotionOdds: "74% over 5 years",
-    satisfaction: "Mixed",
-    satisfactionColor: "text-amber-500",
-    salaryData: [9.2, 9.4, 9.8, 10.5, 11.2, 11.8, 12.3, 13.2, 13.8, 14.6],
-    pros: ["Highest salary ceiling", "Very low AI risk", "Compounding leadership capital"],
-    cons: ["12–18 months of deliberate positioning", "Less hands-on technical work", "A different job, not just a promotion"],
-    aiVerdict: "This path has the highest ceiling but the longest runway. It requires you to be strategic — not just competent. Your technical depth is a real asset in management. The risk is that most people underestimate how different managing is from doing.",
-    confidence: 79,
-  },
-];
+function riskWord(pct: number): string {
+  return pct >= 55 ? "High" : pct >= 38 ? "Moderate" : pct >= 22 ? "Low" : "Very low";
+}
 
-const timelineLabels = ["Now", "6mo", "1yr", "18mo", "2yr", "2.5yr", "3yr", "3.5yr", "4yr", "5yr"];
+const SATISFACTION_TONE: Record<CorpusFuture["satisfactionTone"], string> = {
+  good: "text-emerald-500",
+  mixed: "text-amber-500",
+  poor: "text-red-500",
+};
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const [selected, setSelected] = useState<string>("ml");
+  const { profile } = useCareerProfile();
+  const corpus = corpusFor(profile);
+  const futures = corpus.futures;
+
+  /* Open on the recommended path rather than on standing still. */
+  const [selected, setSelected] = useState<string>("target");
   const [showChart, setShowChart] = useState(false);
 
-  const activeFuture = futures.find(f => f.id === selected)!;
+  const activeFuture = futures.find(f => f.id === selected) ?? futures[1];
+  const [stayFuture, targetFuture] = futures;
 
-  const chartData = timelineLabels.map((label, i) => ({
-    label,
-    "Future A (Stay)":    futures[0].salaryData[i],
-    "Future B (ML Eng)":  futures[1].salaryData[i],
-    "Future C (Manager)": futures[2].salaryData[i],
-  }));
+  /* Recharts keys off the series name, so the legend and the lines both
+     read the future's own role — no fixed "ML Eng" label. */
+  const series = futures.map(f => ({ key: `${f.label} (${f.role})`, color: f.color }));
+  const chartData = TIMELINE_LABELS.map((label, i) => {
+    const row: Record<string, string | number> = { label };
+    futures.forEach((f, fi) => { row[series[fi].key] = +(f.salaryData[i] / 1000).toFixed(1); });
+    return row;
+  });
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -169,11 +92,11 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-xs text-muted-foreground">5-year salary</p>
-                  <p className="text-base font-bold text-foreground">{f.salary5yr}</p>
+                  <p className="text-base font-bold text-foreground">{fmtRM(f.salary5yr)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">AI risk</p>
-                  <p className={`text-sm font-bold ${f.aiRiskColor}`}>{f.aiRisk}</p>
+                  <p className={`text-sm font-bold ${riskTone(f.aiRiskPct)}`}>{riskWord(f.aiRiskPct)} ({f.aiRiskPct}%)</p>
                 </div>
               </div>
             </button>
@@ -219,10 +142,10 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
           {/* Metrics row */}
           <div className="border-t border-border px-8 py-5 grid grid-cols-4 gap-6">
             {[
-              { label: "5-year salary",   value: activeFuture.salary5yr,        color: "text-foreground" },
-              { label: "AI risk",         value: activeFuture.aiRisk,            color: activeFuture.aiRiskColor },
-              { label: "Promotion odds",  value: activeFuture.promotionOdds,     color: "text-foreground" },
-              { label: "Satisfaction",    value: activeFuture.satisfaction,      color: activeFuture.satisfactionColor },
+              { label: "5-year salary",   value: fmtRM(activeFuture.salary5yr),                                  color: "text-foreground" },
+              { label: "AI risk",         value: `${riskWord(activeFuture.aiRiskPct)} (${activeFuture.aiRiskPct}%)`, color: riskTone(activeFuture.aiRiskPct) },
+              { label: "Promotion odds",  value: `${activeFuture.promotionOddsPct}% over 5 years`,                 color: "text-foreground" },
+              { label: "Satisfaction",    value: activeFuture.satisfaction,                                        color: SATISFACTION_TONE[activeFuture.satisfactionTone] },
             ].map(m => (
               <div key={m.label}>
                 <p className="text-xs text-muted-foreground mb-1">{m.label}</p>
@@ -294,17 +217,17 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
                     <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => `RM ${v}k`} />
                     <Tooltip formatter={(v: number) => [`RM ${v}k/mo`, ""]} />
-                    <Line key="line-stay"    type="monotone" dataKey="Future A (Stay)"    stroke="#3B82F6" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    <Line key="line-ml"      type="monotone" dataKey="Future B (ML Eng)"  stroke="#22C55E" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    <Line key="line-manager" type="monotone" dataKey="Future C (Manager)" stroke="#A855F7" strokeWidth={2} dot={false} isAnimationActive={false} />
+                    {series.map(sr => (
+                      <Line key={sr.key} type="monotone" dataKey={sr.key} stroke={sr.color} strokeWidth={2} dot={false} isAnimationActive={false} />
+                    ))}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
               <div className="flex items-center gap-6 mt-2 justify-center">
-                {[["Future A (Stay)","#3B82F6"],["Future B (ML Eng)","#22C55E"],["Future C (Manager)","#A855F7"]].map(([l,c])=>(
-                  <div key={l} className="flex items-center gap-1.5">
-                    <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: c }} />
-                    <span className="text-xs text-muted-foreground">{l}</span>
+                {series.map(sr => (
+                  <div key={sr.key} className="flex items-center gap-1.5">
+                    <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: sr.color }} />
+                    <span className="text-xs text-muted-foreground">{sr.key}</span>
                   </div>
                 ))}
               </div>
@@ -319,20 +242,20 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
               <Sparkles size={20} className="text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-blue-200 font-semibold uppercase tracking-wider mb-2">AI recommendation · {futures[1].confidence}% confidence</p>
-              <p className="text-lg font-bold mb-3">Future B: Transition to ML Engineering within 9–14 months.</p>
-              <p className="text-blue-100 text-sm leading-relaxed max-w-2xl">
-                Across all three paths, the ML Engineering transition delivers the best risk-adjusted outcome for your specific profile. Your Python and SQL depth reduces the transition timeline by an estimated 4 months versus a typical candidate. Future A (staying) carries more career risk than it appears. Future C (management) is viable but requires 12–18 months of deliberate positioning that you haven't started yet.
+              <p className="text-xs text-blue-200 font-semibold uppercase tracking-wider mb-2">AI recommendation · {targetFuture.confidence}% confidence</p>
+              <p className="text-lg font-bold mb-3">
+                {targetFuture.label}: move into {targetFuture.role} within {corpus.transitionMonths[0]}–{corpus.transitionMonths[1]} months.
               </p>
+              <p className="text-blue-100 text-sm leading-relaxed max-w-2xl">{targetFuture.aiVerdict}</p>
               <div className="flex flex-wrap items-center gap-4 mt-4">
                 <div className="flex items-center gap-1.5 text-xs text-blue-200">
-                  <DollarSign size={13} /> +RM 2.8k/mo by year 5 vs. staying
+                  <DollarSign size={13} /> +{fmtRM(targetFuture.salary5yr - stayFuture.salary5yr)} by year 5 vs. staying
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-blue-200">
-                  <Shield size={13} /> AI risk: 62% → 28%
+                  <Shield size={13} /> AI risk: {stayFuture.aiRiskPct}% → {targetFuture.aiRiskPct}%
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-blue-200">
-                  <Clock size={13} /> 9–14 months to transition
+                  <Clock size={13} /> {corpus.transitionMonths[0]}–{corpus.transitionMonths[1]} months to transition
                 </div>
               </div>
             </div>
@@ -340,7 +263,7 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
         </div>
 
         {/* ── Market Salary Comparison ── */}
-        <MarketSalaryGraph />
+        <MarketSalaryGraph positions={corpus.salaryLandscape} />
 
         <NextStep currentPage="decisionlab" onNavigate={onNavigate} />
       </div>
@@ -352,79 +275,18 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
    Market Salary Comparison — animated bar race chart
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-interface SalaryEntry {
-  company: string;
-  min: number;
-  max: number;
-  median: number;
-  color: string;
-  glow: string;
-}
+/* Positions and company bands come from the corpus, so this compares
+   the three roles the user is actually choosing between rather than a
+   fixed trio of data-analytics titles. */
 
-interface PositionSalary {
-  id: string;
-  position: string;
-  yourOffer: number;
-  marketMedian: number;
-  companies: SalaryEntry[];
-}
-
-const SALARY_DATA: PositionSalary[] = [
-  {
-    id: "data-analyst",
-    position: "Data Analyst",
-    yourOffer: 8500,
-    marketMedian: 7800,
-    companies: [
-      { company: "Maybank",          min: 7000, max: 9500,  median: 8200,  color: "#FFB300", glow: "rgba(255,179,0,0.25)" },
-      { company: "CIMB",             min: 6500, max: 9000,  median: 7800,  color: "#C62828", glow: "rgba(198,40,40,0.2)" },
-      { company: "Grab",             min: 8000, max: 12000, median: 9800,  color: "#2E7D32", glow: "rgba(46,125,50,0.2)" },
-      { company: "Shopee",           min: 7500, max: 11000, median: 9200,  color: "#E65100", glow: "rgba(230,81,0,0.2)" },
-      { company: "Petronas Digital", min: 7000, max: 10000, median: 8500,  color: "#0D47A1", glow: "rgba(13,71,161,0.2)" },
-      { company: "Axiata",           min: 6800, max: 9200,  median: 7600,  color: "#4527A0", glow: "rgba(69,39,160,0.15)" },
-      { company: "TNG Digital",      min: 7200, max: 10500, median: 8800,  color: "#00695C", glow: "rgba(0,105,92,0.2)" },
-    ],
-  },
-  {
-    id: "analytics-engineer",
-    position: "Analytics Engineer",
-    yourOffer: 10500,
-    marketMedian: 9600,
-    companies: [
-      { company: "Grab",             min: 9000,  max: 14000, median: 11500, color: "#2E7D32", glow: "rgba(46,125,50,0.2)" },
-      { company: "Shopee",           min: 8500,  max: 13000, median: 10800, color: "#E65100", glow: "rgba(230,81,0,0.2)" },
-      { company: "GoTo",             min: 8000,  max: 12500, median: 10200, color: "#1565C0", glow: "rgba(21,101,192,0.2)" },
-      { company: "Maybank",          min: 7500,  max: 11000, median: 9200,  color: "#FFB300", glow: "rgba(255,179,0,0.25)" },
-      { company: "Petronas Digital", min: 8000,  max: 11500, median: 9800,  color: "#0D47A1", glow: "rgba(13,71,161,0.2)" },
-      { company: "CIMB",             min: 7000,  max: 10500, median: 8800,  color: "#C62828", glow: "rgba(198,40,40,0.2)" },
-      { company: "TNG Digital",      min: 8200,  max: 12000, median: 10000, color: "#00695C", glow: "rgba(0,105,92,0.2)" },
-    ],
-  },
-  {
-    id: "ai-product-analyst",
-    position: "AI Product Analyst",
-    yourOffer: 9500,
-    marketMedian: 10200,
-    companies: [
-      { company: "Petronas Digital", min: 8000,  max: 13000, median: 10500, color: "#0D47A1", glow: "rgba(13,71,161,0.2)" },
-      { company: "Grab",             min: 9000,  max: 15000, median: 12000, color: "#2E7D32", glow: "rgba(46,125,50,0.2)" },
-      { company: "Axiata",           min: 7500,  max: 11500, median: 9500,  color: "#4527A0", glow: "rgba(69,39,160,0.15)" },
-      { company: "Shopee",           min: 8500,  max: 13500, median: 11000, color: "#E65100", glow: "rgba(230,81,0,0.2)" },
-      { company: "MDEC",             min: 7000,  max: 10000, median: 8500,  color: "#00838F", glow: "rgba(0,131,143,0.2)" },
-      { company: "AirAsia Digital",  min: 7800,  max: 12000, median: 9800,  color: "#B71C1C", glow: "rgba(183,28,28,0.2)" },
-      { company: "TNG Digital",      min: 8000,  max: 11000, median: 9600,  color: "#00695C", glow: "rgba(0,105,92,0.2)" },
-    ],
-  },
-];
-
-function MarketSalaryGraph() {
+function MarketSalaryGraph({ positions }: { positions: LandscapePosition[] }) {
   const [activePos, setActivePos] = useState(0);
   const [animProgress, setAnimProgress] = useState(0);
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
   const animRef = useRef(0);
   const startRef = useRef(0);
 
-  const data = SALARY_DATA[activePos];
+  const data = positions[activePos] ?? positions[0];
   const sorted = [...data.companies].sort((a, b) => b.median - a.median);
   const maxVal = Math.max(...sorted.map(c => c.max)) * 1.08;
 
@@ -456,10 +318,14 @@ function MarketSalaryGraph() {
 
   const xScale = (val: number) => LEFT + (val / maxVal) * chartW;
 
-  const yourX = xScale(data.yourOffer);
+  const yourPay = data.yourPay;
+  const yourX = xScale(yourPay ?? data.marketMedian);
   const medianX = xScale(data.marketMedian);
 
-  const gridLines = [0, 2000, 4000, 6000, 8000, 10000, 12000, 14000, 16000].filter(v => v <= maxVal);
+  /* A fixed 0–16k grid left a service-sector chart with two lines and a
+     senior-tech one crowded, so the step follows the range. */
+  const gridStep = maxVal > 24000 ? 5000 : maxVal > 12000 ? 2000 : maxVal > 6000 ? 1000 : 500;
+  const gridLines = Array.from({ length: Math.floor(maxVal / gridStep) + 1 }, (_, i) => i * gridStep);
 
   return (
     <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
@@ -476,7 +342,7 @@ function MarketSalaryGraph() {
             <p className="text-sm text-muted-foreground">Compare salary ranges across companies for each position — powered by market intelligence.</p>
           </div>
           <div className="flex items-center gap-1.5 bg-muted border border-border rounded-xl p-1">
-            {SALARY_DATA.map((pos, i) => (
+            {positions.map((pos, i) => (
               <button key={pos.id} onClick={() => setActivePos(i)}
                 className={`text-xs font-semibold px-3 py-2 rounded-lg transition-all ${
                   activePos === i ? "bg-slate-950 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
@@ -593,7 +459,7 @@ function MarketSalaryGraph() {
             })}
 
             {/* Your offer line */}
-            {animProgress > 0.3 && (
+            {yourPay !== null && animProgress > 0.3 && (
               <g style={{ opacity: animProgress }}>
                 <line x1={yourX} y1={TOP - 2} x2={yourX} y2={TOP + chartH + 2}
                   stroke="url(#your-offer-grad)" strokeWidth={2.5} strokeDasharray="6,4" />
@@ -601,7 +467,7 @@ function MarketSalaryGraph() {
                   fill="#8A7038" />
                 <text x={yourX} y={TOP + chartH + 19} textAnchor="middle" fontSize={10} fontWeight={700} fill="white"
                   style={{ fontFamily: "var(--font-mono, monospace)" }}>
-                  You: RM {(data.yourOffer / 1000).toFixed(1)}k
+                  You: RM {(yourPay! / 1000).toFixed(1)}k
                 </text>
               </g>
             )}
@@ -623,19 +489,29 @@ function MarketSalaryGraph() {
         {/* Insight cards */}
         <div className="grid grid-cols-3 gap-3 mt-5">
           {(() => {
-            const aboveMarket = data.yourOffer > data.marketMedian;
-            const diff = Math.abs(data.yourOffer - data.marketMedian);
-            const pct = Math.round((diff / data.marketMedian) * 100);
             const highest = sorted[0];
             const lowest = sorted[sorted.length - 1];
+            const aboveMarket = yourPay !== null && yourPay > data.marketMedian;
+            const diff = yourPay === null ? 0 : Math.abs(yourPay - data.marketMedian);
+            const pct = Math.round((diff / data.marketMedian) * 100);
             return [
-              {
-                label: aboveMarket ? "Above Market" : "Below Market",
-                value: `${aboveMarket ? "+" : "−"}RM ${(diff / 1000).toFixed(1)}k`,
-                desc: `Your offer is ${pct}% ${aboveMarket ? "above" : "below"} the market median`,
-                color: aboveMarket ? "#115E50" : "#C62828",
-                bg: aboveMarket ? "rgba(17,94,80,0.06)" : "rgba(198,40,40,0.06)",
-              },
+              /* With no salary stated there is nothing to compare against,
+                 so this card reports the market instead of inventing a gap. */
+              yourPay === null
+                ? {
+                    label: "Market median",
+                    value: `RM ${(data.marketMedian / 1000).toFixed(1)}k`,
+                    desc: `Add your current pay in your profile to see your gap to ${data.position}`,
+                    color: "#16284B",
+                    bg: "rgba(22,40,75,0.04)",
+                  }
+                : {
+                    label: aboveMarket ? "Above Market" : "Below Market",
+                    value: `${aboveMarket ? "+" : "−"}RM ${(diff / 1000).toFixed(1)}k`,
+                    desc: `Your pay is ${pct}% ${aboveMarket ? "above" : "below"} the median for ${data.position}`,
+                    color: aboveMarket ? "#115E50" : "#C62828",
+                    bg: aboveMarket ? "rgba(17,94,80,0.06)" : "rgba(198,40,40,0.06)",
+                  },
               {
                 label: "Highest Payer",
                 value: highest.company,

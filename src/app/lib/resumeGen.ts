@@ -13,36 +13,27 @@
 
 import type { CareerProfile } from "./profileTypes";
 
+export interface JobAngle {
+  focus: string;
+  hook: string;
+  body: string;
+}
+
 export interface JobTarget {
   id: string;
   title: string;
   company: string;
   location?: string;
   requirements?: string[];
+  /** How to pitch this candidate at this posting. */
+  angle?: JobAngle;
 }
 
-/* Per-job framing. Authored, because it encodes what each employer
-   actually screens for — but it only ever supplies the angle. Every
-   fact in the output comes from the candidate's own profile. */
-const JOB_ANGLE: Record<string, { focus: string; hook: string; body: string }> = {
-  "maybank-da": {
-    focus: "fraud analytics, customer segmentation, and digital banking KPIs",
-    hook: "Digital banking decisions ride on dashboards people actually trust — that is the work I want to do at full scale.",
-    body: "My SQL depth and reporting experience map directly to this role: building KPI pipelines, segmenting customer behaviour across digital channels, and presenting findings that product and engineering teams acted on.",
-  },
-  "grab-ae": {
-    focus: "dbt model development, pipeline testing, and analytics engineering at scale",
-    hook: "Real-time marketplace decisions depend on tested, reliable data models — exactly what this Analytics Engineer role owns.",
-    body: "I bring hands-on modelling and Git-based workflows, experience writing tested data models, and collaboration with engineers on CI for analytics code.",
-  },
-  "petronas-pm": {
-    focus: "ML model evaluation and translating AI metrics for business stakeholders",
-    hook: "Digitalising energy operations with AI is high-impact, stakeholder-heavy analytics work, which is where I do my best work.",
-    body: "I pair technical proficiency with storytelling: defining metrics, evaluating model performance, and turning data patterns into recommendations leadership can act on.",
-  },
-};
+/* The angle used to live here as a table keyed by three job ids, so
+   every other posting fell through to one generic paragraph. It is
+   supplied by the caller now — see angleFor() in careerCorpus. */
 
-const DEFAULT_ANGLE = {
+const DEFAULT_ANGLE: JobAngle = {
   focus: "the core responsibilities of the role",
   hook: "This role lines up closely with the direction I am deliberately moving my career in.",
   body: "I bring directly relevant experience and a record of turning work into outcomes the business could measure.",
@@ -120,7 +111,7 @@ export function buildResumeForRole(profile: CareerProfile, targetRole: string): 
 
 /** A resume tailored to one specific job posting. */
 export function buildResumeForJob(profile: CareerProfile, job: JobTarget): string {
-  const angle = JOB_ANGLE[job.id] ?? DEFAULT_ANGLE;
+  const angle = job.angle ?? DEFAULT_ANGLE;
   const reqs = job.requirements?.slice(0, 3) ?? [];
   return compact([
     `${candidateName(profile)} — tailored for ${job.title} @ ${job.company}`,
@@ -136,7 +127,7 @@ export function buildResumeForJob(profile: CareerProfile, job: JobTarget): strin
 
 /** A cover letter for one specific job posting. */
 export function buildCoverLetterForJob(profile: CareerProfile, job: JobTarget): string {
-  const angle = JOB_ANGLE[job.id] ?? DEFAULT_ANGLE;
+  const angle = job.angle ?? DEFAULT_ANGLE;
   const name = profile.resume?.name ?? "Your name";
   const contact = [profile.resume?.phone, profile.resume?.email].filter(Boolean).join(" · ");
   const skills = profile.resume?.skills ?? [];

@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { useCareerProfile } from "../state/careerProfile";
+import { corpusFor } from "../lib/careerCorpus";
 import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, ExternalLink, Globe, MapPin, MessageCircle, Send, Shield, Sparkles, TrendingUp, X, XCircle, Zap } from "lucide-react";
 
 interface JobMatchTrackerProps {
   onPrepareApp?: (jobId: string) => void;
   onCoach?: (jobId: string) => void;
-  appliedJobs?: Set<string>;
+  /** Job id → ISO timestamp of when the application was sent. */
+  appliedJobs?: Record<string, string>;
 }
 
 interface TimelineEntry {
@@ -15,89 +18,17 @@ interface TimelineEntry {
 
 const TIMELINE_STAGES = ["Saved", "Applied", "Screening", "Recruiter Review", "Interview", "Offer"];
 
-const jobs = [
-  {
-    id: "maybank-da",
-    company: "Maybank",
-    companyId: "maybank",
-    role: "Data Analyst, Digital Banking",
-    position: "Data Analyst",
-    salary: "RM 7.5k-9.5k",
-    location: "Kuala Lumpur",
-    fit: 91,
-    currentStage: 4,
-    strengths: ["SQL depth", "FinTech domain", "Fraud analytics"],
-    gaps: ["Cloud credential"],
-    timeline: [
-      { stage: "Saved", date: "2026-06-20 14:30" },
-      { stage: "Applied", date: "2026-06-22 09:15" },
-      { stage: "Screening", date: "2026-06-25 11:00" },
-      { stage: "Recruiter Review", date: "2026-06-28 16:45" },
-      { stage: "Interview", date: "2026-07-03 10:00", active: true },
-    ] as TimelineEntry[],
-    eta: "3–5 days",
-    successChance: 82,
-    healthDelta: "84 → 91",
-    hrName: "Sarah Tan",
-    hrTitle: "Talent Acquisition, Digital Banking",
-    hrReplyRate: 96,
-    hrAvgReply: "~45 min",
-    hrResponseHours: "9 AM – 6 PM",
-    hrLastSeen: "2 min ago",
-  },
-  {
-    id: "grab-ae",
-    company: "Grab",
-    companyId: "grab",
-    role: "Analytics Engineer",
-    position: "Analytics Engineer",
-    salary: "RM 9k-12k",
-    location: "Petaling Jaya / Hybrid",
-    fit: 86,
-    currentStage: 2,
-    strengths: ["dbt", "Python", "Experimentation"],
-    gaps: ["Spark production evidence"],
-    timeline: [
-      { stage: "Saved", date: "2026-06-18 09:00" },
-      { stage: "Applied", date: "2026-06-21 11:20" },
-      { stage: "Screening", date: "2026-06-27 14:00", active: true },
-    ] as TimelineEntry[],
-    eta: "5–7 days",
-    successChance: 71,
-    healthDelta: "84 → 88",
-    hrName: "Daniel Lim",
-    hrTitle: "People Operations, Data Team",
-    hrReplyRate: 82,
-    hrAvgReply: "~2.5 hrs",
-    hrResponseHours: "10 AM – 7 PM",
-    hrLastSeen: "18 min ago",
-  },
-  {
-    id: "petronas-pm",
-    company: "Petronas Digital",
-    companyId: "petronas",
-    role: "AI Product Analyst",
-    position: "AI Product Analyst",
-    salary: "RM 8k-11k",
-    location: "Kuala Lumpur",
-    fit: 78,
-    currentStage: 0,
-    strengths: ["Stakeholder comms", "AI project signal"],
-    gaps: ["Product discovery", "Cloud"],
-    timeline: [
-      { stage: "Saved", date: "2026-06-30 10:45", active: true },
-    ] as TimelineEntry[],
-    eta: "7–10 days",
-    successChance: 65,
-    healthDelta: "84 → 86",
-    hrName: "Aisha Rahman",
-    hrTitle: "HR Business Partner, Digital",
-    hrReplyRate: 68,
-    hrAvgReply: "~6 hrs",
-    hrResponseHours: "9 AM – 5 PM",
-    hrLastSeen: "3 hrs ago",
-  },
-];
+/* ────────────────────────────────────────────────────────────────
+   Postings come from the corpus; pipeline state comes from what the
+   user has actually done.
+
+   This page used to ship three fixed data-analytics postings with an
+   invented application history attached — a Maybank interview booked
+   for July 3rd, a Grab screening in progress, and a chat thread that
+   opened "Hi Jordan". A person who scanned thirty seconds ago has
+   applied to nothing, so a job sits at Saved until they apply and the
+   timestamps are their own.
+   ──────────────────────────────────────────────────────────────── */
 
 interface ChatMessage {
   from: "me" | "hr";
@@ -105,65 +36,78 @@ interface ChatMessage {
   time: string;
 }
 
-const HR_CHAT_HISTORY: Record<string, ChatMessage[]> = {
-  "maybank-da": [
-    { from: "hr", text: "Hi Jordan! Thanks for applying. We've reviewed your profile and would like to schedule a technical interview.", time: "Jun 28, 3:15 PM" },
-    { from: "me", text: "Thank you, Sarah! I'm available anytime next week. Looking forward to it.", time: "Jun 28, 4:02 PM" },
-    { from: "hr", text: "Great! Your interview is confirmed for July 3rd at 10:00 AM. It will be a 45-min SQL case + behavioral round.", time: "Jun 30, 9:30 AM" },
-    { from: "me", text: "Confirmed, thank you! Should I prepare anything specific?", time: "Jun 30, 10:15 AM" },
-    { from: "hr", text: "Brush up on fraud detection patterns and dashboard storytelling. Good luck! 😊", time: "Jun 30, 11:00 AM" },
-  ],
-  "grab-ae": [
-    { from: "hr", text: "Hi Jordan, we received your application for Analytics Engineer. Your dbt experience looks strong!", time: "Jun 22, 10:00 AM" },
-    { from: "me", text: "Thanks Daniel! Happy to share my dbt project portfolio if that helps.", time: "Jun 22, 11:30 AM" },
-    { from: "hr", text: "That would be great. We're currently in screening — expect to hear back within 5-7 business days.", time: "Jun 23, 9:00 AM" },
-  ],
-  "petronas-pm": [],
+const fmtBand = (low: number, high: number) =>
+  `RM ${(low / 1000).toFixed(1)}k-${(high / 1000).toFixed(1)}k/mo`;
+
+const fmtStamp = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.toISOString().slice(0, 10)} ${d.toTimeString().slice(0, 5)}`;
 };
 
-const externalJobs = [
-  {
-    title: "Business Intelligence Analyst",
-    company: "AirAsia MOVE",
-    location: "Sepang, Selangor",
-    salary: "RM 7k-9k/mo",
-    fit: 84,
-  },
-  {
-    title: "Data Analyst, E-Commerce",
-    company: "Shopee Malaysia",
-    location: "Kuala Lumpur",
-    salary: "RM 6.5k-8.5k/mo",
-    fit: 81,
-  },
-  {
-    title: "Product Data Analyst",
-    company: "Touch 'n Go Digital",
-    location: "Bangsar South, KL",
-    salary: "RM 7.5k-9.5k/mo",
-    fit: 77,
-  },
-  {
-    title: "Senior Data Analyst",
-    company: "CIMB Bank",
-    location: "Kuala Lumpur / Hybrid",
-    salary: "RM 8k-10k/mo",
-    fit: 74,
-  },
-];
-
-const stageCounts = [
-  { label: "Saved", count: 4 },
-  { label: "Applied", count: 3 },
-  { label: "Screening", count: 2 },
-  { label: "Interview", count: 1 },
-  { label: "Offer", count: 0 },
-];
+/** How long this employer typically takes to come back, from their reply rate. */
+const etaFor = (replyRate: number) =>
+  replyRate >= 90 ? "3–5 days" : replyRate >= 75 ? "5–7 days" : "7–10 days";
 
 export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatchTrackerProps) {
+  const { profile } = useCareerProfile();
+  const corpus = corpusFor(profile);
+  const applied = appliedJobs ?? {};
+
   const [chatJobId, setChatJobId] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({ ...HR_CHAT_HISTORY });
+  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({});
+
+  /* Every posting the corpus ranked, plus whatever the user has done
+     with it. Nothing here is authored ahead of the user's own actions. */
+  const jobs = corpus.rankedJobs.map(job => {
+    const appliedAt = applied[job.id];
+    const timeline: TimelineEntry[] = appliedAt
+      ? [{ stage: "Applied", date: fmtStamp(appliedAt), active: true }]
+      : [];
+    return {
+      ...job,
+      role: job.title,
+      salary: fmtBand(job.salaryLow, job.salaryHigh),
+      currentStage: appliedAt ? 1 : 0,
+      timeline,
+      eta: appliedAt ? etaFor(job.hr.replyRate) : "Not applied yet",
+      healthDelta: `${job.fit}% → ${Math.min(99, job.fit + Math.round(job.gaps.length * 3))}%`,
+      hrName: job.hr.name,
+      hrTitle: job.hr.title,
+      hrReplyRate: job.hr.replyRate,
+      hrAvgReply: job.hr.avgReply,
+      hrResponseHours: job.hr.responseHours,
+      hrLastSeen: job.hr.lastSeen,
+    };
+  });
+
+  const appliedCount = jobs.filter(j => applied[j.id]).length;
+  const stageCounts = [
+    { label: "Matched", count: jobs.length },
+    { label: "Applied", count: appliedCount },
+    { label: "Screening", count: 0 },
+    { label: "Interview", count: 0 },
+    { label: "Offer", count: 0 },
+  ];
+
+  /* Recommendations from outside the Talentbank network — the next
+     tier down on fit, shown as a separate list. */
+  const externalJobs = corpus.rankedJobs.slice(1).map(j => ({
+    title: j.title,
+    company: j.company,
+    location: j.location,
+    salary: fmtBand(j.salaryLow, j.salaryHigh),
+    fit: Math.max(40, j.fit - 6),
+  }));
+
+  const topJob = jobs[0];
+  const brief = topJob
+    ? [
+        `Rewrite your resume headline around ${topJob.position}`,
+        `Prepare two STAR stories from your ${profile.currentRole || "current"} work`,
+        `Have an honest answer ready for ${topJob.gaps[0] ?? "your weakest requirement"}`,
+      ]
+    : [];
 
   const chatJob = chatJobId ? jobs.find(j => j.id === chatJobId) : null;
   const messages = chatJobId ? (chatMessages[chatJobId] || []) : [];
@@ -207,7 +151,7 @@ export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatch
         <div className="grid lg:grid-cols-[1fr_330px] gap-6">
           <section className="space-y-4">
             {jobs.map(job => {
-              const isApplied = appliedJobs?.has(job.id) || job.currentStage >= 1;
+              const isApplied = !!applied[job.id];
 
               return (
                 <div key={job.id} className="bg-white border border-border rounded-xl shadow-sm p-5">
@@ -379,10 +323,12 @@ export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatch
             <Sparkles size={18} className="text-blue-300 mb-3" />
             <h2 className="font-bold">AI application brief</h2>
             <p className="text-sm text-slate-300 leading-relaxed mt-2">
-              Apply to Maybank first. Your FinTech evidence is stronger than your cloud gap, but rehearse a SQL product case before the interview.
+              {topJob
+                ? <>Apply to {topJob.company} first — it is your strongest fit at {topJob.fit}%. The gap there is {topJob.gaps[0]?.toLowerCase() ?? "narrow"}, which is closable before they reply.</>
+                : <>Finish your scan to see which of these roles you are closest to.</>}
             </p>
             <div className="mt-5 space-y-3">
-              {["Rewrite resume headline around fraud analytics", "Prepare 2 STAR stories from Stripe", "Explain cloud learning plan honestly"].map(item => (
+              {brief.map(item => (
                 <div key={item} className="flex items-start gap-2 text-sm text-slate-200">
                   <CheckCircle size={14} className="text-emerald-300 mt-0.5 flex-shrink-0" />
                   <span>{item}</span>

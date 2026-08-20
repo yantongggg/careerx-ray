@@ -23,12 +23,15 @@ export interface HiringSignal {
   live: boolean;
 }
 
+/* Two market-wide signals so the graph is not empty before the first
+   employer decision lands. They name no role family on purpose — they
+   are aggregate rejection reasons, not this user's own history. */
 const SEED_SIGNALS: HiringSignal[] = [
   {
     id: "seed-1",
     skill: "Cloud deployment (AWS/GCP)",
     reason: "No cloud certification",
-    role: "Data Analyst, Digital Banking",
+    role: "An entry-level technical role",
     employer: "A digital banking employer",
     stage: "Interview",
     time: "2 days ago",
@@ -38,7 +41,7 @@ const SEED_SIGNALS: HiringSignal[] = [
     id: "seed-2",
     skill: "Stakeholder communication",
     reason: "Needs stakeholder comms practice",
-    role: "AI Product Analyst",
+    role: "A client-facing role",
     employer: "A fintech employer",
     stage: "Screening",
     time: "5 days ago",

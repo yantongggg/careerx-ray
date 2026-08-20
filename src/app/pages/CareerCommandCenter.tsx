@@ -5,9 +5,14 @@ import {
 import { SignalBanner, explainRoleGap } from "../state/intelligence";
 import { JourneyTracker } from "../state/stages";
 import { useCareerProfile } from "../state/careerProfile";
+import { corpusFor, type Corpus } from "../lib/careerCorpus";
+import type { CareerProfile } from "../lib/profileTypes";
+import type { Risk } from "../lib/careerRisk";
 
 interface CareerCommandCenterProps {
   onNavigate: (page: string) => void;
+  /** Job id → when the application was sent. Empty until they apply. */
+  appliedJobs?: Record<string, string>;
 }
 
 const SEVERITY_TONE = {
@@ -17,27 +22,106 @@ const SEVERITY_TONE = {
   low: "amber",
 } as const;
 
-const nextActions = [
-  { title: "Rehearse SQL case interview", impact: "Interview in 2 days", page: "coach", icon: Video },
-  { title: "Tailor resume for Maybank Data Analyst", impact: "+11% interview chance", page: "jobs", icon: FileText },
-  { title: "Close cloud skill gap", impact: "Blocks 3 target roles", page: "prescription", icon: GraduationCap },
+/* ────────────────────────────────────────────────────────────────
+   The three panels below follow the user's own state.
+
+   They used to be constants: rehearse a SQL case, tailor a résumé for
+   a Maybank analyst role, three applications at Maybank, Grab and
+   Petronas, and four skill bars led by SQL. None of it moved when the
+   person changed.
+   ──────────────────────────────────────────────────────────────── */
+
+const STAGE_TONE = [
+  "bg-slate-50 text-slate-700 border-slate-200",
+  "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "bg-blue-50 text-blue-700 border-blue-200",
+  "bg-amber-50 text-amber-700 border-amber-200",
 ];
 
-const applications = [
-  { company: "Maybank", role: "Data Analyst", stage: "Interview", fit: 91, tone: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { company: "Grab", role: "Analytics Engineer", stage: "Screening", fit: 86, tone: "bg-blue-50 text-blue-700 border-blue-200" },
-  { company: "Petronas Digital", role: "AI Product Analyst", stage: "Applied", fit: 78, tone: "bg-amber-50 text-amber-700 border-amber-200" },
-];
+/** The next three things worth doing, ordered by what is costing most. */
+function buildNextActions(profile: CareerProfile, risks: Risk[], corpus: Corpus) {
+  const top = corpus.rankedJobs[0];
+  const worstRisk = risks[0];
+  const actions: { title: string; impact: string; page: string; icon: typeof Video }[] = [];
 
-const evidenceStrength = [
-  { skill: "SQL", level: "strong" as const, note: "3 verified projects" },
-  { skill: "Data storytelling", level: "strong" as const, note: "Portfolio + interview score" },
-  { skill: "Leadership", level: "weak" as const, note: "1 unverified signal" },
-  { skill: "Cloud deployment", level: "missing" as const, note: "No evidence yet" },
-];
+  if (profile.evidence.length === 0) {
+    actions.push({
+      title: "Add your first piece of evidence",
+      impact: "Every score here rests on your word until you do",
+      page: "evidence", icon: FileText,
+    });
+  }
+  if (top) {
+    actions.push({
+      title: `Tailor your résumé for ${top.company}`,
+      impact: `Your strongest match at ${top.fit}% fit`,
+      page: "jobs", icon: FileText,
+    });
+    actions.push({
+      title: `Rehearse the ${top.position} interview`,
+      impact: `${top.gaps[0] ?? "Their hardest requirement"} is what they will probe`,
+      page: "coach", icon: Video,
+    });
+  }
+  if (worstRisk) {
+    actions.push({
+      title: worstRisk.fix,
+      impact: worstRisk.comparison.shortfall || worstRisk.metric,
+      page: "prescription", icon: GraduationCap,
+    });
+  }
+  return actions.slice(0, 3);
+}
 
-export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
+/** What the user has actually applied to — empty until they do. */
+function buildApplications(profile: CareerProfile, corpus: Corpus, applied: Record<string, string>) {
+  return corpus.rankedJobs
+    .filter(j => applied[j.id])
+    .map((j, i) => ({
+      company: j.company,
+      role: j.position,
+      stage: "Applied",
+      fit: j.fit,
+      tone: STAGE_TONE[(i + 1) % STAGE_TONE.length],
+    }));
+}
+
+/**
+ * Where the evidence is strong and where it is missing.
+ *
+ * Strength here means corroboration, not proficiency: a skill the
+ * target roles ask for and something independent backs is strong; one
+ * nobody has backed is weak; one nothing mentions at all is missing.
+ */
+function buildEvidenceStrength(profile: CareerProfile, corpus: Corpus) {
+  const evidenced = new Map<string, number>();
+  profile.evidence.forEach(e => e.skills.forEach(sk => {
+    evidenced.set(sk.toLowerCase(), (evidenced.get(sk.toLowerCase()) ?? 0) + 1);
+  }));
+  const onResume = new Set((profile.resume?.skills ?? []).map(sk => sk.toLowerCase()));
+
+  return corpus.targetSkills.slice(0, 4).map(skill => {
+    const key = skill.toLowerCase();
+    const backing = [...evidenced.entries()].filter(([k]) => k.includes(key) || key.includes(k));
+    const count = backing.reduce((sum, [, n]) => sum + n, 0);
+    const claimed = [...onResume].some(sk => sk.includes(key) || key.includes(sk));
+
+    if (count > 0) {
+      return { skill, level: "strong" as const, note: `${count} verified item${count > 1 ? "s" : ""}` };
+    }
+    if (claimed) {
+      return { skill, level: "weak" as const, note: "On your résumé, nothing backing it" };
+    }
+    return { skill, level: "missing" as const, note: "No evidence yet" };
+  });
+}
+
+export function CareerCommandCenter({ onNavigate, appliedJobs = {} }: CareerCommandCenterProps) {
   const { profile, risks, targetGaps, scorecard } = useCareerProfile();
+  const corpus = corpusFor(profile);
+  const nextActions = buildNextActions(profile, risks, corpus);
+  const applications = buildApplications(profile, corpus, appliedJobs);
+  const evidenceStrength = buildEvidenceStrength(profile, corpus);
   const firstName = profile.resume?.name?.split(" ")[0];
   const topGap = targetGaps[0]?.skill ?? risks[0]?.category.toLowerCase() ?? "your evidence record";
   const currentRole = profile.currentRole || "your current role";
@@ -265,6 +349,19 @@ export function CareerCommandCenter({ onNavigate }: CareerCommandCenterProps) {
               <CalendarClock size={17} className="text-muted-foreground" />
             </div>
             <div className="space-y-3">
+              {applications.length === 0 && (
+                <div className="border border-dashed border-border rounded-xl p-5 text-center">
+                  <p className="text-sm text-foreground font-medium">No applications yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {corpus.rankedJobs[0]
+                      ? `Your strongest match right now is ${corpus.rankedJobs[0].position} at ${corpus.rankedJobs[0].company}.`
+                      : "Finish your scan to see matched roles."}
+                  </p>
+                  <button onClick={() => onNavigate("jobs")} className="mt-3 text-xs font-semibold text-primary inline-flex items-center gap-1">
+                    See matched roles <ArrowRight size={12} />
+                  </button>
+                </div>
+              )}
               {applications.map(app => (
                 <div key={`${app.company}-${app.role}`} className="border border-border rounded-xl p-4">
                   <div className="flex items-start justify-between gap-3">

@@ -6,6 +6,9 @@ import {
   Sparkles, Shield, ChevronRight, Plus, Check, X,
   BookOpen, Globe, Heart, RefreshCw, ExternalLink, Circle
 } from "lucide-react";
+import { useCareerProfile } from "../state/careerProfile";
+import { corpusFor } from "../lib/careerCorpus";
+import type { CareerProfile, EvidenceItem, TrustLevel } from "../lib/profileTypes";
 
 type Tab = "timeline" | "detected" | "impact";
 
@@ -41,85 +44,133 @@ const typeColor: Record<Entry["type"], { text: string; bg: string; border: strin
   opensource:  { text: "text-gray-700",    bg: "bg-gray-50",    border: "border-gray-200"    },
 };
 
-const entries: Entry[] = [
-  {
-    id: "e1", type: "competition", emoji: "🏆",
-    title: "SuperAI NEXT Finalist", org: "SuperAI Conference", date: "Jun 2026",
-    skills: ["Multi-agent AI", "LLMs", "Rapid Prototyping"],
-    evidenceSource: "SuperAI Event Website", trustScore: 97, verified: "verified",
-    aiImpact: "Elite competitive signal. Top 5/2,400 applicants. Directly supports ML Engineer transition credibility and raises Promotion Readiness by +4pts.",
-  },
-  {
-    id: "e2", type: "cert", emoji: "☁️",
-    title: "AWS Certified Solutions Architect", org: "Amazon Web Services", date: "Apr 2026",
-    skills: ["AWS", "Cloud Architecture", "IAM", "EC2"],
-    evidenceSource: "AWS Certification Portal", trustScore: 99, verified: "verified",
-    aiImpact: "Closes the #1 career gap identified in your X-Ray scan. Unlocks 73% of target roles. Direct +8pt Career Health Score contribution.",
-  },
-  {
-    id: "e3", type: "project", emoji: "💻",
-    title: "AI Maritime Verification Platform", org: "Open Source", date: "Mar–May 2026",
-    skills: ["LangGraph", "GPT-4o", "FastAPI", "Python"],
-    evidenceSource: "GitHub", trustScore: 96, verified: "verified",
-    aiImpact: "Strongest portfolio signal for ML pivot. Demonstrates end-to-end LLM system design. Reduces AI Risk Score by –12pts by proving non-automatable skill depth.",
-  },
-  {
-    id: "e4", type: "work", emoji: "💼",
-    title: "Senior Data Analyst", org: "Stripe", date: "Mar 2023–Present",
-    skills: ["Python", "SQL", "dbt", "Looker", "Statistics"],
-    evidenceSource: "LinkedIn", trustScore: 95, verified: "verified",
-    aiImpact: "Core career anchor. Stripe brand and FinTech depth are strong differentiators. However, role scope is team-level — a cross-functional project is needed for L5 promotion signal.",
-  },
-  {
-    id: "e5", type: "hackathon", emoji: "⚡",
-    title: "Stripe ML Hackathon — 1st Place", org: "Stripe Internal", date: "Nov 2023",
-    skills: ["Clustering", "Anomaly Detection", "Kafka", "Python"],
-    evidenceSource: "Stripe Internal", trustScore: 88, verified: "verified",
-    aiImpact: "Combined with SuperAI placement, builds a competition pedigree that differentiates from pure analysts. Raises innovation signal by +15pts.",
-  },
-  {
-    id: "e6", type: "leadership", emoji: "👥",
-    title: "Analytics Guild Lead", org: "Stripe", date: "Jan 2024–Present",
-    skills: ["Leadership", "Mentoring", "Community Building"],
-    evidenceSource: "LinkedIn / Stripe Internal", trustScore: 85, verified: "pending",
-    aiImpact: "Directly addresses the 'Limited Leadership' blind spot. Adds cross-functional scope needed for L5 promotion consideration. Raises Promotion Readiness by +9pts.",
-  },
-  {
-    id: "e7", type: "opensource", emoji: "🔧",
-    title: "dbt Metrics Dashboard Package", org: "GitHub (89★)", date: "Jul 2023",
-    skills: ["dbt", "SQL", "Jinja", "GitHub Actions"],
-    evidenceSource: "GitHub", trustScore: 98, verified: "verified",
-    aiImpact: "Rare signal — most analysts don't ship OSS. Reduces AI Risk Score, demonstrates software engineering instincts beyond analytics execution.",
-  },
-  {
-    id: "e8", type: "publication", emoji: "📝",
-    title: "Fraud Pattern Detection with GBMs", org: "Towards Data Science", date: "Feb 2024",
-    skills: ["Technical Writing", "XGBoost", "Fraud Detection"],
-    evidenceSource: "Medium / TDS", trustScore: 96, verified: "verified",
-    aiImpact: "Builds thought leadership and discoverability. Partially addresses network decay blind spot by generating inbound connections from relevant professionals.",
-  },
-];
+/* ────────────────────────────────────────────────────────────────
+   The record shows what the user actually added.
 
-const detected = [
-  {
-    id: "d1", title: "SuperAI NEXT — Finalist Recognition",
-    source: "SuperAI Website", sourceIcon: Globe, confidence: 97,
-    desc: "Your name detected in the official SuperAI NEXT 2026 finalist list. Cross-referenced with LinkedIn profile.",
-    status: "pending" as const,
-  },
-  {
-    id: "d2", title: "New GitHub Repo: ai-maritime-verify",
-    source: "GitHub", sourceIcon: Github, confidence: 99,
-    desc: "New public repo with 24 commits, FastAPI + LangGraph stack. AI classified as production-grade portfolio project.",
-    status: "accepted" as const,
-  },
-  {
-    id: "d3", title: "AWS Certification Added",
-    source: "LinkedIn", sourceIcon: Linkedin, confidence: 94,
-    desc: "New certification detected on your LinkedIn. Cross-verified with AWS portal metadata.",
-    status: "accepted" as const,
-  },
-];
+   Eight entries used to be authored here — a SuperAI finalist placing,
+   an AWS certification, a Stripe hackathon win, an 89-star dbt package
+   — and every account saw all eight as its own. The whole point of this
+   page is that a claim is only worth what backs it, so inventing the
+   backing was the one thing it could not do.
+
+   The "detected" tab now proposes what would be worth adding for this
+   person's role family, clearly framed as suggestions. It does not
+   claim to have found things that were never there.
+   ──────────────────────────────────────────────────────────────── */
+
+const KIND_TO_TYPE: Record<string, Entry["type"]> = {
+  certificate: "cert",
+  project: "project",
+  portfolio: "project",
+  link: "project",
+  reference: "leadership",
+  record: "work",
+  resume: "work",
+  other: "work",
+};
+
+const TYPE_EMOJI: Record<Entry["type"], string> = {
+  work: "💼", project: "💻", cert: "🎓", hackathon: "⚡", competition: "🏆",
+  leadership: "👥", volunteer: "🤝", publication: "📝", opensource: "🔧",
+};
+
+const TRUST_TO_STATUS: Record<TrustLevel, Entry["verified"]> = {
+  verified: "verified",
+  corroborated: "pending",
+  "self-declared": "unverified",
+};
+
+const TRUST_SCORE: Record<TrustLevel, number> = {
+  verified: 96,
+  corroborated: 74,
+  "self-declared": 45,
+};
+
+/** Turn what the user actually gave us into the timeline's shape. */
+function entriesFrom(profile: CareerProfile): Entry[] {
+  const items: Entry[] = profile.evidence.map(e => {
+    const type = KIND_TO_TYPE[e.kind] ?? "work";
+    return {
+      id: e.id,
+      type,
+      emoji: TYPE_EMOJI[type],
+      title: e.label,
+      org: e.source || "Self-declared",
+      date: e.addedAt,
+      skills: e.skills,
+      evidenceSource: e.source || "You",
+      trustScore: TRUST_SCORE[e.trust],
+      verified: TRUST_TO_STATUS[e.trust],
+      aiImpact: impactOf(e),
+    };
+  });
+
+  /* The uploaded resume is evidence too — it is where most of the
+     profile came from, and hiding it made the record look emptier
+     than it is. */
+  if (profile.resume) {
+    items.unshift({
+      id: "resume",
+      type: "work",
+      emoji: "📄",
+      title: profile.resume.fileName,
+      org: profile.resume.employers[0] ?? profile.currentRole ?? "Your history",
+      date: "Uploaded during your scan",
+      skills: profile.resume.skills.slice(0, 6),
+      evidenceSource: profile.resume.method === "ai" ? "AI extraction" : "On-device parsing",
+      trustScore: TRUST_SCORE["self-declared"],
+      verified: "unverified",
+      aiImpact: `Read ${profile.resume.skills.length} skills and ${profile.resume.employers.length} employer${profile.resume.employers.length === 1 ? "" : "s"} from this file. A resume is your own account of your history — it raises detail, not trust. Verify the claims that matter with an issuer.`,
+    });
+  }
+
+  return items;
+}
+
+function impactOf(e: EvidenceItem): string {
+  const skills = e.skills.length ? ` It backs ${e.skills.slice(0, 3).join(", ")}.` : "";
+  switch (e.trust) {
+    case "verified":
+      return `Confirmed against the issuer's own record, so this counts fully toward your readiness score.${skills}`;
+    case "corroborated":
+      return `Matches a source you connected but is not issuer-confirmed, so it carries partial weight.${skills} Verify it with the issuer to close the gap.`;
+    default:
+      return `Currently your word alone. It appears on your profile but adds little to your score until something independent supports it.${skills}`;
+  }
+}
+
+/** What this person's role family should be adding next. */
+function suggestionsFrom(profile: CareerProfile) {
+  return corpusFor(profile).evidenceSamples.map((sample, i) => ({
+    id: `s${i + 1}`,
+    title: sample.title,
+    source: sample.issuer,
+    sourceIcon: sample.kind === "certificate" ? Award : sample.kind === "project" ? Github : Globe,
+    kind: sample.kind === "experience" ? ("record" as const) : sample.kind,
+    desc: sample.detail,
+  }));
+}
+
+/* A freshly-scanned account has an empty record, and that is the honest
+   state to show — not eight achievements belonging to someone else. */
+function NoEvidenceYet() {
+  return (
+    <div className="mx-auto max-w-md py-16 text-center">
+      <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+        <Shield className="h-5 w-5 text-slate-400" />
+      </div>
+      <h3 className="text-base font-semibold text-foreground">Your record is empty</h3>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        Nothing has been added yet. Every recommendation X-Ray makes is only as
+        strong as what backs it, so this page stays empty until you add
+        something real — a certificate, a repository, a reference.
+      </p>
+      <p className="mt-4 text-xs text-muted-foreground">
+        Open the <strong className="text-foreground">Suggested</strong> tab to see what counts most for your role.
+      </p>
+    </div>
+  );
+}
 
 function VerifiedBadge({ status, score }: { status: Entry["verified"]; score: number }) {
   if (status === "verified") return (
@@ -140,11 +191,16 @@ function VerifiedBadge({ status, score }: { status: Entry["verified"]; score: nu
 }
 
 function TimelineTab() {
-  const [open, setOpen] = useState<string | null>("e1");
+  const { profile } = useCareerProfile();
+  const entries = entriesFrom(profile);
+  const [open, setOpen] = useState<string | null>(null);
+
+  if (!entries.length) return <NoEvidenceYet />;
+
   return (
     <div>
       <p className="text-sm text-muted-foreground mb-6 leading-relaxed max-w-xl">
-        Your verified career evidence powers X-Ray's blind spot detection, risk scoring, and career simulations. The richer this record, the more precise your Career Health Score.
+        Your career evidence powers X-Ray's blind spot detection, risk scoring, and career simulations. The richer this record, the more precise your Career Health Score.
       </p>
       <div className="relative">
         <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
@@ -198,25 +254,25 @@ function TimelineTab() {
 }
 
 function DetectedTab() {
-  const [statuses, setStatuses] = useState<Record<string, "pending" | "accepted" | "rejected">>(
-    Object.fromEntries(detected.map(d => [d.id, d.status]))
-  );
+  const { profile, addEvidence } = useCareerProfile();
+  const detected = suggestionsFrom(profile);
+  const [statuses, setStatuses] = useState<Record<string, "pending" | "accepted" | "rejected">>({});
 
   return (
     <div className="space-y-5">
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
         <Sparkles size={15} className="text-primary flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-semibold text-foreground">AI Detection Engine</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Scans GitHub, LinkedIn, AWS, dbt Labs, Medium every 24 hours. New achievements are surfaced for your approval before being added to your evidence record.</p>
+          <p className="text-sm font-semibold text-foreground">What would move your score most</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Ranked for {profile.targetRole || "your target role"}. Connect a source and X-Ray will watch it for new achievements, with your approval before anything is added.</p>
         </div>
-        <button onClick={() => demoToast("Scanning GitHub, LinkedIn, AWS, dbt Labs… 2 new achievements found for your review")} className="ml-auto flex-shrink-0 flex items-center gap-1.5 text-xs text-primary border border-blue-200 bg-white px-3 py-1.5 rounded-lg hover:bg-blue-50 font-medium">
+        <button onClick={() => demoToast("Connect GitHub, LinkedIn or an issuer portal to enable automatic detection")} className="ml-auto flex-shrink-0 flex items-center gap-1.5 text-xs text-primary border border-blue-200 bg-white px-3 py-1.5 rounded-lg hover:bg-blue-50 font-medium">
           <RefreshCw size={11} /> Scan
         </button>
       </div>
 
-      {detected.map(d => {
-        const status = statuses[d.id];
+      {detected.map((d, i) => {
+        const status = statuses[d.id] ?? "pending";
         return (
           <div key={d.id} className={`bg-white border rounded-xl p-5 shadow-sm ${status === "accepted" ? "border-emerald-200" : status === "rejected" ? "border-border opacity-50" : "border-amber-200"}`}>
             <div className="flex items-start gap-3">
@@ -226,8 +282,8 @@ function DetectedTab() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <p className="text-sm font-semibold text-foreground">{d.title}</p>
-                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${d.confidence >= 90 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                    {d.confidence}% confidence
+                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${i === 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                    {i === 0 ? "Highest impact" : i === 1 ? "High impact" : "Worth adding"}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-1">Source: {d.source}</p>
@@ -239,7 +295,14 @@ function DetectedTab() {
                     className="text-xs border border-border text-muted-foreground px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
                     <X size={11} /> Skip
                   </button>
-                  <button onClick={() => setStatuses(p => ({ ...p, [d.id]: "accepted" }))}
+                  <button onClick={() => {
+                      /* Added on the user's word, so it enters the record
+                         self-declared. Trust is earned by verification,
+                         not by clicking Add. */
+                      addEvidence({ kind: d.kind, label: d.title, source: d.source, trust: "self-declared", skills: [] });
+                      setStatuses(p => ({ ...p, [d.id]: "accepted" }));
+                      demoToast(`Added "${d.title}" as self-declared — verify it to raise its weight`);
+                    }}
                     className="text-xs bg-primary text-white px-2.5 py-1.5 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-1">
                     <Check size={11} /> Add
                   </button>
@@ -255,29 +318,73 @@ function DetectedTab() {
 }
 
 function ImpactTab() {
+  const { profile, scorecard } = useCareerProfile();
+  const entries = entriesFrom(profile);
+
+  const verified = entries.filter(e => e.verified === "verified").length;
+  const pending = entries.filter(e => e.verified === "pending").length;
+  const unverified = entries.length - verified - pending;
+
+  /* Evidence quality is the share of the record that something
+     independent stands behind — not a number typed into the file. */
+  const quality = entries.length
+    ? Math.round(((verified * 100 + pending * 65 + unverified * 25) / entries.length))
+    : 0;
+
+  if (!entries.length) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
+          Your evidence has no effect on your scores yet, because there is none on
+          file. Each verified item moves the four numbers below.
+        </p>
+        <div className="bg-muted border border-border rounded-xl p-5">
+          <p className="text-sm font-semibold text-foreground mb-1">Nothing to measure</p>
+          <p className="text-xs text-muted-foreground">
+            Add something on the Suggested tab and the impact appears here.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const rows: { metric: string; value: string | number; note: string }[] = [
+    {
+      metric: "Career Health Score",
+      value: scorecard.careerHealth,
+      note: `${verified} verified item${verified === 1 ? "" : "s"} counting in full`,
+    },
+    {
+      metric: "AI exposure",
+      value: `${scorecard.aiExposure.percent}%`,
+      note: "Evidence of non-automatable work is what lowers this",
+    },
+    {
+      metric: "Promotion Readiness",
+      value: scorecard.promotionReady,
+      note: "Scope and leadership evidence move this most",
+    },
+    {
+      metric: "Items on record",
+      value: entries.length,
+      note: `${verified} verified · ${pending} corroborated · ${unverified} self-declared`,
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
-        Here's how your career evidence directly influences your X-Ray scores and recommendations. Every verified entry improves accuracy.
+        How your evidence feeds the four numbers X-Ray scores you on. Verified
+        entries count in full; self-declared ones barely count at all.
       </p>
       <div className="grid gap-3">
-        {[
-          { metric: "Career Health Score",  before: 78, after: 84, delta: "+6 pts",  source: "AWS Cert + OSS Project + Guild Lead",       positive: true  },
-          { metric: "AI Risk Score",        before: 42, after: 30, delta: "–12%",    source: "Maritime AI Project + OSS Package",          positive: true  },
-          { metric: "Promotion Readiness",  before: 65, after: 74, delta: "+9%",     source: "Guild Lead + SuperAI Finalist recognition", positive: true  },
-          { metric: "Blind Spots Detected", before: 5,  after: 3,  delta: "–2 gaps", source: "AWS Cert closes cloud gap",                 positive: true  },
-        ].map(m => (
+        {rows.map(m => (
           <div key={m.metric} className="bg-white border border-border rounded-xl p-4 flex items-center gap-5">
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">{m.metric}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Driven by: {m.source}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{m.note}</p>
             </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <span className="text-sm text-muted-foreground">{m.before}</span>
-              <span className="text-xs text-muted-foreground">→</span>
-              <span className="text-sm font-bold text-foreground">{m.after}</span>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">{m.delta}</span>
-            </div>
+            <span className="text-lg font-bold text-foreground tabular-nums flex-shrink-0">{m.value}</span>
           </div>
         ))}
       </div>
@@ -285,15 +392,19 @@ function ImpactTab() {
       <div className="bg-muted border border-border rounded-xl p-5 mt-2">
         <div className="flex items-start gap-3">
           <Shield size={16} className="text-primary mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-foreground mb-1">Overall Evidence Quality</p>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground mb-1">Overall evidence quality</p>
             <div className="flex items-center gap-3 mb-2">
               <div className="flex-1 h-2 bg-border rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full" style={{ width: "88%" }} />
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${quality}%` }} />
               </div>
-              <span className="text-sm font-bold text-primary">88%</span>
+              <span className="text-sm font-bold text-primary tabular-nums">{quality}%</span>
             </div>
-            <p className="text-xs text-muted-foreground">8 of 8 entries have evidence. 6 verified, 2 pending. Add DataKind volunteering verification to reach 95%+.</p>
+            <p className="text-xs text-muted-foreground">
+              {unverified > 0
+                ? `${unverified} of ${entries.length} entries rest on your word alone. Verifying ${unverified === 1 ? "it" : "them"} with the issuer is the fastest way to raise this.`
+                : `All ${entries.length} entries have something independent behind them.`}
+            </p>
           </div>
         </div>
       </div>
@@ -303,7 +414,7 @@ function ImpactTab() {
 
 const tabs: { id: Tab; label: string; icon: typeof Clock }[] = [
   { id: "timeline", label: "Career Timeline",    icon: Clock        },
-  { id: "detected", label: "AI Detected",        icon: Sparkles     },
+  { id: "detected", label: "Suggested",        icon: Sparkles     },
   { id: "impact",   label: "X-Ray Impact",       icon: Shield       },
 ];
 

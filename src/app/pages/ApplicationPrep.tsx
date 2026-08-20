@@ -2,177 +2,138 @@ import { useState } from "react";
 import { ArrowRight, Briefcase, Building2, CheckCircle, Clock, FileText, GraduationCap, Link2, MapPin, PenLine, Send, Shield, Sparkles, Upload, User } from "lucide-react";
 import { PositionSkillGraph } from "./PositionSkillGraph";
 import { demoToast } from "../state/toast";
+import { useCareerProfile } from "../state/careerProfile";
+import { angleFor, fitFor, jobById, successChanceFor } from "../lib/careerCorpus";
+import { buildCoverLetterForJob, buildResumeForJob } from "../lib/resumeGen";
+import type { CareerProfile } from "../lib/profileTypes";
 
-export interface JobData {
-  id: string;
-  company: string;
-  companyId: string;
-  title: string;
-  position: string;
+/* ────────────────────────────────────────────────────────────────
+   Everything on this page comes from the user's own scan.
+
+   It used to hold CANDIDATE_DATA — Jordan Kim, University of Malaya,
+   a Maybank internship, ten skills led by SQL and Tableau — and render
+   that as "your profile" no matter who was signed in. The postings and
+   the resume drafts were fixed to the same three data-analytics jobs.
+   ──────────────────────────────────────────────────────────────── */
+
+/** What the profile can tell us about the person, and what it cannot. */
+interface CandidateView {
+  name: string;
+  email: string;
+  phone: string;
   location: string;
-  type: string;
-  salary: string;
-  description: string;
-  requirements: string[];
-  fit: number;
-  successChance: number;
-  companyColors: string[];
-  companyGlow: string;
+  summary: string;
+  resumeFile: string | null;
+  resumeNote: string;
+  education: string[];
+  employers: string[];
+  skills: string[];
+  certifications: string[];
+  portfolio: string[];
 }
 
-export const ALL_JOBS: JobData[] = [
-  {
-    id: "maybank-da",
-    company: "Maybank",
-    companyId: "maybank",
-    title: "Data Analyst, Digital Banking",
-    position: "Data Analyst",
-    location: "Kuala Lumpur",
-    type: "Full-time",
-    salary: "RM 7,500 – 9,500",
-    description: "Join Maybank's Digital Banking division to drive data-driven insights across our consumer products. You'll analyze customer behavior, build automated reporting dashboards, and collaborate closely with product and engineering teams to improve digital banking engagement across Southeast Asia.",
-    requirements: ["3+ years in data analytics or BI", "Expert SQL and Python skills", "Experience with Tableau or Power BI", "Strong communication & storytelling", "Banking/fintech domain knowledge preferred"],
-    fit: 91,
-    successChance: 82,
-    companyColors: ["#FFF8E1","#FFB300","#FF8F00","#E65100"],
-    companyGlow: "rgba(255,179,0,0.5)",
-  },
-  {
-    id: "grab-ae",
-    company: "Grab",
-    companyId: "grab",
-    title: "Analytics Engineer",
-    position: "Analytics Engineer",
-    location: "Petaling Jaya / Hybrid",
-    type: "Full-time",
-    salary: "RM 9,000 – 12,000",
-    description: "Grab is looking for an Analytics Engineer to build and maintain data pipelines powering real-time decision-making for our ride-hailing and delivery platforms. You'll work with dbt, BigQuery, and modern data stack tools to deliver reliable, tested data models at scale.",
-    requirements: ["Strong SQL and dbt experience", "Python scripting proficiency", "BigQuery / cloud data warehouse experience", "CI/CD and version control (Git)", "Understanding of data modeling best practices"],
-    fit: 86,
-    successChance: 71,
-    companyColors: ["#E8F5E9","#66BB6A","#2E7D32","#1B5E20"],
-    companyGlow: "rgba(102,187,106,0.5)",
-  },
-  {
-    id: "petronas-pm",
-    company: "Petronas Digital",
-    companyId: "petronas",
-    title: "AI Product Analyst",
-    position: "AI Product Analyst",
-    location: "Kuala Lumpur",
-    type: "Full-time",
-    salary: "RM 8,000 – 11,000",
-    description: "Petronas Digital seeks an AI Product Analyst to bridge technical AI capabilities with business stakeholders. You'll define product metrics, analyze model performance, and translate complex data patterns into actionable product recommendations for our energy digitalization initiatives.",
-    requirements: ["Python and SQL proficiency", "Experience with ML model evaluation", "Strong storytelling & stakeholder communication", "Product analytics or PM experience", "Energy/industrial domain knowledge a plus"],
-    fit: 78,
-    successChance: 65,
-    companyColors: ["#E3F2FD","#42A5F5","#1565C0","#0D47A1"],
-    companyGlow: "rgba(66,165,245,0.5)",
-  },
-];
+const UNKNOWN = "Not on file";
 
-const CANDIDATE_DATA = {
-  name: "Jordan Kim",
-  email: "jordan.kim@email.com",
-  phone: "+60 12-345 6789",
-  location: "Kuala Lumpur, Malaysia",
-  summary: "Data-driven analyst with 3+ years of experience in digital banking and e-commerce analytics. Skilled in SQL, Python, Tableau, and dbt. Passionate about turning complex data into clear business narratives.",
-  education: [
-    { school: "University of Malaya", degree: "BSc Computer Science (Data Analytics)", year: "2020-2024", gpa: "3.72" },
-  ],
-  experience: [
-    { company: "Maybank", role: "Data Analyst Intern", period: "Jun 2023 – Dec 2023", desc: "Built customer segmentation dashboards, automated weekly KPI reports using Python & Tableau." },
-    { company: "Grab", role: "Analytics Intern", period: "Jan 2023 – May 2023", desc: "Supported analytics engineering team with dbt model development and data quality monitoring." },
-  ],
-  skills: ["SQL", "Python", "Tableau", "Power BI", "dbt", "BigQuery", "Excel", "Storytelling", "Teamwork", "Leadership"],
-  certifications: ["Google Data Analytics Professional Certificate", "dbt Fundamentals"],
-  portfolio: ["github.com/jordankim", "linkedin.com/in/jordankim"],
-  resumeFile: "Jordan_Kim_Resume_2024.pdf",
-};
+function candidateFrom(profile: CareerProfile): CandidateView {
+  const r = profile.resume;
+  const certs = [
+    ...(r?.certifications ?? []),
+    ...profile.evidence.filter(e => e.kind === "certificate").map(e => e.label),
+  ];
+  const links = profile.evidence
+    .filter(e => e.kind === "portfolio" || e.kind === "link" || e.kind === "project")
+    .map(e => e.source || e.label);
 
-const JOB_ANGLE: Record<string, { focus: string; proof: string; hook: string; body: string }> = {
-  "maybank-da": {
-    focus: "fraud analytics, customer segmentation, and digital banking KPIs",
-    proof: "At Maybank (internship), automated weekly KPI reporting in Python + Tableau and shipped segmentation dashboards used by the digital banking team.",
-    hook: "Having interned with Maybank's data team, I've seen first-hand how digital banking decisions ride on trustworthy dashboards — and I want to build them at full scale.",
-    body: "My SQL depth and fintech domain exposure map directly to this role: I've built automated KPI pipelines, segmented customer behavior across digital channels, and told data stories that product and engineering teams actually acted on. I'm also closing my cloud gap with a structured GCP learning plan.",
-  },
-  "grab-ae": {
-    focus: "dbt model development, pipeline testing, and analytics engineering at scale",
-    proof: "At Grab (internship), contributed production dbt models and built data-quality monitoring that cut silent pipeline failures.",
-    hook: "My analytics internship at Grab showed me how much real-time marketplace decisions depend on tested, reliable data models — exactly what this Analytics Engineer role owns.",
-    body: "I bring hands-on dbt and Python experience, Git-based workflows, and BigQuery exposure. I've written tested data models, monitored data quality in production, and collaborated with engineers on CI for analytics code — the modern-data-stack fundamentals this role requires.",
-  },
-  "petronas-pm": {
-    focus: "ML model evaluation and translating AI metrics for business stakeholders",
-    proof: "Bridged analytics and product teams across two internships — defined metrics, evaluated model outputs, and presented recommendations to non-technical stakeholders.",
-    hook: "Petronas Digital's push to digitalize energy operations with AI is exactly the kind of high-impact, stakeholder-heavy analytics work I want to do.",
-    body: "I pair Python/SQL proficiency with strong storytelling: I've defined product metrics, evaluated model performance, and turned complex data patterns into recommendations leadership could act on. My stakeholder communication is my sharpest edge — and this role lives at that intersection.",
-  },
-};
+  const years = r?.yearsExperience;
+  const from = r?.currentTitle || profile.currentRole;
+  const summary = [
+    from ? `${from}${years ? ` with ${years}+ years of experience` : ""}` : "Early in your career",
+    profile.targetRole ? `moving toward ${profile.targetRole}` : null,
+    (r?.skills ?? []).length ? `Strongest in ${(r?.skills ?? []).slice(0, 4).join(", ")}.` : null,
+  ].filter(Boolean).join(", ").replace(/,([^,]*)$/, ".$1");
 
-const DEFAULT_ANGLE = {
-  focus: "SQL, Python, and dashboard storytelling",
-  proof: "Delivered analytics projects across banking and e-commerce internships in Malaysia.",
-  hook: "This role aligns closely with my analytics background and career direction.",
-  body: "I bring SQL, Python, Tableau, and dbt experience, plus a track record of turning complex data into clear business narratives for stakeholders.",
-};
-
-function buildResumeDraft(job: JobData): string {
-  const angle = JOB_ANGLE[job.id] ?? DEFAULT_ANGLE;
-  return [
-    `JORDAN KIM — tailored for ${job.title} @ ${job.company}`,
-    ``,
-    `• Data analyst (3+ yrs across banking & e-commerce) focused on ${angle.focus}.`,
-    `• Direct match to ${job.company}'s requirements: ${job.requirements.slice(0, 3).join("; ")}.`,
-    `• ${angle.proof}`,
-    `• Certified: Google Data Analytics Professional · dbt Fundamentals · BSc CS (Data Analytics), University of Malaya, GPA 3.72.`,
-  ].join("\n");
+  return {
+    name: r?.name || UNKNOWN,
+    email: r?.email || UNKNOWN,
+    phone: r?.phone || UNKNOWN,
+    location: "Malaysia",
+    summary: summary || "Complete your scan to build a summary.",
+    resumeFile: r?.fileName ?? null,
+    resumeNote: r
+      ? `${(r.fileSize / 1024).toFixed(0)} KB · read ${r.method === "ai" ? "by AI extraction" : "with on-device parsing"}`
+      : "No resume uploaded — the drafts below are built from your scan answers.",
+    education: r?.education ?? [],
+    employers: r?.employers ?? [],
+    skills: r?.skills ?? [],
+    certifications: certs,
+    portfolio: links,
+  };
 }
 
-function buildCoverDraft(job: JobData): string {
-  const angle = JOB_ANGLE[job.id] ?? DEFAULT_ANGLE;
-  return [
-    `Dear ${job.company} Hiring Team,`,
-    ``,
-    `I'm writing to apply for the ${job.title} position (${job.location}). ${angle.hook}`,
-    ``,
-    `${angle.body}`,
-    ``,
-    `I'd welcome the chance to discuss how I can contribute to ${job.company}'s team. Thank you for your time and consideration.`,
-    ``,
-    `Warm regards,`,
-    `Jordan Kim · +60 12-345 6789 · jordan.kim@email.com`,
-  ].join("\n");
+/* Reached from the Apply rail rather than from a job card: there is no
+   job to tailor against yet, so say that instead of rendering nothing. */
+function NoJobPicked({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="mx-auto max-w-lg py-20 text-center">
+      <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+        <Briefcase className="h-5 w-5 text-slate-500" />
+      </div>
+      <h2 className="text-xl font-semibold text-slate-900">Pick a job first</h2>
+      <p className="mt-2 text-sm leading-relaxed text-slate-500">
+        Application Prep writes your resume and cover letter against one specific
+        posting. Choose the role you're applying for and it will tailor to that.
+      </p>
+      <button
+        onClick={onBack}
+        className="mt-6 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+      >
+        Browse matched jobs <ArrowRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
 }
 
 interface ApplicationPrepProps {
-  jobId: string;
+  jobId: string | null;
   onBack: () => void;
   onApply: (jobId: string) => void;
   onCoach: () => void;
 }
 
 export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: ApplicationPrepProps) {
+  const { profile } = useCareerProfile();
   const [submitted, setSubmitted] = useState(false);
   // Per-job edits: undefined = still on the AI draft
   const [docEdits, setDocEdits] = useState<Record<string, { resume?: string; cover?: string }>>({});
-  const job = ALL_JOBS.find(j => j.id === jobId);
+  const job = jobById(profile, jobId);
 
-  if (!job) return null;
+  if (!job) return <NoJobPicked onBack={onBack} />;
 
-  const aiResume = buildResumeDraft(job);
-  const aiCover = buildCoverDraft(job);
-  const resumeText = docEdits[jobId]?.resume ?? aiResume;
-  const coverText = docEdits[jobId]?.cover ?? aiCover;
+  // Past the guard job.id is the same string as jobId, but only job.id
+  // carries that through the type checker.
+  const key = job.id;
+
+  const candidate = candidateFrom(profile);
+  const fit = fitFor(profile, job);
+  const successChance = successChanceFor(profile, job);
+  const salaryBand = `RM ${job.salaryLow.toLocaleString()} – ${job.salaryHigh.toLocaleString()}`;
+  const target = {
+    id: job.id, title: job.title, company: job.company,
+    location: job.location, requirements: job.requirements,
+    angle: angleFor(profile, job),
+  };
+  const aiResume = buildResumeForJob(profile, target);
+  const aiCover = buildCoverLetterForJob(profile, target);
+  const resumeText = docEdits[key]?.resume ?? aiResume;
+  const coverText = docEdits[key]?.cover ?? aiCover;
   const setDoc = (field: "resume" | "cover", value: string | undefined) =>
-    setDocEdits(prev => ({ ...prev, [jobId]: { ...prev[jobId], [field]: value } }));
+    setDocEdits(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
 
   const handleApply = () => {
     // resumeText / coverText (including any candidate edits) are what get submitted
     demoToast("Application submitted with your customized resume + cover letter ✓");
     setSubmitted(true);
-    onApply(jobId);
+    onApply(key);
   };
 
   if (submitted) {
@@ -235,11 +196,11 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
               <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1"><MapPin size={12} /> {job.location}</span>
                 <span className="inline-flex items-center gap-1"><Briefcase size={12} /> {job.type}</span>
-                <span className="inline-flex items-center gap-1"><Clock size={12} /> {job.salary}/month</span>
+                <span className="inline-flex items-center gap-1"><Clock size={12} /> {salaryBand}/month</span>
               </div>
             </div>
             <div className="text-right flex-shrink-0">
-              <div className="text-3xl font-bold text-primary">{job.fit}%</div>
+              <div className="text-3xl font-bold text-primary">{fit}%</div>
               <p className="text-xs text-muted-foreground">Skill Match</p>
             </div>
           </div>
@@ -265,18 +226,20 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
             <Shield size={16} className="text-primary" />
             <div className="flex-1">
               <p className="text-xs font-semibold text-foreground">AI Success Prediction</p>
-              <p className="text-xs text-muted-foreground">Based on your profile, there's a <span className="font-bold text-primary">{job.successChance}%</span> chance of progressing to interview stage.</p>
+              <p className="text-xs text-muted-foreground">Based on your profile, there's a <span className="font-bold text-primary">{successChance}%</span> chance of progressing to interview stage.</p>
             </div>
           </div>
         </section>
 
         {/* Skill System */}
         <PositionSkillGraph
-          companyId={job.companyId}
           position={job.position}
           companyLabel={job.company}
           companyColors={job.companyColors}
           companyGlow={job.companyGlow}
+          strengths={job.strengths}
+          gaps={job.gaps}
+          candidateSkills={candidate.skills}
         />
 
         {/* Application Review — Auto-filled */}
@@ -297,12 +260,12 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                 <h3 className="text-sm font-semibold text-foreground">Personal Information</h3>
               </div>
               <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                <div><span className="text-muted-foreground">Name:</span> <span className="font-medium text-foreground">{CANDIDATE_DATA.name}</span></div>
-                <div><span className="text-muted-foreground">Email:</span> <span className="font-medium text-foreground">{CANDIDATE_DATA.email}</span></div>
-                <div><span className="text-muted-foreground">Phone:</span> <span className="font-medium text-foreground">{CANDIDATE_DATA.phone}</span></div>
-                <div><span className="text-muted-foreground">Location:</span> <span className="font-medium text-foreground">{CANDIDATE_DATA.location}</span></div>
+                <div><span className="text-muted-foreground">Name:</span> <span className="font-medium text-foreground">{candidate.name}</span></div>
+                <div><span className="text-muted-foreground">Email:</span> <span className="font-medium text-foreground">{candidate.email}</span></div>
+                <div><span className="text-muted-foreground">Phone:</span> <span className="font-medium text-foreground">{candidate.phone}</span></div>
+                <div><span className="text-muted-foreground">Location:</span> <span className="font-medium text-foreground">{candidate.location}</span></div>
               </div>
-              <p className="text-sm text-muted-foreground mt-3 italic">"{CANDIDATE_DATA.summary}"</p>
+              <p className="text-sm text-muted-foreground mt-3 italic">{candidate.summary}</p>
             </div>
 
             {/* Resume */}
@@ -312,12 +275,12 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                 <h3 className="text-sm font-semibold text-foreground">Resume / CV</h3>
               </div>
               <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-border">
-                <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
-                  <FileText size={18} className="text-red-500" />
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${candidate.resumeFile ? "bg-red-50" : "bg-slate-100"}`}>
+                  <FileText size={18} className={candidate.resumeFile ? "text-red-500" : "text-slate-400"} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{CANDIDATE_DATA.resumeFile}</p>
-                  <p className="text-xs text-muted-foreground">Uploaded 3 days ago · 2 pages</p>
+                  <p className="text-sm font-medium text-foreground">{candidate.resumeFile ?? "No resume on file"}</p>
+                  <p className="text-xs text-muted-foreground">{candidate.resumeNote}</p>
                 </div>
                 <Upload size={14} className="text-muted-foreground" />
               </div>
@@ -329,12 +292,11 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                 <GraduationCap size={14} className="text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">Education</h3>
               </div>
-              {CANDIDATE_DATA.education.map((edu, i) => (
-                <div key={i} className="text-sm">
-                  <p className="font-medium text-foreground">{edu.degree}</p>
-                  <p className="text-muted-foreground">{edu.school} · {edu.year} · GPA {edu.gpa}</p>
-                </div>
-              ))}
+              {candidate.education.length
+                ? candidate.education.map((edu, i) => (
+                    <p key={i} className="text-sm font-medium text-foreground">{edu}</p>
+                  ))
+                : <p className="text-sm text-muted-foreground">Upload a resume to pull this through automatically.</p>}
             </div>
 
             {/* Work Experience */}
@@ -344,13 +306,17 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                 <h3 className="text-sm font-semibold text-foreground">Work Experience</h3>
               </div>
               <div className="space-y-3">
-                {CANDIDATE_DATA.experience.map((exp, i) => (
-                  <div key={i} className="text-sm border-l-2 border-primary/30 pl-3">
-                    <p className="font-medium text-foreground">{exp.role}</p>
-                    <p className="text-muted-foreground">{exp.company} · {exp.period}</p>
-                    <p className="text-muted-foreground mt-0.5">{exp.desc}</p>
-                  </div>
-                ))}
+                {candidate.employers.length
+                  ? candidate.employers.map((emp, i) => (
+                      <div key={i} className="text-sm border-l-2 border-primary/30 pl-3">
+                        <p className="font-medium text-foreground">{emp}</p>
+                      </div>
+                    ))
+                  : <p className="text-sm text-muted-foreground">
+                      {profile.currentRole
+                        ? `You told us you are a ${profile.currentRole}. Upload a resume to add employers and dates.`
+                        : "Upload a resume to add your work history."}
+                    </p>}
               </div>
             </div>
 
@@ -361,9 +327,11 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                 <h3 className="text-sm font-semibold text-foreground">Skills</h3>
               </div>
               <div className="flex flex-wrap gap-2">
-                {CANDIDATE_DATA.skills.map(skill => (
-                  <span key={skill} className="text-xs bg-white border border-border px-2.5 py-1 rounded-full font-medium text-foreground">{skill}</span>
-                ))}
+                {candidate.skills.length
+                  ? candidate.skills.map(skill => (
+                      <span key={skill} className="text-xs bg-white border border-border px-2.5 py-1 rounded-full font-medium text-foreground">{skill}</span>
+                    ))
+                  : <span className="text-sm text-muted-foreground">No skills extracted yet — upload a resume or add evidence.</span>}
               </div>
             </div>
 
@@ -375,9 +343,11 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                   <h3 className="text-sm font-semibold text-foreground">Certifications</h3>
                 </div>
                 <ul className="space-y-1">
-                  {CANDIDATE_DATA.certifications.map((cert, i) => (
-                    <li key={i} className="text-xs text-muted-foreground">• {cert}</li>
-                  ))}
+                  {candidate.certifications.length
+                    ? candidate.certifications.map((cert, i) => (
+                        <li key={i} className="text-xs text-muted-foreground">• {cert}</li>
+                      ))
+                    : <li className="text-xs text-muted-foreground">None on file yet.</li>}
                 </ul>
               </div>
               <div className="p-4 rounded-xl bg-accent/50 border border-border">
@@ -386,9 +356,11 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                   <h3 className="text-sm font-semibold text-foreground">Portfolio Links</h3>
                 </div>
                 <ul className="space-y-1">
-                  {CANDIDATE_DATA.portfolio.map((link, i) => (
-                    <li key={i} className="text-xs text-primary font-medium">• {link}</li>
-                  ))}
+                  {candidate.portfolio.length
+                    ? candidate.portfolio.map((link, i) => (
+                        <li key={i} className="text-xs text-primary font-medium">• {link}</li>
+                      ))
+                    : <li className="text-xs text-muted-foreground">None connected yet.</li>}
                 </ul>
               </div>
             </div>
@@ -415,7 +387,7 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                   <FileText size={14} className="text-primary" />
                   <h3 className="text-sm font-semibold text-foreground">Tailored Resume Summary</h3>
                 </div>
-                {docEdits[jobId]?.resume !== undefined && docEdits[jobId]?.resume !== aiResume && (
+                {docEdits[key]?.resume !== undefined && docEdits[key]?.resume !== aiResume && (
                   <span className="text-[10px] font-semibold text-[#8A7038] inline-flex items-center gap-1"><PenLine size={10} /> Edited</span>
                 )}
               </div>
@@ -461,7 +433,7 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
                   <Send size={14} className="text-primary" />
                   <h3 className="text-sm font-semibold text-foreground">Cover Letter</h3>
                 </div>
-                {docEdits[jobId]?.cover !== undefined && docEdits[jobId]?.cover !== aiCover && (
+                {docEdits[key]?.cover !== undefined && docEdits[key]?.cover !== aiCover && (
                   <span className="text-[10px] font-semibold text-[#8A7038] inline-flex items-center gap-1"><PenLine size={10} /> Edited</span>
                 )}
               </div>

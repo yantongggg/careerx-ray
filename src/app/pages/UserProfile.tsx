@@ -3,86 +3,89 @@ import { archetypeFor } from "../lib/careerDna.js";
 import { useCareerProfile } from "../state/careerProfile";
 import { MapPin, Briefcase, GraduationCap, Award, Code, Star, ExternalLink, Edit3, Plus, ArrowRight } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
+import { dimensions } from "../lib/careerDna.js";
+import { corpusFor } from "../lib/careerCorpus";
+import type { CareerProfile } from "../lib/profileTypes";
 
-const dnaData = [
-  { subject: "Analytical", A: 92 },
-  { subject: "Creative", A: 58 },
-  { subject: "Leadership", A: 74 },
-  { subject: "Communication", A: 82 },
-  { subject: "Strategic", A: 65 },
-  { subject: "Technical", A: 88 },
+/* ────────────────────────────────────────────────────────────────
+   My Profile — what the scan actually knows about this person.
+
+   Every section on this page used to be a module-level constant: three
+   jobs at Stripe, Airbnb and Deloitte, a Michigan degree, nine skill
+   bars and three awards. It called useCareerProfile() and then rendered
+   none of it, so the page confidently described someone else.
+
+   Sections with nothing behind them now say so and point at the way to
+   fill them, rather than borrowing a stranger's history.
+   ──────────────────────────────────────────────────────────────── */
+
+const LOGO_COLORS = [
+  "bg-indigo-600", "bg-rose-500", "bg-emerald-600",
+  "bg-amber-600", "bg-sky-600", "bg-violet-600",
 ];
 
-const experience = [
-  {
-    company: "Stripe",
-    role: "Senior Data Analyst",
-    period: "Mar 2023 – Present",
-    location: "San Francisco, CA",
-    desc: "Lead analytics for the payments intelligence team. Built real-time fraud detection dashboards used by 14 ops team members. Reduced false-positive rate by 23% through statistical model improvements.",
-    skills: ["Python", "SQL", "dbt", "Looker", "Stripe APIs"],
-    logo: "S",
-    logoColor: "bg-indigo-600",
-  },
-  {
-    company: "Airbnb",
-    role: "Data Analyst",
-    period: "Jul 2021 – Mar 2023",
-    location: "Remote",
-    desc: "Owned supply-side analytics for the APAC market. Built cohort analyses and pricing models that informed RM 2M in host acquisition decisions. Mentored 2 junior analysts.",
-    skills: ["Python", "SQL", "Tableau", "A/B Testing", "Spark"],
-    logo: "A",
-    logoColor: "bg-rose-500",
-  },
-  {
-    company: "Deloitte",
-    role: "Business Intelligence Analyst",
-    period: "Jun 2019 – Jul 2021",
-    location: "New York, NY",
-    desc: "Delivered BI solutions for Fortune 500 financial services clients. Created executive dashboards and automated reporting workflows, saving 20+ hours per week across teams.",
-    skills: ["SQL", "Tableau", "Power BI", "Excel", "VBA"],
-    logo: "D",
-    logoColor: "bg-green-600",
-  },
-];
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+}
 
-const education = [
-  {
-    school: "University of Michigan",
-    degree: "B.S. Statistics & Computer Science",
-    period: "2015 – 2019",
-    gpa: "3.8 / 4.0",
-    logo: "M",
-    logoColor: "bg-blue-700",
-  },
-];
+/** The six DNA dimensions, from the scan rather than a fixed radar. */
+function dnaFrom(profile: CareerProfile) {
+  return dimensions.map(d => ({ subject: d, A: Math.round(profile.dnaScores[d] ?? 55) }));
+}
 
-const certifications = [
-  { name: "Google Data Analytics Professional", issuer: "Google", year: "2022", status: "active" },
-  { name: "dbt Analytics Engineering", issuer: "dbt Labs", year: "2023", status: "active" },
-  { name: "Tableau Desktop Specialist", issuer: "Tableau", year: "2021", status: "active" },
-];
+/**
+ * Skill bars from the resume.
+ *
+ * We have no proficiency measurement, so the level cannot be presented
+ * as one. It reflects corroboration instead: a skill the target role's
+ * postings also ask for, or one an evidence item backs, sits higher
+ * than a skill that only appears once on a CV.
+ */
+function skillsFrom(profile: CareerProfile, wanted: string[]): { name: string; level: number; why: string }[] {
+  const resumeSkills = profile.resume?.skills ?? [];
+  const evidenced = new Set(
+    profile.evidence.flatMap(e => e.skills.map(sk => sk.toLowerCase())),
+  );
+  const demanded = new Set(wanted.map(w => w.toLowerCase()));
 
-const skills = [
-  { name: "SQL", level: 95 }, { name: "Python", level: 84 }, { name: "dbt", level: 72 },
-  { name: "Tableau", level: 80 }, { name: "Statistics", level: 88 }, { name: "Looker", level: 70 },
-  { name: "Spark", level: 48 }, { name: "ML/AI", level: 38 }, { name: "Cloud", level: 30 },
-];
+  return resumeSkills.slice(0, 10).map(name => {
+    const key = name.toLowerCase();
+    const backed = evidenced.has(key);
+    const inDemand = [...demanded].some(d => d.includes(key) || key.includes(d));
+    if (backed && inDemand) return { name, level: 92, why: "Evidenced, and your target roles ask for it" };
+    if (backed) return { name, level: 78, why: "Backed by evidence you added" };
+    if (inDemand) return { name, level: 64, why: "Your target roles ask for it, but nothing backs it yet" };
+    return { name, level: 45, why: "On your resume only" };
+  });
+}
 
-const projects = [
-  { name: "Fraud Pattern Classifier", desc: "Trained a gradient boosting model on 2M+ transactions. Achieved 0.94 AUC.", tech: ["Python", "XGBoost", "Snowflake"], stars: 142 },
-  { name: "dbt Metrics Dashboard", desc: "Open-source dbt package for automated metric reporting across data warehouses.", tech: ["dbt", "SQL", "GitHub Actions"], stars: 89 },
-];
-
-const achievements = [
-  { label: "Data Impact Award", issuer: "Stripe, 2024", icon: Star },
-  { label: "Top 5% Analyst", issuer: "Airbnb 2022 Calibration", icon: Award },
-  { label: "Hackathon Winner", issuer: "Stripe ML Summit 2023", icon: Award },
-];
+function EmptySection({ text }: { text: string }) {
+  return <p className="text-sm text-muted-foreground leading-relaxed">{text}</p>;
+}
 
 export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const { profile } = useCareerProfile();
+  const { profile, scorecard } = useCareerProfile();
   const primary = archetypeFor(profile);
+  const corpus = corpusFor(profile);
+
+  const name = profile.resume?.name || "Your profile";
+  const role = profile.resume?.currentTitle || profile.currentRole;
+  const years = profile.resume?.yearsExperience;
+  const employers = profile.resume?.employers ?? [];
+  const education = profile.resume?.education ?? [];
+  const certifications = [
+    ...(profile.resume?.certifications ?? []),
+    ...profile.evidence.filter(e => e.kind === "certificate").map(e => e.label),
+  ];
+  const projects = profile.evidence.filter(e => e.kind === "project" || e.kind === "portfolio");
+  const dnaData = dnaFrom(profile);
+  const skills = skillsFrom(profile, corpus.targetSkills);
+  const tags = [
+    profile.currentRole, profile.targetRole,
+    ...(profile.resume?.skills ?? []).slice(0, 4),
+  ].filter(Boolean) as string[];
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
@@ -90,19 +93,21 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
         <div className="bg-white rounded-xl border border-border shadow-sm p-6 mb-6">
           <div className="flex items-start gap-6">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-              JK
+              {initialsOf(name)}
             </div>
             <div className="flex-1">
               <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground tracking-tight">Jordan Kim</h1>
-                  <p className="text-base text-muted-foreground mt-0.5">Senior Data Analyst · Stripe</p>
+                  <h1 className="text-2xl font-bold text-foreground tracking-tight">{name}</h1>
+                  <p className="text-base text-muted-foreground mt-0.5">
+                    {[role, employers[0]].filter(Boolean).join(" · ") || "Complete your scan to fill this in"}
+                  </p>
                   <div className="flex items-center gap-4 mt-2">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <MapPin size={12} /> San Francisco, CA
+                      <MapPin size={12} /> Malaysia
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Briefcase size={12} /> 6 years experience
+                      <Briefcase size={12} /> {years ? `${years} years experience` : profile.experience || "Experience not stated"}
                     </div>
                   </div>
                 </div>
@@ -111,7 +116,7 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                 </button>
               </div>
               <div className="flex flex-wrap gap-2 mt-4">
-                {["Data Analytics", "Python", "SQL", "dbt", "Statistics", "FinTech"].map(t => (
+                {tags.map(t => (
                   <span key={t} className="text-xs bg-blue-50 text-primary border border-blue-100 px-3 py-1 rounded-full">{t}</span>
                 ))}
               </div>
@@ -132,32 +137,32 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                   <Plus size={12} /> Add
                 </button>
               </div>
-              <div className="space-y-6">
-                {experience.map((e, i) => (
-                  <div key={i} className={i < experience.length - 1 ? "pb-6 border-b border-border" : ""}>
-                    <div className="flex gap-4">
-                      <div className={`w-10 h-10 rounded-lg ${e.logoColor} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
-                        {e.logo}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold text-foreground">{e.role}</p>
-                            <p className="text-sm text-muted-foreground">{e.company} · {e.location}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{e.period}</p>
-                          </div>
+              {employers.length ? (
+                <div className="space-y-6">
+                  {employers.map((company, i) => (
+                    <div key={company} className={i < employers.length - 1 ? "pb-6 border-b border-border" : ""}>
+                      <div className="flex gap-4">
+                        <div className={`w-10 h-10 rounded-lg ${LOGO_COLORS[i % LOGO_COLORS.length]} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                          {initialsOf(company)}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{e.desc}</p>
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          {e.skills.map(s => (
-                            <span key={s} className="text-xs bg-muted border border-border text-foreground px-2 py-0.5 rounded-md">{s}</span>
-                          ))}
+                        <div className="flex-1">
+                          <p className="font-semibold text-foreground">{i === 0 ? role || "Role not stated" : "Previous role"}</p>
+                          <p className="text-sm text-muted-foreground">{company}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Read from your resume. Dates and detail were not extracted — add them to strengthen this.
+                          </p>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptySection text={
+                  profile.resume
+                    ? "No employers were found in your resume. Add them there and re-run the scan."
+                    : "Upload a resume during your scan and your work history appears here."
+                } />
+              )}
             </div>
 
             {/* Education */}
@@ -165,18 +170,20 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
               <h2 className="font-semibold text-foreground flex items-center gap-2 mb-5">
                 <GraduationCap size={16} className="text-muted-foreground" /> Education
               </h2>
-              {education.map((e, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className={`w-10 h-10 rounded-lg ${e.logoColor} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
-                    {e.logo}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground">{e.degree}</p>
-                    <p className="text-sm text-muted-foreground">{e.school}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{e.period} · GPA {e.gpa}</p>
-                  </div>
+              {education.length ? (
+                <div className="space-y-4">
+                  {education.map((e, i) => (
+                    <div key={e} className="flex gap-4">
+                      <div className={`w-10 h-10 rounded-lg ${LOGO_COLORS[i % LOGO_COLORS.length]} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                        <GraduationCap size={16} />
+                      </div>
+                      <p className="font-semibold text-foreground self-center">{e}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <EmptySection text="No qualifications on file yet. SPM, STPM, diploma and TVET all count — add them to your resume." />
+              )}
             </div>
 
             {/* Projects */}
@@ -184,23 +191,26 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
               <h2 className="font-semibold text-foreground flex items-center gap-2 mb-5">
                 <Code size={16} className="text-muted-foreground" /> Projects
               </h2>
-              <div className="space-y-4">
-                {projects.map((p) => (
-                  <div key={p.name} className="p-4 rounded-xl border border-border hover:bg-muted transition-colors group">
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="font-medium text-foreground">{p.name}</p>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Star size={11} className="text-amber-400 fill-amber-400" /> {p.stars}
-                        <ExternalLink size={11} className="ml-1 group-hover:text-primary transition-colors" />
+              {projects.length ? (
+                <div className="space-y-4">
+                  {projects.map(p => (
+                    <div key={p.id} className="p-4 rounded-xl border border-border hover:bg-muted transition-colors group">
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="font-medium text-foreground">{p.label}</p>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          {p.source}
+                          <ExternalLink size={11} className="ml-1 group-hover:text-primary transition-colors" />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {p.skills.map(t => <span key={t} className="text-xs bg-blue-50 text-primary border border-blue-100 px-2 py-0.5 rounded-md">{t}</span>)}
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-3">{p.desc}</p>
-                    <div className="flex gap-1.5">
-                      {p.tech.map(t => <span key={t} className="text-xs bg-blue-50 text-primary border border-blue-100 px-2 py-0.5 rounded-md">{t}</span>)}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptySection text="Nothing here yet. Add a project or portfolio under Career Evidence and it shows up on your profile." />
+              )}
             </div>
           </div>
 
@@ -213,7 +223,7 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                   <h2 className="font-semibold text-foreground">Career DNA</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">Primary type: {primary.name}</p>
                 </div>
-                <span className="text-xs bg-blue-50 text-primary border border-blue-100 px-2 py-1 rounded-full font-semibold">82%</span>
+                <span className="text-xs bg-blue-50 text-primary border border-blue-100 px-2 py-1 rounded-full font-semibold">{scorecard.careerHealth}%</span>
               </div>
               <div style={{ width: "100%", height: 208 }}>
                 <ResponsiveContainer width="100%" height={208}>
@@ -237,8 +247,11 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
             <div className="bg-white rounded-xl border border-border shadow-sm p-6">
               <h2 className="font-semibold text-foreground mb-4">Skills</h2>
               <div className="space-y-3">
+                {skills.length === 0 && (
+                  <EmptySection text="Skills appear here once a resume is read or evidence is added." />
+                )}
                 {skills.map((s) => (
-                  <div key={s.name}>
+                  <div key={s.name} title={s.why}>
                     <div className="flex justify-between mb-1">
                       <span className="text-xs font-medium text-foreground">{s.name}</span>
                       <span className="text-xs text-muted-foreground">{s.level}%</span>
@@ -260,31 +273,30 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                 <Award size={16} className="text-muted-foreground" /> Certifications
               </h2>
               <div className="space-y-3">
-                {certifications.map((c) => (
-                  <div key={c.name} className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                {certifications.length ? certifications.map(c => (
+                  <div key={c} className="flex items-start gap-3 p-3 bg-muted rounded-lg">
                     <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
                       <Award size={13} className="text-primary" />
                     </div>
-                    <div>
-                      <p className="text-xs font-medium text-foreground leading-snug">{c.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{c.issuer} · {c.year}</p>
-                    </div>
+                    <p className="text-xs font-medium text-foreground leading-snug self-center">{c}</p>
                   </div>
-                ))}
+                )) : (
+                  <EmptySection text={`None yet. ${corpus.certification} is the one that opens the most doors for where you are heading.`} />
+                )}
               </div>
             </div>
 
             {/* Achievements */}
             <div className="bg-white rounded-xl border border-border shadow-sm p-6">
               <h2 className="font-semibold text-foreground flex items-center gap-2 mb-4">
-                <Star size={16} className="text-muted-foreground" /> Achievements
+                <Star size={16} className="text-muted-foreground" /> Worth adding next
               </h2>
               <div className="space-y-3">
-                {achievements.map((a) => (
-                  <div key={a.label} className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
-                    <a.icon size={14} className="text-amber-500 flex-shrink-0" />
+                {corpus.evidenceSamples.slice(0, 3).map(a => (
+                  <div key={a.title} className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                    <Star size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs font-medium text-foreground">{a.label}</p>
+                      <p className="text-xs font-medium text-foreground">{a.title}</p>
                       <p className="text-xs text-muted-foreground">{a.issuer}</p>
                     </div>
                   </div>

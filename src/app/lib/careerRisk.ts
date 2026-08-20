@@ -142,6 +142,33 @@ const ROLE_GATE_TERMS: Record<RoleFamily, string[]> = {
   generic: [],
 };
 
+/* ── Benchmark accessors ─────────────────────────────────────
+   The corpus layer builds its salary trajectories and AI-risk figures
+   from these same tables, so a number shown in Decision Lab cannot
+   disagree with the same number on the dashboard. */
+
+export type SeniorityBand = 0 | 1 | 2;
+
+/** Median monthly RM for a family at a seniority band. */
+export function marketMedian(family: RoleFamily, band: SeniorityBand): number {
+  return MARKET_MEDIAN[family][band];
+}
+
+/** Baseline share of a family's tasks exposed to automation, 0–1. */
+export function automationBase(family: RoleFamily): number {
+  return AUTOMATION_BASE[family];
+}
+
+/** Which of the three seniority bands this profile sits in. */
+export function seniorityBand(profile: CareerProfile): SeniorityBand {
+  return seniorityIndex(profile);
+}
+
+/** The credential that most often gates entry into a family. */
+export function keyCredential(family: RoleFamily): string {
+  return KEY_CREDENTIAL[family];
+}
+
 /* ── Helpers ─────────────────────────────────────────────────── */
 
 const avg = (ns: number[]) => (ns.length ? ns.reduce((a, b) => a + b, 0) / ns.length : 0);

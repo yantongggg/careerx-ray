@@ -9,118 +9,191 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceL
 import { useCareerProfile } from "../state/careerProfile";
 import { NextStep } from "../state/stages";
 import { buildResumeForRole, downloadText } from "../lib/resumeGen";
+import { corpusFor, type Corpus } from "../lib/careerCorpus";
+import type { CareerProfile } from "../lib/profileTypes";
+import type { Risk, Scorecard } from "../lib/careerRisk";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
-const diagnosis = {
-  score: 74,
-  verdict: "Moderate Career Risk",
-  verdictColor: "text-amber-600",
-  verdictBg: "bg-amber-50",
-  verdictBorder: "border-amber-200",
-  summary: "Your career is at a moderate risk of stagnation. You have real strengths — but three structural problems are compounding quietly in the background. Left unaddressed, these risks will become visible regrets within 18–24 months.",
-  detectedRisks: [
-    { label: "AI automation exposure", severity: "critical", impact: "62% of your daily tasks automatable within 24 months" },
-    { label: "Cloud credential gap",   severity: "high",     impact: "Filters you out of 73% of target roles at screening" },
-    { label: "Skill stagnation",       severity: "high",     impact: "Python skills plateau — market has moved to modern stack" },
-    { label: "Leadership gap",         severity: "medium",   impact: "Promotion blocker for L5 without cross-functional scope" },
-    { label: "Salary drift",           severity: "medium",   impact: "Earning RM 1.6k/mo below market — gap compounds each year"     },
-  ],
-  detectedStrengths: [
-    "FinTech domain expertise — top 20% of peers",
-    "Communication skills — 88th percentile",
-    "Active OSS contributor",
-    "Competition track record — SuperAI NEXT Top 5/2,400",
-  ],
-  prognosis: "With the treatment plan below, your Career Health Score is projected to reach 92/100 within 6 months — moving from moderate risk into the safe zone and positioning you for a significant salary increase or role transition.",
-};
+/* ────────────────────────────────────────────────────────────────
+   The diagnosis is the same one the dashboard shows.
 
-const scoreProjection = [
-  { period: "Now",  score: 74 },
-  { period: "30d",  score: 78 },
-  { period: "90d",  score: 85 },
-  { period: "6mo",  score: 92 },
+   It used to be typed in — a fixed 74/100, five named risks including a
+   "SuperAI NEXT Top 5/2,400" strength, and a 62% automation figure — so
+   this page could contradict the dashboard on the same person. Both now
+   read deriveRisks() and deriveScorecard().
+   ──────────────────────────────────────────────────────────────── */
+
+const VERDICT_BANDS: { floor: number; verdict: string; color: string; bg: string; border: string }[] = [
+  { floor: 80, verdict: "Low Career Risk",      color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
+  { floor: 65, verdict: "Moderate Career Risk", color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200"   },
+  { floor: 0,  verdict: "High Career Risk",     color: "text-red-600",     bg: "bg-red-50",     border: "border-red-200"     },
 ];
+
+function buildDiagnosis(
+  profile: CareerProfile,
+  risks: Risk[],
+  scorecard: Scorecard,
+  strengthFloor = 70,
+) {
+  const band = VERDICT_BANDS.find(b => scorecard.careerHealth >= b.floor)!;
+  const critical = risks.filter(r => r.severity === "critical" || r.severity === "high").length;
+
+  const strengths = Object.entries(profile.dnaScores)
+    .filter(([, v]) => v >= strengthFloor)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, v]) => `${k} — ${Math.round(v)}/100 on your scan`);
+
+  const verified = profile.evidence.filter(e => e.trust === "verified");
+  verified.slice(0, 2).forEach(e => strengths.push(`${e.label} — verified with ${e.source}`));
+
+  /* Six months of consistent execution is worth roughly this much, and
+     it is capped so the projection cannot promise a perfect score. */
+  const projected = Math.min(94, scorecard.careerHealth + 8 + critical * 3);
+
+  return {
+    band,
+    score: scorecard.careerHealth,
+    projected,
+    summary: risks.length
+      ? `${risks.length} structural ${risks.length === 1 ? "problem is" : "problems are"} working against you right now, ${critical > 0 ? `${critical} of them serious` : "none of them yet critical"}. Left alone they compound quietly — the kind of thing that becomes visible as a regret in 18–24 months rather than as a crisis next week.`
+      : `Nothing structural is currently working against you. Keep the evidence current and the plan below is about extending the lead rather than closing a gap.`,
+    detectedRisks: risks.map(r => ({
+      label: r.headline,
+      severity: r.severity,
+      impact: r.comparison.shortfall || r.metric,
+    })),
+    detectedStrengths: strengths.length
+      ? strengths
+      : ["Nothing has scored as a clear strength yet — the plan below is how you build the first one."],
+    prognosis: `Working the plan below puts your Career Health Score on track for about ${projected}/100 within six months, from ${scorecard.careerHealth} today. That is the difference between being screened out and being shortlisted.`,
+    projection: [
+      { period: "Now", score: scorecard.careerHealth },
+      { period: "30d", score: Math.round(scorecard.careerHealth + (projected - scorecard.careerHealth) * 0.3) },
+      { period: "90d", score: Math.round(scorecard.careerHealth + (projected - scorecard.careerHealth) * 0.7) },
+      { period: "6mo", score: projected },
+    ],
+  };
+}
 
 type Phase = "30day" | "90day" | "6month";
 
-const treatment: Record<Phase, {
+interface TreatmentPhase {
   label: string;
   goal: string;
   scoreGain: number;
   color: string;
   bg: string;
   border: string;
-  tasks: { id: string; label: string; rationale: string; effort: string; impact: "Critical" | "High" | "Medium"; category: string }[];
-}> = {
-  "30day": {
-    label: "30-Day Sprint",
-    goal: "Stop the bleeding. Close the fastest-to-fix gaps and create immediate market visibility.",
-    scoreGain: 4,
-    color: "#2563EB",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-    tasks: [
-      { id: "t1", label: "Request salary review with your manager", rationale: "You're RM 1.6k/mo below market. Every month you wait, you lose leverage and compound the deficit.", effort: "1 hr",  impact: "Critical", category: "Salary"      },
-      { id: "t2", label: "Complete AWS Cloud Practitioner exam",    rationale: "8 hours. Free. Immediately changes your ATS screening outcome for 73% of target roles.",          effort: "8 hrs", impact: "Critical", category: "Certification"},
-      { id: "t3", label: "Rewrite your LinkedIn summary",           rationale: "Your current summary describes what you do. It should describe the decisions you enable.",          effort: "2 hrs", impact: "High",     category: "Visibility"   },
-      { id: "t4", label: "Reconnect with 5 dormant network contacts",rationale: "80% of senior roles are filled through networks. Your reach has declined 22% in 6 months.",       effort: "2 hrs", impact: "Medium",   category: "Network"      },
-      { id: "t5", label: "Install Polars and rebuild one Pandas project", rationale: "Signal to the market that your skills are current. One portfolio update changes the conversation.", effort: "4 hrs", impact: "Medium", category: "Skills" },
-    ],
-  },
-  "90day": {
-    label: "90-Day Transformation",
-    goal: "Build the evidence that makes your next career move credible, not just hopeful.",
-    scoreGain: 11,
-    color: "#A855F7",
-    bg: "bg-purple-50",
-    border: "border-purple-200",
-    tasks: [
-      { id: "t6",  label: "Pass AWS Solutions Architect Associate",            rationale: "This credential alone unlocks 73% of target roles and raises your average salary offer by RM 1k/mo.",                 effort: "40 hrs",  impact: "Critical", category: "Certification" },
-      { id: "t7",  label: "Build ML portfolio project #1 — fraud detection",  rationale: "Demonstrates ML engineering depth beyond your analyst background. One project changes how interviewers see you.", effort: "30 hrs",  impact: "Critical", category: "Portfolio"     },
-      { id: "t8",  label: "Complete fast.ai Practical Deep Learning course",   rationale: "Bridges the theory-to-practice gap. Fast.ai is how ML engineers actually learn the craft.",                      effort: "20 hrs",  impact: "High",     category: "Skills"        },
-      { id: "t9",  label: "Lead one cross-functional project at Stripe",       rationale: "Your promotion is blocked by scope, not performance. One visible leadership contribution changes the calculus.",   effort: "Ongoing", impact: "High",     category: "Leadership"    },
-      { id: "t10", label: "Apply to 3 roles via warm referral",                rationale: "Referrals have a 3× higher interview rate. You need market signal, not just internal advocacy.",                   effort: "4 hrs",   impact: "High",     category: "Job Search"    },
-    ],
-  },
-  "6month": {
-    label: "6-Month Outcome",
-    goal: "Reach the target: a new role, a promotion, or a salary reset that reflects your actual market value.",
-    scoreGain: 18,
-    color: "#22C55E",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-    tasks: [
-      { id: "t11", label: "Land ML Engineer role or earn promotion",              rationale: "This is the goal. Everything in the 30 and 90-day plan is designed to make this moment achievable.",        effort: "Ongoing", impact: "Critical", category: "Career Move"   },
-      { id: "t12", label: "Achieve RM 11.7k+/mo salary",                               rationale: "Market rate for your profile with AWS cert + ML projects. This is not aspirational — it's attainable.",      effort: "Ongoing", impact: "Critical", category: "Salary"       },
-      { id: "t13", label: "Build ML portfolio project #2 — recommendation system",rationale: "Two ML projects in your portfolio creates a pattern, not a fluke. Pattern is what gets you hired.",          effort: "40 hrs",  impact: "High",     category: "Portfolio"    },
-      { id: "t14", label: "Complete GCP Professional Data Engineer cert",         rationale: "Multi-cloud credentialing differentiates you from the 80% of candidates with only AWS.",                     effort: "50 hrs",  impact: "High",     category: "Certification"},
-      { id: "t15", label: "Speak or present at one industry event",              rationale: "Thought leadership is a force multiplier. One talk generates inbound connections and interview requests.",     effort: "10 hrs",  impact: "Medium",   category: "Visibility"   },
-    ],
-  },
-};
+  tasks: { id: string; label: string; rationale: string; effort: string; impact: string; category: string }[];
+}
 
-const expectedOutcome = {
-  score: 92,
-  salary: "RM 11.7k–12.9k/mo",
-  aiRisk: "Low (28%)",
-  promotionReady: "81%",
-  summary: "With consistent execution of this plan, you move from moderate risk to strong positioning within 6 months. The Career Health Score of 92 reflects a professional who is not just performing well — but building in a direction that compounds.",
-};
+/* ────────────────────────────────────────────────────────────────
+   The plan follows the person's own target and their own open risks.
 
-const certifications = [
-  { name: "AWS Cloud Practitioner",                priority: 1, effort: "1 week",    salaryImpact: "Gate-opener",  urgency: "This week" },
-  { name: "AWS Solutions Architect Associate",      priority: 2, effort: "6–8 weeks", salaryImpact: "+RM 1k/mo avg",    urgency: "By Day 60" },
-  { name: "GCP Professional Data Engineer",         priority: 3, effort: "8–10 weeks",salaryImpact: "+RM 850/mo avg",    urgency: "Month 4–5" },
-  { name: "Databricks ML Associate",                priority: 4, effort: "4–5 weeks", salaryImpact: "+RM 8k avg",     urgency: "Month 5–6" },
-];
+   Fifteen tasks used to be typed in here, all of them steps toward ML
+   Engineering: pass AWS Solutions Architect, build a fraud-detection
+   model, do fast.ai, lead a cross-functional project at Stripe. A
+   restaurant supervisor aiming at restaurant manager was handed the
+   same fifteen.
+   ──────────────────────────────────────────────────────────────── */
 
-const recommendedRoles = [
-  { title: "Analytics Engineer",           salary: "RM 10.8k–12.9k/mo", fit: 91, match: "Best immediate fit — minimal gap, AWS cert closes the remaining blocker"       },
-  { title: "ML Engineer",                  salary: "RM 12.1k–14.6k/mo", fit: 82, match: "Best 12-month target — 2 ML projects + AWS cert makes you credible"            },
-  { title: "Data Science Manager",         salary: "RM 12.9k–15.8k/mo", fit: 68, match: "Strong ceiling — requires 12–18 months of leadership positioning first"        },
-  { title: "Staff Data Scientist",         salary: "RM 15k–20k/mo", fit: 54, match: "Aspirational — plan for 18–24 months of deliberate preparation"                },
-];
+function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[]): Record<Phase, TreatmentPhase> {
+  const target = profile.targetRole || "your target role";
+  const cert = corpus.certification;
+  const skill1 = corpus.targetSkills[0] ?? "the core skill of the role";
+  const skill2 = corpus.targetSkills[1] ?? "a second core skill";
+  const targetFuture = corpus.futures[1];
+  const payGoal = `RM ${(Math.round(targetFuture.salary5yr * 0.72) / 1000).toFixed(1)}k/mo`;
+
+  const salaryRisk = risks.find(r => r.category.toLowerCase().includes("salary"));
+  const hasEvidence = profile.evidence.length > 0;
+
+  return {
+    "30day": {
+      label: "30-Day Sprint",
+      goal: `Stop the bleeding. Fix what is costing you money or opportunities right now.`,
+      scoreGain: 4,
+      color: "#3B82F6", bg: "bg-blue-50", border: "border-blue-200",
+      tasks: [
+        salaryRisk
+          ? { id: "t1", label: "Open a pay conversation with your manager", rationale: `${salaryRisk.comparison.shortfall} Every month you wait compounds the deficit and costs you leverage.`, effort: "1 hr", impact: "Critical", category: "Salary" }
+          : { id: "t1", label: "Write down what you want from the next 12 months", rationale: "Your pay is not the current problem, so direction is. A target you have not written down is a wish.", effort: "1 hr", impact: "High", category: "Direction" },
+        { id: "t2", label: `Register for ${cert}`, rationale: `This is the credential that most often gates entry into ${target}. Booking the date is what makes it real.`, effort: "1 hr", impact: "Critical", category: "Certification" },
+        { id: "t3", label: `Rewrite your résumé headline around ${target}`, rationale: "Your current headline describes what you have done. It should describe what you are moving toward — screeners read it in four seconds.", effort: "2 hrs", impact: "High", category: "Visibility" },
+        hasEvidence
+          ? { id: "t4", label: "Get one self-declared item verified", rationale: "A verified claim counts in full; a self-declared one barely counts at all. Verification is the cheapest score you will get.", effort: "2 hrs", impact: "High", category: "Evidence" }
+          : { id: "t4", label: "Add your first piece of evidence", rationale: "Your record is empty, which means every recommendation here rests on your word alone. One verified item changes that.", effort: "2 hrs", impact: "Critical", category: "Evidence" },
+        { id: "t5", label: "Reconnect with five people who have seen you work", rationale: "Most roles at this level are filled through people who can vouch for you. Reach decays quietly if you never use it.", effort: "2 hrs", impact: "Medium", category: "Network" },
+      ],
+    },
+    "90day": {
+      label: "90-Day Transformation",
+      goal: `Build the evidence that makes ${target} credible rather than hopeful.`,
+      scoreGain: 11,
+      color: "#A855F7", bg: "bg-purple-50", border: "border-purple-200",
+      tasks: [
+        { id: "t6", label: `Pass ${cert}`, rationale: `This credential alone moves you past the screening filter that currently stops you before a human reads anything.`, effort: "40 hrs", impact: "Critical", category: "Certification" },
+        { id: "t7", label: `Ship one piece of work that demonstrates ${skill1}`, rationale: `${skill1} is the first thing ${target} interviews probe. A shipped example ends that conversation in your favour.`, effort: "30 hrs", impact: "Critical", category: "Portfolio" },
+        { id: "t8", label: `Close your gap in ${skill2}`, rationale: "The second gap is what separates a shortlist from an offer once the first one is closed.", effort: "20 hrs", impact: "High", category: "Skills" },
+        { id: "t9", label: "Take ownership of something end to end", rationale: "Scope, not performance, is what usually blocks the next level. One visibly owned piece of work changes how you are read.", effort: "Ongoing", impact: "High", category: "Leadership" },
+        { id: "t10", label: "Apply to three roles through a warm introduction", rationale: "A referred application converts several times better than a cold one. You need market signal, not just internal advocacy.", effort: "4 hrs", impact: "High", category: "Job Search" },
+      ],
+    },
+    "6month": {
+      label: "6-Month Outcome",
+      goal: `Reach the target: ${target}, a promotion, or a pay reset that reflects your actual market value.`,
+      scoreGain: 18,
+      color: "#22C55E", bg: "bg-emerald-50", border: "border-emerald-200",
+      tasks: [
+        { id: "t11", label: `Land ${target} or the promotion into it`, rationale: "This is the goal. Everything in the first two phases exists to make this moment reachable.", effort: "Ongoing", impact: "Critical", category: "Career Move" },
+        { id: "t12", label: `Reach ${payGoal}`, rationale: `Market rate for this profile once ${cert} and shipped evidence are behind you. Attainable, not aspirational.`, effort: "Ongoing", impact: "Critical", category: "Salary" },
+        { id: "t13", label: `Ship a second piece of ${skill1} work`, rationale: "Two examples is a pattern; one is a fluke. Pattern is what gets you hired.", effort: "40 hrs", impact: "High", category: "Portfolio" },
+        { id: "t14", label: `Add a second credential beyond ${cert}`, rationale: "Depth past the entry credential separates you from everyone else who cleared the same bar.", effort: "50 hrs", impact: "High", category: "Certification" },
+        { id: "t15", label: "Talk publicly about your work once", rationale: "A talk, a write-up, a meetup. Visibility generates inbound conversations that applications never will.", effort: "10 hrs", impact: "Medium", category: "Visibility" },
+      ],
+    },
+  };
+}
+
+/* Certifications and target roles follow the user's family and their
+   own three futures, rather than a fixed AWS-to-Databricks ladder aimed
+   at one data-analytics career. */
+
+function buildCertifications(corpus: Corpus) {
+  const primary = corpus.certification;
+  return [
+    { name: primary,                                  priority: 1, effort: "6–8 weeks",  salaryImpact: "Gate-opener",   urgency: "Start this month" },
+    { name: `${corpus.targetSkills[0]} — a shipped example`, priority: 2, effort: "3–4 weeks", salaryImpact: "Proof, not a claim", urgency: "By Day 60" },
+    { name: `${corpus.targetSkills[1] ?? "A second core skill"} — evidenced`, priority: 3, effort: "4–6 weeks", salaryImpact: "Closes the second gap", urgency: "Month 3–4" },
+  ];
+}
+
+function buildRecommendedRoles(corpus: Corpus) {
+  const fmt = (n: number) => `RM ${(n / 1000).toFixed(1)}k/mo`;
+  return corpus.futures.map(f => ({
+    title: f.role,
+    salary: `${fmt(Math.round(f.salary5yr * 0.72))}–${fmt(f.salary5yr)}`,
+    fit: f.confidence,
+    match: f.id === "target"
+      ? `Your stated target. ${f.pros[0]}.`
+      : f.id === "adjacent"
+        ? `${f.pros[0]}, and it keeps your target open as a later internal move.`
+        : `Staying put. ${f.cons[0]}.`,
+  }));
+}
+
+function buildExpectedOutcome(corpus: Corpus, projected: number) {
+  const target = corpus.futures[1];
+  const fmt = (n: number) => `RM ${(n / 1000).toFixed(1)}k/mo`;
+  return {
+    score: projected,
+    salary: `${fmt(Math.round(target.salary5yr * 0.72))}–${fmt(target.salary5yr)}`,
+    aiRisk: `${target.aiRiskPct}%`,
+    promotionReady: `${target.promotionOddsPct}%`,
+    summary: `Working this plan moves you from where you are today into position for ${target.role}. The projected score of ${projected} reflects someone building in a direction that compounds, not just performing well where they already are.`,
+  };
+}
 
 const impactColors: Record<string, string> = {
   Critical: "bg-red-100 text-red-700",
@@ -137,6 +210,15 @@ const severityColors: Record<string, string> = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { profile, risks, scorecard } = useCareerProfile();
+  const corpus = corpusFor(profile);
+  const diagnosis = buildDiagnosis(profile, risks, scorecard);
+  const scoreProjection = diagnosis.projection;
+  const certifications = buildCertifications(corpus);
+  const recommendedRoles = buildRecommendedRoles(corpus);
+  const expectedOutcome = buildExpectedOutcome(corpus, diagnosis.projected);
+  const treatment = buildTreatment(profile, corpus, risks);
+
   const [activePhase, setActivePhase] = useState<Phase>("30day");
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const toggleCheck = (id: string) => setChecked(p => ({ ...p, [id]: !p[id] }));
@@ -158,8 +240,8 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Career Prescription</p>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${diagnosis.verdictBg} ${diagnosis.verdictBorder} ${diagnosis.verdictColor}`}>
-                  {diagnosis.verdict}
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${diagnosis.band.bg} ${diagnosis.band.border} ${diagnosis.band.color}`}>
+                  {diagnosis.band.verdict}
                 </span>
               </div>
               <h1 className="text-xl font-bold text-white mb-2">Current Diagnosis</h1>
@@ -400,7 +482,9 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
    Application Prep, which tailors this to one posting. */
 function ResumeFromPortfolio() {
   const { profile } = useCareerProfile();
-  const targets = [profile.targetRole, "Analytics Engineer", "Product Manager", "Team Lead"].filter(Boolean) as string[];
+  /* The three roles this person is actually choosing between, not a
+     fixed analytics ladder. */
+  const targets = [...new Set(corpusFor(profile).futures.map(f => f.role))].filter(Boolean);
   const [target, setTarget] = useState(targets[0] ?? "your target role");
   const [draft, setDraft] = useState<string | null>(null);
   const [edited, setEdited] = useState(false);

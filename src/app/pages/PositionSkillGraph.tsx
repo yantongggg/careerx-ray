@@ -41,25 +41,51 @@ const GAP_META: Record<string, { label: string; colors: string[]; glow: string }
   spark:  { label: "Spark",      colors: ["#EF5350","#C62828"], glow: "rgba(239,83,80,0.4)" },
 };
 
-interface PositionData {
-  skills: { skillId: string; fit: number }[];
-  gaps: { skillId: string; importance: number }[];
+/* ────────────────────────────────────────────────────────────────
+   The graph is built from the posting and the person, not a lookup.
+
+   POSITIONS used to key three "companyId|position" pairs. Every other
+   posting missed the table entirely and rendered an empty orbit, which
+   is what anyone outside data analytics saw.
+   ──────────────────────────────────────────────────────────────── */
+
+/* Deterministic colours for a skill the metadata table has never seen,
+   so an unfamiliar requirement still gets a body in the orbit rather
+   than being dropped. */
+const FALLBACK_PALETTES: { colors: string[]; glow: string }[] = [
+  { colors: ["#64B5F6", "#1565C0", "#0D47A1"], glow: "rgba(100,181,246,0.45)" },
+  { colors: ["#4DB6AC", "#00897B", "#004D40"], glow: "rgba(77,182,172,0.45)" },
+  { colors: ["#FFB74D", "#EF6C00", "#E65100"], glow: "rgba(255,183,77,0.45)" },
+  { colors: ["#CE93D8", "#8E24AA", "#4A148C"], glow: "rgba(206,147,216,0.45)" },
+  { colors: ["#A5D6A7", "#2E7D32", "#1B5E20"], glow: "rgba(165,214,167,0.4)" },
+  { colors: ["#F48FB1", "#C2185B", "#880E4F"], glow: "rgba(244,143,177,0.4)" },
+];
+
+function hashOf(text: string): number {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) >>> 0;
+  return h;
 }
 
-const POSITIONS: Record<string, PositionData> = {
-  "maybank|Data Analyst": {
-    skills: [{ skillId: "sql", fit: 95 }, { skillId: "python", fit: 72 }, { skillId: "tableau", fit: 85 }, { skillId: "excel", fit: 60 }, { skillId: "storytell", fit: 65 }],
-    gaps: [{ skillId: "aws", importance: 40 }],
-  },
-  "grab|Analytics Engineer": {
-    skills: [{ skillId: "sql", fit: 88 }, { skillId: "dbt", fit: 92 }, { skillId: "python", fit: 80 }, { skillId: "bigquery", fit: 75 }],
-    gaps: [{ skillId: "k8s", importance: 55 }, { skillId: "docker", importance: 50 }],
-  },
-  "petronas|AI Product Analyst": {
-    skills: [{ skillId: "sql", fit: 90 }, { skillId: "python", fit: 78 }, { skillId: "tableau", fit: 82 }, { skillId: "storytell", fit: 55 }],
-    gaps: [{ skillId: "aws", importance: 50 }, { skillId: "mlops", importance: 88 }, { skillId: "docker", importance: 65 }],
-  },
-};
+const slug = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+function paletteFor(label: string) {
+  return FALLBACK_PALETTES[hashOf(label) % FALLBACK_PALETTES.length];
+}
+
+/** Look the label up in the authored metadata, else generate it. */
+function skillMetaFor(label: string) {
+  const known = SKILL_META[slug(label)] ?? SKILL_META[label.toLowerCase()];
+  if (known) return known;
+  const pal = paletteFor(label);
+  return { label, proficiency: 60 + (hashOf(label) % 30), colors: pal.colors, glow: pal.glow };
+}
+
+function gapMetaFor(label: string) {
+  const known = GAP_META[slug(label)] ?? GAP_META[label.toLowerCase()];
+  if (known) return known;
+  return { label, colors: ["#EF5350", "#C62828"], glow: "rgba(239,83,80,0.45)" };
+}
 
 function makeStars(count: number, W: number, H: number) {
   const stars: { x: number; y: number; r: number; o: number }[] = [];
@@ -70,14 +96,19 @@ function makeStars(count: number, W: number, H: number) {
 }
 
 interface Props {
-  companyId: string;
   position: string;
   companyLabel: string;
   companyColors: string[];
   companyGlow: string;
+  /** What this posting rewards that the candidate already brings. */
+  strengths: string[];
+  /** What this posting asks for that they do not yet have. */
+  gaps: string[];
+  /** Skills read off the candidate's resume, used to set fit. */
+  candidateSkills?: string[];
 }
 
-export function PositionSkillGraph({ companyId, position, companyLabel, companyColors, companyGlow }: Props) {
+export function PositionSkillGraph({ position, companyLabel, companyColors, companyGlow, strengths, gaps, candidateSkills = [] }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [mouseInGraph, setMouseInGraph] = useState(false);
@@ -92,18 +123,27 @@ export function PositionSkillGraph({ companyId, position, companyLabel, companyC
 
   const starsRef = useRef(makeStars(180, W, H));
 
-  const key = `${companyId}|${position}`;
-  const posData = POSITIONS[key];
+  /* Fit is higher when the candidate's own resume names the skill —
+     the posting says it matters, the resume says they have it. */
+  const owned = new Set(candidateSkills.map(sk => sk.toLowerCase()));
+  const matchedSkills: SkillEntry[] = strengths.map(label => {
+    const meta = skillMetaFor(label);
+    const evidenced = owned.has(label.toLowerCase());
+    return {
+      id: slug(label),
+      label: meta.label,
+      fit: evidenced ? Math.min(96, meta.proficiency + 12) : meta.proficiency,
+      proficiency: meta.proficiency,
+      colors: meta.colors,
+      glow: meta.glow,
+    };
+  });
 
-  const matchedSkills: SkillEntry[] = (posData?.skills || []).map(s => {
-    const meta = SKILL_META[s.skillId];
-    return meta ? { id: s.skillId, label: meta.label, fit: s.fit, proficiency: meta.proficiency, colors: meta.colors, glow: meta.glow } : null;
-  }).filter(Boolean) as SkillEntry[];
-
-  const gapSkills: GapEntry[] = (posData?.gaps || []).map(g => {
-    const meta = GAP_META[g.skillId];
-    return meta ? { id: g.skillId, label: meta.label, importance: g.importance, colors: meta.colors, glow: meta.glow } : null;
-  }).filter(Boolean) as GapEntry[];
+  const gapSkills: GapEntry[] = gaps.map((label, i) => {
+    const meta = gapMetaFor(label);
+    /* The first gap listed on a posting is the one that blocks hardest. */
+    return { id: slug(label), label: meta.label, importance: 85 - i * 15, colors: meta.colors, glow: meta.glow };
+  });
 
   const allSkillIds = new Set([...matchedSkills.map(s => s.id), ...gapSkills.map(g => g.id)]);
   const unrelatedSkills = Object.entries(SKILL_META).filter(([id]) => !allSkillIds.has(id)).map(([id, meta]) => ({ id, ...meta }));
@@ -117,7 +157,9 @@ export function PositionSkillGraph({ companyId, position, companyLabel, companyC
     matchedSkills.forEach((s, i) => map.set(s.id, (i / Math.max(matchedSkills.length, 1)) * TAU));
     gapSkills.forEach((g, i) => map.set(g.id, ((i + 0.3) / Math.max(gapSkills.length, 1)) * TAU + 0.5));
     anglesRef.current = map;
-  }, [key]);
+    /* Re-seed the orbit when the posting changes, which is what the old
+       `key` string tracked before the lookup table went away. */
+  }, [position, strengths.join("|"), gaps.join("|")]);
 
   useEffect(() => {
     let running = true;

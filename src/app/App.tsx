@@ -20,6 +20,7 @@ import { LearningWallet } from "./pages/LearningWallet";
 import { PortfolioBuilder } from "./pages/PortfolioBuilder";
 import { Dashboard } from "./pages/Dashboard";
 import { DecisionLab } from "./pages/DecisionLab";
+import { WhatIfLab } from "./pages/WhatIfLab";
 import { BlindSpots } from "./pages/BlindSpots";
 import { CareerPrescription } from "./pages/CareerPrescription";
 import { CareerEvidence } from "./pages/CareerEvidence";
@@ -52,6 +53,7 @@ type Page =
   | "dna-method"
   | "jobs"
   | "apply-prep"
+  | "whatif"
   | "coach"
   | "offers"
   | "portfolio"
@@ -84,6 +86,7 @@ const pageLabels: Record<Page, string> = {
   "dna-method":     "How Career DNA Works",
   jobs:             "Job Match Tracker",
   "apply-prep":     "Application Preparation",
+  whatif:           "What-If Lab",
   coach:            "Interview Coach",
   offers:           "Offer Decision AI",
   portfolio:        "Portfolio Builder",
@@ -108,7 +111,7 @@ const pageLabels: Record<Page, string> = {
 
 const allPages: Page[] = [
   "command", "stage-diagnose", "stage-decide", "stage-prepare", "stage-apply", "stage-prove",
-  "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
+  "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "whatif", "blindspots",
   "prescription", "evidence", "profile", "employer", "emp-matching", "emp-sla", "emp-reengage",
   "emp-resilience", "emp-pipeline", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
 ];
@@ -124,6 +127,7 @@ const pageRole: Record<Page, Role> = {
   "dna-method": "candidate",
   jobs: "candidate",
   "apply-prep": "candidate",
+  whatif: "candidate",
   coach: "candidate",
   offers: "candidate",
   portfolio: "candidate",
@@ -184,7 +188,10 @@ function AppRouter() {
   const [role, setRole]         = useState<Role>("candidate");
   const [history, setHistory]   = useState<Page[]>([]);
   const [prepJobId, setPrepJobId] = useState<string | null>(null);
-  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set(["maybank-da", "grab-ae"]));
+  /* id → when they applied. Was a Set pre-seeded with two applications
+     the user had never made, which put a freshly-scanned account into an
+     interview loop it had no history for. */
+  const [appliedJobs, setAppliedJobs] = useState<Record<string, string>>({});
 
   const navigate = (target: string) => {
     if (target === "landing")     { setAppState("landing");     return; }
@@ -230,11 +237,13 @@ function AppRouter() {
 
   const handlePrepareApp = (jobId: string) => {
     setPrepJobId(jobId);
-    setPage("apply-prep");
+    /* navigate, not setPage — apply-prep is a stop on the Apply journey now,
+       so Back has to be able to return from it. */
+    navigate("apply-prep");
   };
 
   const handleApply = (jobId: string) => {
-    setAppliedJobs(prev => new Set([...prev, jobId]));
+    setAppliedJobs(prev => (prev[jobId] ? prev : { ...prev, [jobId]: new Date().toISOString() }));
   };
 
   const switchRole = (nextRole: Role) => {
@@ -369,7 +378,7 @@ function AppRouter() {
               title={user?.name ?? "Profile"}
               className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D9C18A] to-[#8A7038] flex items-center justify-center text-white text-xs font-bold"
             >
-              {(user?.name ?? "Jordan Kim").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
+              {(user?.name || profile.resume?.name || "You").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
             </button>
             <button
               onClick={signOut}
@@ -394,7 +403,7 @@ function AppRouter() {
           )}
           <div className="flex-1 min-w-0 overflow-hidden flex flex-col">
             {page === "dashboard"       && <Dashboard onNavigate={navigate} />}
-            {page === "command"         && <CareerCommandCenter onNavigate={navigate} />}
+            {page === "command"         && <CareerCommandCenter onNavigate={navigate} appliedJobs={appliedJobs} />}
           {/* Looked up by id, not array position — the journey order can
               change without silently pointing a route at the wrong stage. */}
             {page === "stage-diagnose"  && <StageHub stage={stageById("stage-diagnose")} onNavigate={navigate} />}
@@ -405,11 +414,12 @@ function AppRouter() {
             {page === "dna"             && <CareerDna onNavigate={navigate} />}
             {page === "dna-method"      && <DnaMethod onNavigate={navigate} />}
             {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
-            {page === "apply-prep"      && prepJobId && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
+            {page === "apply-prep"      && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
             {page === "coach"           && <InterviewCoach jobId={prepJobId} onNavigate={navigate} />}
             {page === "offers"          && <OfferDecisionDashboard onNavigate={navigate} />}
             {page === "portfolio"       && <PortfolioBuilder onNavigate={navigate} />}
             {page === "decisionlab"     && <DecisionLab onNavigate={navigate} />}
+            {page === "whatif"          && <WhatIfLab onNavigate={navigate} />}
             {page === "blindspots"      && <BlindSpots onNavigate={navigate} />}
             {page === "prescription"    && <CareerPrescription onNavigate={navigate} />}
             {page === "evidence"        && <CareerEvidence onNavigate={navigate} />}

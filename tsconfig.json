@@ -1,0 +1,29 @@
+{
+  /* Vite transpiles without type checking, so a build passing proves only
+     that the syntax parsed — a component referencing a deleted export still
+     ships and crashes at runtime. `npm run typecheck` is the real gate.
+
+     strict stays off: the existing code was not written under it and
+     turning it on now would bury real errors under thousands of implicit
+     -any complaints. strictNullChecks alone would be the next step. */
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "types": ["node"],
+
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src", "api", "vite.config.ts"]
+}

@@ -161,7 +161,7 @@ const roles = [
   "Student / no job yet",
   "Data Analyst", "Senior Data Analyst", "Analytics Engineer", "Data Engineer",
   "ML Engineer", "Data Scientist",
-  "Software Engineer", "Senior Software Engineer", "QA Engineer", "IT Support",
+  "Junior Developer", "Software Engineer", "Senior Software Engineer", "QA Engineer", "IT Support",
   "Product Manager", "Business Analyst", "Project Coordinator",
   "Graphic Designer", "UX/UI Designer", "Content Creator", "Videographer",
   "Marketing Executive", "Digital Marketing Specialist", "Social Media Executive",

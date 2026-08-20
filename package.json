@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "test": "node tests/careerDna.test.mjs && node tests/careerCorpus.test.mjs && node tests/whatIf.test.mjs",
+    "verify": "npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

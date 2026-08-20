@@ -6,6 +6,10 @@ import {
 } from "lucide-react";
 import { useCareerProfile } from "../state/careerProfile";
 import { NextStep } from "../state/stages";
+import { corpusFor } from "../lib/careerCorpus";
+import { marketMedian, seniorityBand } from "../lib/careerRisk";
+import type { RoleFamily } from "../lib/roleFamily";
+import type { CareerProfile } from "../lib/profileTypes";
 
 /* ── The weighting model ──
    One place for the weights. The label, the bar width and the
@@ -21,53 +25,78 @@ const FACTORS = [
 
 type FactorKey = typeof FACTORS[number]["key"];
 
-/* Per-offer sub-scores. Four of the five are authored from what we know
-   about each employer; the DNA one is computed per user below, which is
-   why the same three offers can rank differently for two candidates. */
-const offers: {
+/* ────────────────────────────────────────────────────────────────
+   The offers on the table are the postings this person is closest to.
+
+   Three were authored here — Maybank, Grab and Shopee, all analytics
+   roles — so a software engineer compared three data jobs they had not
+   applied for. Four of the five sub-scores are now derived from the
+   posting itself; the DNA one is computed per user, which is why the
+   same three offers rank differently for two candidates.
+   ──────────────────────────────────────────────────────────────── */
+
+interface OfferView {
   company: string; role: string; location: string; salary: string; monthly: number;
   sub: Record<Exclude<FactorKey, "dna">, number>;
-  /** The DNA dimensions this role actually leans on. */
   dnaWeights: Record<string, number>;
   upside: string; risk: string;
-}[] = [
-  {
-    company: "Maybank",
-    role: "Data Analyst, Digital Banking",
-    location: "Kuala Lumpur",
-    salary: "RM 8.8k/mo",
-    monthly: 8800,
-    sub: { growth: 88, pay: 74, trust: 96, life: 92 },
-    dnaWeights: { Technical: 0.3, Execution: 0.3, Communication: 0.25, Strategic: 0.15 },
-    upside: "Best structured growth path and the strongest employer trust score in the set.",
-    risk: "Less innovation freedom than the startup track.",
-  },
-  {
-    company: "Grab",
-    role: "Analytics Engineer",
-    location: "Petaling Jaya / Hybrid",
-    salary: "RM 10.2k/mo",
-    monthly: 10200,
-    sub: { growth: 94, pay: 90, trust: 78, life: 70 },
-    dnaWeights: { Technical: 0.4, Innovation: 0.25, Execution: 0.2, Strategic: 0.15 },
-    upside: "Best technical compounding and regional exposure.",
-    risk: "Higher ambiguity; needs stronger self-direction.",
-  },
-  {
-    company: "Shopee",
-    role: "Business Intelligence Associate",
-    location: "Kuala Lumpur",
-    salary: "RM 9.4k/mo",
-    monthly: 9400,
-    sub: { growth: 66, pay: 82, trust: 72, life: 76 },
-    dnaWeights: { Execution: 0.4, Technical: 0.3, Communication: 0.3 },
-    upside: "Fast pace and a strong brand signal on your record.",
-    risk: "The role can keep you in reporting work, which raises your AI exposure.",
-  },
-];
+}
+
+/* What each role family leans on. Used to weight the candidate's own
+   dimensions rather than to score the employer. */
+const FAMILY_DNA_WEIGHTS: Record<RoleFamily, Record<string, number>> = {
+  software:  { Technical: 0.40, Execution: 0.25, Innovation: 0.20, Communication: 0.15 },
+  data:      { Technical: 0.35, Execution: 0.25, Communication: 0.25, Strategic: 0.15 },
+  design:    { Innovation: 0.35, Communication: 0.25, Execution: 0.25, Technical: 0.15 },
+  marketing: { Communication: 0.35, Strategic: 0.25, Innovation: 0.25, Execution: 0.15 },
+  product:   { Strategic: 0.35, Communication: 0.25, Execution: 0.20, Technical: 0.20 },
+  business:  { Communication: 0.35, Execution: 0.30, Strategic: 0.20, Leadership: 0.15 },
+  service:   { Execution: 0.40, Communication: 0.30, Leadership: 0.20, Strategic: 0.10 },
+  generic:   { Execution: 0.30, Communication: 0.30, Strategic: 0.20, Technical: 0.20 },
+};
+
+function buildOffers(profile: CareerProfile): OfferView[] {
+  const corpus = corpusFor(profile);
+  const family = corpus.family;
+  const weights = FAMILY_DNA_WEIGHTS[family];
+
+  return corpus.rankedJobs.slice(0, 3).map(job => {
+    const mid = Math.round((job.salaryLow + job.salaryHigh) / 2);
+    const spread = job.salaryHigh - job.salaryLow;
+
+    return {
+      company: job.company,
+      role: job.title,
+      location: job.location,
+      salary: `RM ${(mid / 1000).toFixed(1)}k/mo`,
+      monthly: mid,
+      sub: {
+        /* Growth: how much room the band leaves above the entry point,
+           plus how much of the role is not yet automatable. */
+        growth: Math.max(45, Math.min(96, Math.round(
+          60 + (spread / Math.max(job.salaryLow, 1)) * 70 - job.gaps.length * 2,
+        ))),
+        /* Pay: this band against what the family pays at this level. */
+        pay: Math.max(40, Math.min(96, Math.round(
+          62 + ((mid - marketMedian(family, seniorityBand(profile))) / Math.max(mid, 1)) * 90,
+        ))),
+        /* Trust: how reliably this employer actually replies. */
+        trust: Math.max(45, Math.min(98, job.hr.replyRate)),
+        /* Life fit: hybrid and remote arrangements score higher. */
+        life: /hybrid|remote/i.test(job.location) ? 88 : 74,
+      },
+      dnaWeights: weights,
+      upside: `${job.strengths.slice(0, 2).join(" and ")} are what this role rewards most.`,
+      risk: job.gaps.length
+        ? `${job.gaps[0]} is what they will probe hardest, and it is your weakest point here.`
+        : "No obvious blocker — which usually means the competition for it is heavier.",
+    };
+  });
+}
 
 export function OfferDecisionDashboard({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const { profile } = useCareerProfile();
+  const offers = buildOffers(profile);
   const dnaScores = Object.keys(profile.dnaScores).length
     ? profile.dnaScores
     : { Technical: 55, Execution: 55, Communication: 55, Strategic: 55, Innovation: 55, Leadership: 55 };
