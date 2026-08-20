@@ -468,7 +468,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
       </nav>
 
       <div className={`flex-1 flex items-center justify-center px-6 ${step === "calibration" || step === "connect" ? "py-4" : "py-12"}`}>
-        <div className={`w-full ${step === "upload" ? "max-w-2xl" : "max-w-[1380px]"}`}>
+        <div className={`w-full ${step === "calibration" || step === "connect" ? "max-w-[1380px]" : "max-w-2xl"}`}>
 
           {/* Progress indicator */}
           {step !== "scan" && step !== "done" && (
@@ -788,7 +788,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               </div>
 
               <div className="space-y-5 mb-8">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1.5">Current Role</label>
                     <select
@@ -833,7 +833,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1.5">Years of Experience</label>
                     <select
@@ -873,7 +873,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                   <p className="text-xs text-muted-foreground mb-3">
                     Your answer is compared against what we measure. Where the two disagree is worth knowing.
                   </p>
-                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                     {SELF_ASSESSMENT_OPTIONS.map(o => {
                       const active = selfAssessment === o.id;
                       return (
@@ -896,7 +896,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
 
                 <div>
                   <label className="text-sm font-medium text-foreground block mb-3">Primary Career Goal <span className="text-muted-foreground font-normal">(select all that apply)</span></label>
-                  <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {goals.map((g) => {
                       const active = selectedGoals.includes(g.id);
                       return (
