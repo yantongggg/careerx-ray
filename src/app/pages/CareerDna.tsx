@@ -14,6 +14,7 @@ import {
 import { useCareerProfile } from "../state/careerProfile";
 import { NextStep } from "../state/stages";
 import { detectRoleFamily, type RoleFamily } from "../lib/roleFamily";
+import { levelOf, type JobLevel } from "../lib/careerCorpus";
 
 const defaultDnaScores = {
   Technical: 88,
@@ -31,6 +32,8 @@ const defaultDnaScores = {
    restaurant supervisor and a machine-learning engineer. The profile
    below is picked from the target role, so the comparison is against
    the job you want rather than against a fixed persona. */
+/* The profile a role in this family usually leans on, at mid level.
+   Authored, not measured — the page says so. */
 const ASPIRATION_BY_FAMILY: Record<RoleFamily, Record<string, number>> = {
   data:      { Technical: 88, Strategic: 82, Execution: 74, Communication: 72, Innovation: 66, Leadership: 60 },
   software:  { Technical: 90, Execution: 82, Innovation: 74, Strategic: 70, Communication: 64, Leadership: 58 },
@@ -41,6 +44,36 @@ const ASPIRATION_BY_FAMILY: Record<RoleFamily, Record<string, number>> = {
   service:   { Communication: 86, Execution: 84, Leadership: 70, Strategic: 62, Innovation: 58, Technical: 50 },
   generic:   { Communication: 78, Execution: 78, Strategic: 74, Technical: 70, Innovation: 68, Leadership: 66 },
 };
+
+/* ────────────────────────────────────────────────────────────────
+   Family alone was not enough.
+
+   The benchmark was keyed only by family, so Data Analyst and Data
+   Science Manager returned the same profile — and it put Leadership
+   last at 60. The chart was telling someone aiming at a manager's job
+   that leadership was the least of what the role needed.
+
+   What a job asks for moves with the rung as much as with the field:
+   a lead role wants judgement and people, an entry role wants
+   execution, and the technical bar stops rising somewhere in between.
+   ──────────────────────────────────────────────────────────────── */
+const LEVEL_SHIFT: Record<JobLevel, Record<string, number>> = {
+  entry:  { Technical:  +2, Execution:  +8, Strategic: -12, Leadership: -18, Communication:  -4, Innovation:  -2 },
+  mid:    { Technical:   0, Execution:   0, Strategic:   0, Leadership:   0, Communication:   0, Innovation:   0 },
+  senior: { Technical:  +4, Execution:  -2, Strategic:  +8, Leadership: +10, Communication:  +6, Innovation:  +2 },
+  lead:   { Technical: -14, Execution: -10, Strategic: +14, Leadership: +30, Communication: +14, Innovation:  -2 },
+};
+
+/** The profile a specific role leans on — its field and its rung. */
+function aspirationFor(targetRole: string): Record<string, number> {
+  const base = ASPIRATION_BY_FAMILY[detectRoleFamily(targetRole)];
+  const shift = LEVEL_SHIFT[levelOf(targetRole)];
+  return Object.fromEntries(
+    Object.entries(base).map(([dim, v]) =>
+      [dim, Math.max(35, Math.min(95, v + (shift[dim] ?? 0)))],
+    ),
+  );
+}
 
 /* A dimension only counts as a conflict once the gap is wide enough to
    act on. Below this it is noise in a six-question calibration. */
@@ -124,7 +157,7 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
   const { profile } = useCareerProfile();
   const dnaScores = Object.keys(profile.dnaScores).length ? profile.dnaScores : defaultDnaScores;
   const targetRole = profile.targetRole;
-  const aspirationScores = ASPIRATION_BY_FAMILY[detectRoleFamily(targetRole)];
+  const aspirationScores = aspirationFor(targetRole);
 
   const radarData = Object.entries(dnaScores).map(([subject, A]) => ({ subject, A }));
   const conflictRadarData = Object.entries(dnaScores).map(([subject, A]) => ({
@@ -340,9 +373,10 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
               <h2 className="font-semibold text-foreground">Where you are vs. where you&apos;re headed</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              The blue shape is the work you can currently prove. The gold shape is the profile a role
-              like {targetRole || "your target role"} usually leans on — a written benchmark, not a measurement.
-              Where they pull apart by more than {CONFLICT_THRESHOLD} points, that gap is your next move.
+              The blue shape is how you answered. The gold shape is the profile{" "}
+              {targetRole ? <><strong className="text-foreground">{targetRole}</strong> usually leans on</> : "your target role usually leans on"} —
+              its field and its level, written down rather than measured. Where they pull apart by
+              more than {CONFLICT_THRESHOLD} points, that gap is your next move.
             </p>
           </div>
 
@@ -372,7 +406,7 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
                 <div className="border border-blue-100 bg-blue-50/50 rounded-lg p-3 text-center">
                   <img src={primary.image} alt={primary.animal} className="w-10 h-10 rounded-lg object-cover shadow-sm mx-auto mb-1.5" />
                   <p className="text-xs font-bold text-foreground">{primary.type}</p>
-                  <p className="text-xs text-blue-600 font-semibold">Who you are now</p>
+                  <p className="text-xs text-blue-600 font-semibold">How you work now</p>
                 </div>
                 <div className="border border-amber-100 bg-amber-50/50 rounded-lg p-3 text-center">
                   <img src={aspirationPrimary.image} alt={aspirationPrimary.animal} className="w-10 h-10 rounded-lg object-cover shadow-sm mx-auto mb-1.5" />

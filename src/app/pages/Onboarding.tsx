@@ -904,32 +904,12 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                   </div>
                 </div>
 
-                <div>
-                  {/* Quieter than the fields above it: this one is optional
-                      and nothing on screen depends on the answer. */}
-                  <label className="text-xs font-medium text-muted-foreground block mb-2">
-                    What do you think is holding you back? <span className="font-normal">(optional)</span>
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {SELF_ASSESSMENT_OPTIONS.map(o => {
-                      const active = selfAssessment === o.id;
-                      return (
-                        <button
-                          key={o.id}
-                          type="button"
-                          onClick={() => setSelfAssessment(active ? "" : o.id)}
-                          className={`text-xs px-2.5 py-1.5 rounded-lg border transition-all ${
-                            active
-                              ? "border-primary bg-primary/5 text-foreground font-medium"
-                              : "border-border bg-white text-muted-foreground hover:border-primary/40"
-                          }`}
-                        >
-                          {o.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                {/* The self-assessment question is hidden. Nothing on screen
+                    reads it since the blind-spot callout came off the
+                    dashboard, and an optional question with no visible
+                    outcome is just friction. DEMO_PRESET still supplies a
+                    value, so deriveBlindSpots keeps working if the callout
+                    comes back. */}
 
                 <div>
                   <label className="text-sm font-medium text-foreground block mb-3">Primary Career Goal <span className="text-muted-foreground font-normal">(select all that apply)</span></label>

@@ -83,12 +83,20 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
     .map(e => /github\.com\/([A-Za-z0-9_-]+)/.exec(e.source ?? ""))
     .find(Boolean)?.[1];
 
+  /* Checked against the source URL, not the evidence kind. Any pasted
+     link used to count as LinkedIn, and after the LinkedIn import
+     started producing positions rather than a bare link it stopped
+     counting at all. If they never pasted one, nothing here claims
+     they did. */
+  const hasLinkedIn = profile.evidence.some(e => /linkedin\.com/i.test(e.source ?? ""));
+  const [linkedinConnected, setLinkedinConnected] = useState(hasLinkedIn);
+
   const sourceSummary = [
     profile.resume && {
       label: "Résumé", icon: FileText,
       detail: `${profile.resume.skills.length} skills · ${profile.resume.employers.length} employer${profile.resume.employers.length === 1 ? "" : "s"}`,
     },
-    profile.evidence.some(e => /linkedin/i.test(e.source ?? "")) && {
+    hasLinkedIn && {
       label: "LinkedIn", icon: Linkedin, detail: "Linked as a source",
     },
     githubHandle && { label: "GitHub", icon: Github, detail: `github.com/${githubHandle}` },
@@ -107,8 +115,6 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
      page used to start every source at false, so someone who had just
      uploaded a resume and linked their profile was asked to do it all
      over again. */
-  const importedLink = profile.evidence.find(e => e.kind === "link" || e.kind === "portfolio");
-  const [linkedinConnected, setLinkedinConnected] = useState(!!importedLink);
   const [githubConnected, setGithubConnected] = useState(false);
   const [resumeUploaded, setResumeUploaded] = useState(!!profile.resume);
   const [dnaImported, setDnaImported] = useState(Object.keys(profile.dnaScores).length > 0);

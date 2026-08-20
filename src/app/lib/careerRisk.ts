@@ -18,7 +18,7 @@
    ──────────────────────────────────────────────────────────────── */
 
 import type { CareerProfile } from "./profileTypes";
-import { detectRoleFamily, type RoleFamily } from "./roleFamily";
+import { detectRoleFamily, FAMILY_LABEL, type RoleFamily } from "./roleFamily";
 import { explainRoleGap } from "../state/intelligence";
 
 export type Severity = "critical" | "high" | "medium" | "low";
@@ -141,6 +141,43 @@ const ROLE_GATE_TERMS: Record<RoleFamily, string[]> = {
   service: ["food", "safety", "first aid", "hospitality", "barista", "training"],
   generic: [],
 };
+
+/* The skills a role in each family screens on. Authored, and the only
+   place they are written down — the gap list and the corpus both read
+   from here so they cannot disagree about what a role asks for. */
+const TARGET_SKILLS: Record<RoleFamily, string[]> = {
+  software:  ["System design", "Automated testing", "CI/CD", "Cloud deployment", "Code review"],
+  data:      ["Data modelling", "Pipeline orchestration", "Cloud warehouse", "Experiment design", "Stakeholder communication"],
+  design:    ["Design systems", "User research", "Prototyping", "Accessibility", "Case studies"],
+  marketing: ["Paid acquisition", "Analytics", "Copywriting", "Campaign planning", "Marketing automation"],
+  product:   ["Discovery", "Roadmapping", "Metrics", "Stakeholder management", "Prioritisation"],
+  business:  ["Pipeline management", "Negotiation", "CRM discipline", "Forecasting", "Account planning"],
+  service:   ["Team scheduling", "Service standards", "Stock control", "Cost control", "Training others"],
+  generic:   ["Planning", "Communication", "Ownership", "Problem solving", "Working with data"],
+};
+
+interface SkillCoverage {
+  required: string[];
+  covered: string[];
+  missing: string[];
+}
+
+/** What the target asks for, against what this person can show. */
+function getSkillCoverage(profile: CareerProfile): SkillCoverage {
+  const family = detectRoleFamily(profile.targetRole, profile.currentRole);
+  const required = profile.targetRole ? TARGET_SKILLS[family] : [];
+  const held = [
+    ...(profile.resume?.skills ?? []),
+    ...profile.evidence.flatMap(e => e.skills),
+    ...profile.evidence.map(e => e.label),
+  ].map(x => x.toLowerCase());
+
+  const covered = required.filter(req => {
+    const words = req.toLowerCase().split(/\s+/);
+    return held.some(h => words.some(w => w.length > 3 && h.includes(w)) || req.toLowerCase().includes(h));
+  });
+  return { required, covered, missing: required.filter(r => !covered.includes(r)) };
+}
 
 /* ── Benchmark accessors ─────────────────────────────────────
    The corpus layer builds its salary trajectories and AI-risk figures
@@ -495,33 +532,98 @@ export function deriveRiskCategoryChecks(profile: CareerProfile): RiskCategoryCh
 
 /* ── Target gaps: the role you want ──────────────────────────── */
 
+/* What the rung asks for beyond the field. A lead role is not a bigger
+   version of the job below it, and the gap list should not read as if
+   it were. */
+const LEVEL_DEMANDS: Record<string, { skill: string; headline: string; why: string }[]> = {
+  lead: [
+    {
+      skill: "People leadership",
+      headline: "You have not led anyone yet, and every posting at this level asks for it",
+      why: "This is the one thing that separates the job you have from the job you want. Nothing else on this list matters if this stays empty.",
+    },
+    {
+      skill: "Owning a roadmap",
+      headline: "Deciding what the team does not work on, not only what it does",
+      why: "Managers are hired on judgement about priorities. Being excellent at the work is what got you considered; choosing the work is the job.",
+    },
+  ],
+  senior: [
+    {
+      skill: "Mentoring",
+      headline: "Someone else's work getting better because of you",
+      why: "Senior is the rung where you stop being measured on your own output alone.",
+    },
+  ],
+  entry: [],
+  mid: [],
+};
+
+/**
+ * The distance between the role they hold and the role they want.
+ *
+ * This used to read the transition rule set, which has entries for a
+ * handful of moves and a generic fallback for everything else. Anyone
+ * outside those few got the same four lines — "ship one portfolio
+ * project", "convert experience into verifiable evidence" — which are
+ * process advice, not gaps, and identical no matter what they were
+ * aiming at.
+ *
+ * Gaps are the skills the target role actually asks for that this
+ * person cannot evidence, plus what the rung demands on top. Specific,
+ * different for every target, and checkable against their own record.
+ */
 export function deriveTargetGaps(profile: CareerProfile): TargetGap[] {
   const current = profile.currentRole || "your current role";
   const target = profile.targetRole || "";
   if (!target) return [];
 
-  // Reuses the authored transition rules already in the intelligence layer
-  // rather than introducing a second, divergent set.
-  const { headline, gaps } = explainRoleGap(current, target);
-  const family = detectRoleFamily(target);
-  const held = new Set(profile.evidence.flatMap(e => e.skills.map(s => s.toLowerCase())));
-  const resumeSkills = new Set((profile.resume?.skills ?? []).map(s => s.toLowerCase()));
+  const family = detectRoleFamily(target, profile.currentRole);
+  const coverage = getSkillCoverage(profile);
+  const level = /manager|lead\b|head of|director|principal|chief/i.test(target)
+    ? "lead"
+    : /senior|staff\b/i.test(target)
+      ? "senior"
+      : /junior|intern|graduate|trainee/i.test(target)
+        ? "entry"
+        : "mid";
 
-  return gaps.map((gapText, i) => {
-    const covered = [...held, ...resumeSkills].some(s => gapText.toLowerCase().includes(s));
-    // Blockers named earlier in the rule set are the ones cited most often.
-    const share = [68, 54, 41, 33, 27][i] ?? 25;
+  const evidenced = new Set([
+    ...profile.evidence.flatMap(e => e.skills.map(sk => sk.toLowerCase())),
+    ...profile.evidence.map(e => e.label.toLowerCase()),
+  ]);
+
+  /* What the rung demands comes first — it is the reason the move is a
+     move rather than a promotion that happens on its own. */
+  const fromLevel = (LEVEL_DEMANDS[level] ?? []).map(d => ({ ...d, fromLevel: true }));
+
+  const fromSkills = coverage.missing.map(skill => ({
+    skill,
+    headline: `${skill} — nothing on your record shows it`,
+    why: `Postings for ${target} in ${FAMILY_LABEL[family].toLowerCase()} list this among the skills they screen on. Your résumé and evidence do not mention it.`,
+    fromLevel: false,
+  }));
+
+  const all = [...fromLevel, ...fromSkills].slice(0, 5);
+
+  return all.map((gap, i) => {
+    const covered = evidenced.has(gap.skill.toLowerCase());
+    /* Named earlier means cited more often — the level demand first,
+       then the skills in the order the role screens on them. */
+    const share = [72, 61, 54, 43, 35][i] ?? 30;
     return {
       id: `gap-${i}`,
-      skill: gapText.split(/[—:,(]/)[0].trim(),
-      headline: gapText,
-      why: i === 0 ? headline : `Named as a blocker for ${current} → ${target} moves in the ${family} family.`,
-      severity: covered ? "low" : i === 0 ? "high" : i === 1 ? "medium" : "low",
-      sharedBy: `${share}% of applicants moving into ${target} are filtered out on this`,
+      skill: gap.skill,
+      headline: gap.headline,
+      why: gap.why,
+      severity: covered ? "low" : gap.fromLevel ? "high" : i < 2 ? "high" : i < 4 ? "medium" : "low",
+      sharedBy: `${share}% of people moving from ${current} into ${target} are turned down on this`,
       action: covered
-        ? "You have partial evidence for this — make it explicit on your profile."
-        : gapText,
-      timeToClose: ["3 months", "2 months", "6 weeks", "4 weeks", "2 weeks"][i] ?? "1 month",
+        ? `You have something for this already — make it explicit on your profile rather than leaving it implied.`
+        : gap.fromLevel
+          ? `Take one piece of scope that makes this true, then write down what happened.`
+          : `Ship one piece of work that uses ${gap.skill}, and put the link on your profile.`,
+      timeToClose: gap.fromLevel ? "6 months" : ["3 months", "2 months", "6 weeks", "4 weeks"][i] ?? "1 month",
     };
   });
 }
