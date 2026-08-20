@@ -12,6 +12,7 @@ type Role = "candidate" | "employer" | "university";
 
 import { JOURNEY } from "../state/stages";
 import { useCareerProfile } from "../state/careerProfile";
+import { TapirMark } from "./TapirMark";
 import { demoToast } from "../state/toast";
 
 const employerMain = [
@@ -35,9 +36,11 @@ interface SidebarProps {
   currentPage: string;
   currentRole: Role;
   onNavigate: (page: string) => void;
+  /** Opens the assistant. Candidate accounts only. */
+  onAskTapir?: () => void;
 }
 
-export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) {
+export function Sidebar({ currentPage, currentRole, onNavigate, onAskTapir }: SidebarProps) {
   const { profile, risks, scorecard } = useCareerProfile();
   const scoreValue = scorecard.careerHealth;
   const roleTitle = currentRole === "candidate" ? "Candidates" : currentRole === "employer" ? "Employers" : "Universities";
@@ -150,6 +153,18 @@ export function Sidebar({ currentPage, currentRole, onNavigate }: SidebarProps) 
 
       {/* Bottom */}
       <div className="border-t border-border p-3 space-y-0.5 max-md:hidden">
+        {currentRole === "candidate" && onAskTapir && (
+          <button
+            onClick={onAskTapir}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+          >
+            <span className="w-5 h-5 -ml-0.5 flex items-center justify-center flex-shrink-0">
+              <TapirMark size={20} />
+            </span>
+            <span className="flex-1 text-left">Ask Tapir</span>
+            <span className="text-[10px] font-semibold text-primary bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-full">AI</span>
+          </button>
+        )}
         {[
           { icon: Bell,     label: "Notifications", badge: "2" },
           { icon: Settings, label: "Settings"                  },

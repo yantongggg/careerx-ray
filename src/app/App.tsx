@@ -26,6 +26,7 @@ import { CareerPrescription } from "./pages/CareerPrescription";
 import { CareerEvidence } from "./pages/CareerEvidence";
 import { UserProfile } from "./pages/UserProfile";
 import { Sidebar } from "./layout/Sidebar";
+import { CareerChat } from "./layout/CareerChat";
 import { ApplicationPrep } from "./pages/ApplicationPrep";
 import { HiringPipeline } from "./pages/HiringPipeline";
 import { IntelligenceProvider } from "./state/intelligence";
@@ -191,6 +192,9 @@ function AppRouter() {
   /* id → when they applied. Was a Set pre-seeded with two applications
      the user had never made, which put a freshly-scanned account into an
      interview loop it had no history for. */
+  /* The assistant is reachable from the sidebar and from its own
+     floating launcher, so its open state lives here. */
+  const [chatOpen, setChatOpen] = useState(false);
   const [appliedJobs, setAppliedJobs] = useState<Record<string, string>>({});
 
   const navigate = (target: string) => {
@@ -320,7 +324,7 @@ function AppRouter() {
 
   return (
     <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-muted">
-      <Sidebar currentPage={page} currentRole={role} onNavigate={navigate} />
+      <Sidebar currentPage={page} currentRole={role} onNavigate={navigate} onAskTapir={() => setChatOpen(true)} />
 
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
@@ -441,6 +445,13 @@ function AppRouter() {
           )}
         </div>
       </main>
+
+      {/* Candidate-side only: the assistant reads a career scan, which
+          employer and university accounts do not have. */}
+      {role === "candidate" && (
+        <CareerChat page={pageLabels[page] ?? page} open={chatOpen} onOpenChange={setChatOpen} />
+      )}
+
       <ToastHost />
     </div>
   );
