@@ -229,7 +229,7 @@ const DEMO_PRESET = {
 const scanSteps = [
   { id: "dna", label: "Generating Career DNA", detail: "Combining profile evidence with your Career Calibration answers", duration: 1800 },
   { id: "market", label: "Benchmarking Market Demand", detail: "Comparing your profile against our Malaysian role, salary and demand datasets", duration: 2200 },
-  { id: "blind", label: "Detecting Blind Spots", detail: "Running 50+ career risk models: automation exposure, stagnation signals, demand shifts", duration: 2000 },
+  { id: "blind", label: "Measuring the gap to your target", detail: "Comparing what the role asks for against what your evidence covers", duration: 2000 },
   { id: "scenarios", label: "Generating Decision Scenarios", detail: "Simulating 4 future career paths with salary, promotion, and satisfaction projections", duration: 1900 },
   { id: "prescription", label: "Building Career Prescription", detail: "Synthesizing findings into a personalized 30/90-day action plan", duration: 1600 },
 ];

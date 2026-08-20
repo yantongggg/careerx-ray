@@ -49,7 +49,7 @@ export const JOURNEY: JourneyStage[] = [
     tools: [
       { page: "dashboard",  label: "X-Ray Dashboard", desc: "Your full scan: health score, risk models, market position.", icon: BarChart3 },
       { page: "dna",        label: "Career DNA", desc: "Your archetype, your strongest dimensions, and where your goal pulls away from your evidence.", icon: Fingerprint },
-      { page: "blindspots", label: "Blind Spots", desc: "What stands between you and the role you actually want.", icon: AlertTriangle },
+      { page: "blindspots", label: "Gap to Target", desc: "What stands between you and the role you actually want.", icon: AlertTriangle },
     ],
   },
   {

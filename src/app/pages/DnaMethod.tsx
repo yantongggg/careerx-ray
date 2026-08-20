@@ -309,7 +309,7 @@ export function DnaMethod({ onNavigate }: DnaMethodProps) {
           >
             {profile.targetRole
               ? `What stands between you and ${profile.targetRole}`
-              : "Continue to Blind Spots"}
+              : "Continue to Gap to Target"}
             <ArrowRight size={14} />
           </button>
         </div>

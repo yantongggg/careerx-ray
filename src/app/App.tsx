@@ -93,7 +93,7 @@ const pageLabels: Record<Page, string> = {
   portfolio:        "Portfolio Builder",
   dashboard:        "Career Dashboard",
   decisionlab:      "Decision Lab",
-  blindspots:       "Blind Spot Detection",
+  blindspots:       "Gap to Target",
   prescription:     "Career Prescription",
   evidence:         "Career Evidence",
   profile:          "My Profile",

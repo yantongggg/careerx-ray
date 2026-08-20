@@ -11,7 +11,7 @@ import { TRUST_NOTE } from "../lib/profileTypes";
 import type { Severity } from "../lib/careerRisk";
 
 /* ────────────────────────────────────────────────────────────────
-   Blind Spots — the distance between the role you are in and the
+   Gap to Target — the distance between the role you are in and the
    role you want.
 
    The Dashboard owns the other half of the story: what threatens the
@@ -364,13 +364,13 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
     id: i,
     severity: gap.severity,
     icon: severityIcon[gap.severity],
-    category: gap.skill,
     headline: gap.headline,
     humanContext: gap.why,
     whyItMatters: gap.sharedBy + ".",
     ifIgnored: `Applications for ${targetRole} keep reaching the same filter, and nothing in your record changes the outcome.`,
-    recommendedAction: gap.action,
-    actionSteps: [gap.action],
+    /* Only worth showing when it says something the headline did not.
+       The rule set often makes the gap and the action the same sentence. */
+    recommendedAction: gap.action.trim() === gap.headline.trim() ? null : gap.action,
     timeToFix: gap.timeToClose,
     evidence: `Derived from the ${currentRole} → ${targetRole} transition rules and the evidence on your profile.`,
   }));
@@ -405,7 +405,7 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground tracking-tight leading-tight">
-            {targetRole ? `What stands between you and ${targetRole}` : "Blind Spots"}
+            {targetRole ? `What stands between you and ${targetRole}` : "Gap to Target"}
           </h1>
           <p className="text-muted-foreground text-base mt-3 max-w-2xl leading-relaxed">
             {targetRole
@@ -441,7 +441,7 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
           <div className="bg-slate-950 text-white rounded-2xl p-6 lg:p-7 mb-6">
             <p className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-2.5">Start here</p>
             <h2 className="text-2xl lg:text-[1.75rem] font-bold leading-tight">{spots[0].headline}</h2>
-            <p className="text-base text-slate-300 leading-relaxed mt-3 max-w-2xl">{spots[0].recommendedAction}</p>
+            <p className="text-base text-slate-300 leading-relaxed mt-3 max-w-2xl">{spots[0].whyItMatters}</p>
             <div className="flex flex-wrap items-center gap-4 mt-5">
               <button
                 onClick={() => { setOpen(0); }}
@@ -472,7 +472,7 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
           )}
         </div>
 
-        {/* Blind Spot Cards */}
+        {/* Gap cards */}
         <div className="space-y-3 mb-8">
           {spots.map(spot => {
             const s = severityStyles[spot.severity];
@@ -491,7 +491,6 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${s.badge}`}>{s.label}</span>
-                      <span className="text-sm text-muted-foreground">{spot.category}</span>
                     </div>
                     <p className="text-lg font-semibold text-foreground leading-snug">{spot.headline}</p>
                     {!isOpen && (
@@ -540,15 +539,9 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                           <CheckCircle size={12} className="text-emerald-500" />
                           What to do next
                         </p>
-                        <p className="text-base text-foreground leading-relaxed mb-4">{spot.recommendedAction}</p>
-                        <div className="space-y-2">
-                          {spot.actionSteps.map((step, i) => (
-                            <div key={i} className="flex items-start gap-2.5">
-                              <span className="w-4 h-4 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
-                              <p className="text-sm text-foreground leading-snug">{step}</p>
-                            </div>
-                          ))}
-                        </div>
+                        <p className="text-base text-foreground leading-relaxed">
+                          {spot.recommendedAction ?? spot.headline}
+                        </p>
                         <div className="flex items-center gap-1.5 mt-4 text-sm text-muted-foreground">
                           <Clock size={13} /> Time to fix: <strong className="text-foreground">{spot.timeToFix}</strong>
                         </div>
