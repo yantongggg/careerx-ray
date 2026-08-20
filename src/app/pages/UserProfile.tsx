@@ -1,7 +1,7 @@
 import { demoToast } from "../state/toast";
 import { archetypeFor } from "../lib/careerDna.js";
 import { useCareerProfile } from "../state/careerProfile";
-import { MapPin, Briefcase, GraduationCap, Award, Code, Star, ExternalLink, Edit3, Plus, ArrowRight } from "lucide-react";
+import { MapPin, Briefcase, GraduationCap, Award, Code, Star, ExternalLink, Edit3, Plus, ArrowRight, Network, FileSearch } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 import { dimensions } from "../lib/careerDna.js";
 import { corpusFor } from "../lib/careerCorpus";
@@ -303,6 +303,31 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Kept off the journey on purpose. These answer "how would you
+            know if it were wrong", which is a reviewer's question rather
+            than a jobseeker's — so they live behind a click here instead
+            of taking a slot in the five stages. */}
+        <div className="mt-6 rounded-xl border border-border bg-white p-6">
+          <p className="text-base font-semibold text-foreground">Under the hood</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            How every number on your scan is produced, and how we would know if it were wrong.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              onClick={() => onNavigate?.("architecture")}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
+            >
+              <Network size={15} /> Technical architecture
+            </button>
+            <button
+              onClick={() => onNavigate?.("blueprint")}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
+            >
+              <FileSearch size={15} /> Validation blueprint
+            </button>
           </div>
         </div>
       </div>

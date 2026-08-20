@@ -24,6 +24,8 @@ import { BlindSpots } from "./pages/BlindSpots";
 import { CareerPrescription } from "./pages/CareerPrescription";
 import { CareerEvidence } from "./pages/CareerEvidence";
 import { UserProfile } from "./pages/UserProfile";
+import { ArchitectureDiagram } from "./pages/ArchitectureDiagram";
+import { ValidationBlueprint } from "./pages/ValidationBlueprint";
 import { Sidebar } from "./layout/Sidebar";
 import { CareerChat } from "./layout/CareerChat";
 import { ApplicationPrep } from "./pages/ApplicationPrep";
@@ -53,6 +55,8 @@ type Page =
   | "dna-method"
   | "jobs"
   | "apply-prep"
+  | "architecture"
+  | "blueprint"
   | "coach"
   | "offers"
   | "portfolio"
@@ -85,6 +89,8 @@ const pageLabels: Record<Page, string> = {
   "dna-method":     "How Career DNA Works",
   jobs:             "Job Match Tracker",
   "apply-prep":     "Application Preparation",
+  architecture:     "Technical Architecture",
+  blueprint:        "Validation Blueprint",
   coach:            "Interview Coach",
   offers:           "Offer Decision AI",
   portfolio:        "Living Portfolio",
@@ -109,7 +115,7 @@ const pageLabels: Record<Page, string> = {
 
 const allPages: Page[] = [
   "command", "stage-diagnose", "stage-decide", "stage-prepare", "stage-apply", "stage-prove",
-  "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
+  "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "architecture", "blueprint", "dashboard", "decisionlab", "blindspots",
   "prescription", "evidence", "profile", "employer", "emp-matching", "emp-sla", "emp-reengage",
   "emp-resilience", "emp-pipeline", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
 ];
@@ -125,6 +131,8 @@ const pageRole: Record<Page, Role> = {
   "dna-method": "candidate",
   jobs: "candidate",
   "apply-prep": "candidate",
+  architecture: "candidate",
+  blueprint: "candidate",
   coach: "candidate",
   offers: "candidate",
   portfolio: "candidate",
@@ -426,6 +434,8 @@ function AppRouter() {
             {page === "prescription"    && <CareerPrescription onNavigate={navigate} />}
             {page === "evidence"        && <CareerEvidence onNavigate={navigate} />}
             {page === "profile"         && <UserProfile onNavigate={navigate} />}
+            {page === "architecture"    && <ArchitectureDiagram onNavigate={navigate} />}
+            {page === "blueprint"       && <ValidationBlueprint onNavigate={navigate} />}
             {page === "employer"        && <EmployerDashboard />}
             {page === "emp-matching"    && <SmartTalentMatching />}
             {page === "emp-sla"         && <ReplySlaMonitor />}
