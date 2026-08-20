@@ -2,15 +2,13 @@ import { demoToast } from "../state/toast";
 import { NextStep } from "../state/stages";
 import { useState } from "react";
 import {
-  Clock, Github, Linkedin, Award, CheckCircle, AlertCircle,
-  Sparkles, Shield, ChevronRight, Plus, Check, X,
-  BookOpen, Globe, Heart, RefreshCw, ExternalLink, Circle
+  Clock, Github, Award, CheckCircle,
+  Sparkles, Shield, ChevronRight, Plus, Check, X, Globe, ExternalLink, Circle
 } from "lucide-react";
 import { useCareerProfile } from "../state/careerProfile";
 import { corpusFor } from "../lib/careerCorpus";
-import type { CareerProfile, EvidenceItem, TrustLevel } from "../lib/profileTypes";
+import type { CareerProfile, TrustLevel } from "../lib/profileTypes";
 
-type Tab = "timeline" | "detected" | "impact";
 
 interface Entry {
   id: string;
@@ -22,7 +20,6 @@ interface Entry {
   evidenceSource: string;
   trustScore: number;
   verified: "verified" | "pending" | "unverified";
-  aiImpact: string;
   emoji: string;
 }
 
@@ -118,7 +115,6 @@ function entriesFrom(profile: CareerProfile): Entry[] {
       evidenceSource: e.source || "You",
       trustScore: TRUST_SCORE[e.trust],
       verified: TRUST_TO_STATUS[e.trust],
-      aiImpact: impactOf(e),
     });
   });
 
@@ -137,7 +133,6 @@ function entriesFrom(profile: CareerProfile): Entry[] {
         evidenceSource: r.fileName,
         trustScore: TRUST_SCORE["self-declared"],
         verified: "unverified",
-        aiImpact: `Read from your résumé. Employment is the easiest thing on a CV to confirm — a reference or a payslip moves this to verified and it starts counting in full.`,
       });
     });
 
@@ -153,7 +148,6 @@ function entriesFrom(profile: CareerProfile): Entry[] {
         evidenceSource: r.fileName,
         trustScore: TRUST_SCORE["self-declared"],
         verified: "unverified",
-        aiImpact: `Qualifications verify quickly through the issuing institution, and Malaysian employers check them more often than anything else on a CV.`,
       });
     });
 
@@ -171,7 +165,6 @@ function entriesFrom(profile: CareerProfile): Entry[] {
           evidenceSource: r.fileName,
           trustScore: TRUST_SCORE["self-declared"],
           verified: "unverified",
-          aiImpact: `Named on your résumé but not confirmed with the issuer. Most certification bodies expose a public verification page — one link moves this to verified.`,
         });
       });
   }
@@ -179,17 +172,6 @@ function entriesFrom(profile: CareerProfile): Entry[] {
   return items;
 }
 
-function impactOf(e: EvidenceItem): string {
-  const skills = e.skills.length ? ` It backs ${e.skills.slice(0, 3).join(", ")}.` : "";
-  switch (e.trust) {
-    case "verified":
-      return `Confirmed against the issuer's own record, so this counts fully toward your readiness score.${skills}`;
-    case "corroborated":
-      return `Matches a source you connected but is not issuer-confirmed, so it carries partial weight.${skills} Verify it with the issuer to close the gap.`;
-    default:
-      return `Currently your word alone. It appears on your profile but adds little to your score until something independent supports it.${skills}`;
-  }
-}
 
 /** What this person's role family should be adding next. */
 function suggestionsFrom(profile: CareerProfile) {
@@ -242,288 +224,156 @@ function VerifiedBadge({ status, score }: { status: Entry["verified"]; score: nu
   );
 }
 
-function TimelineTab() {
-  const { profile } = useCareerProfile();
-  const entries = entriesFrom(profile);
+/* ────────────────────────────────────────────────────────────────
+   One page, one list.
+
+   This was three tabs — Career Timeline, Suggested, X-Ray Impact — plus
+   a stats strip whose four numbers were typed in (8 entries, 6 verified,
+   93% trust) regardless of what was on the record. The timeline is the
+   page now; suggestions open beside it when asked for, and the impact
+   tab is gone: it restated scores the dashboard already owns.
+   ──────────────────────────────────────────────────────────────── */
+
+function Timeline({ entries }: { entries: Entry[] }) {
   const [open, setOpen] = useState<string | null>(null);
 
-  if (!entries.length) return <NoEvidenceYet />;
-
   return (
-    <div>
-      <p className="text-sm text-muted-foreground mb-6 leading-relaxed max-w-xl">
-        Your career evidence powers X-Ray's blind spot detection, risk scoring, and career simulations. The richer this record, the more precise your Career Health Score.
-      </p>
-      <div className="relative">
-        <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
-        <div className="space-y-3">
-          {entries.map(e => {
-            const c   = typeColor[e.type];
-            const isOpen = open === e.id;
-            return (
-              <div key={e.id} className="relative flex gap-5">
-                <div className="relative z-10 w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-white border-2 border-border shadow-sm text-base">
-                  {e.emoji}
-                </div>
-                <div className={`flex-1 bg-white rounded-xl border shadow-sm overflow-hidden ${isOpen ? "border-primary/30" : "border-border"}`}>
-                  <button className="w-full flex items-start gap-3 px-5 py-4 text-left" onClick={() => setOpen(isOpen ? null : e.id)}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${c.text} ${c.bg} ${c.border}`}>{typeLabel[e.type]}</span>
-                        <VerifiedBadge status={e.verified} score={e.trustScore} />
-                      </div>
-                      <p className="font-semibold text-foreground text-sm mt-1">{e.title}</p>
-                      <p className="text-xs text-muted-foreground">{e.org} · {e.date}</p>
+    <div className="relative">
+      <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
+      <div className="space-y-3">
+        {entries.map(e => {
+          const c = typeColor[e.type];
+          const isOpen = open === e.id;
+          return (
+            <div key={e.id} className="relative flex gap-5">
+              <div className="relative z-10 w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-white border-2 border-border shadow-sm text-base">
+                {e.emoji}
+              </div>
+              <div className={`flex-1 bg-white rounded-xl border shadow-sm overflow-hidden ${isOpen ? "border-primary/30" : "border-border"}`}>
+                <button className="w-full flex items-start gap-3 px-5 py-4 text-left" onClick={() => setOpen(isOpen ? null : e.id)}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${c.text} ${c.bg} ${c.border}`}>{typeLabel[e.type]}</span>
+                      <VerifiedBadge status={e.verified} score={e.trustScore} />
                     </div>
-                    <ChevronRight size={15} className={`text-muted-foreground flex-shrink-0 mt-1 transition-transform ${isOpen ? "rotate-90" : ""}`} />
-                  </button>
-                  {isOpen && (
-                    <div className="border-t border-border px-5 py-4 space-y-3">
-                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                        <p className="text-xs font-semibold text-primary flex items-center gap-1.5 mb-2">
-                          <Sparkles size={12} /> X-Ray Impact
-                        </p>
-                        <p className="text-xs text-blue-900 leading-relaxed">{e.aiImpact}</p>
-                      </div>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex flex-wrap gap-1.5">
-                          {e.skills.map(s => <span key={s} className="text-xs bg-muted border border-border text-foreground px-2 py-0.5 rounded-md">{s}</span>)}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-                          <ExternalLink size={10} /> {e.evidenceSource}
-                        </div>
-                      </div>
+                    <p className="font-semibold text-foreground text-base">{e.title}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{e.org} · {e.date}</p>
+                  </div>
+                  <ChevronRight size={15} className={`text-muted-foreground flex-shrink-0 mt-1 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                </button>
+                {isOpen && (
+                  <div className="border-t border-border px-5 py-4 flex items-start justify-between gap-4">
+                    <div className="flex flex-wrap gap-1.5">
+                      {e.skills.length
+                        ? e.skills.map(sk => <span key={sk} className="text-xs bg-muted border border-border text-foreground px-2 py-0.5 rounded-md">{sk}</span>)
+                        : <span className="text-sm text-muted-foreground">No skills attached to this one yet.</span>}
                     </div>
-                  )}
-                </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+                      <ExternalLink size={10} /> {e.evidenceSource}
+                    </div>
+                  </div>
+                )}
               </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DetectedTab() {
-  const { profile, addEvidence } = useCareerProfile();
-  const detected = suggestionsFrom(profile);
-  const [statuses, setStatuses] = useState<Record<string, "pending" | "accepted" | "rejected">>({});
-
-  return (
-    <div className="space-y-5">
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
-        <Sparkles size={15} className="text-primary flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-semibold text-foreground">What would move your score most</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Ranked for {profile.targetRole || "your target role"}. Connect a source and X-Ray will watch it for new achievements, with your approval before anything is added.</p>
-        </div>
-        <button onClick={() => demoToast("Connect GitHub, LinkedIn or an issuer portal to enable automatic detection")} className="ml-auto flex-shrink-0 flex items-center gap-1.5 text-xs text-primary border border-blue-200 bg-white px-3 py-1.5 rounded-lg hover:bg-blue-50 font-medium">
-          <RefreshCw size={11} /> Scan
-        </button>
-      </div>
-
-      {detected.map((d, i) => {
-        const status = statuses[d.id] ?? "pending";
-        return (
-          <div key={d.id} className={`bg-white border rounded-xl p-5 shadow-sm ${status === "accepted" ? "border-emerald-200" : status === "rejected" ? "border-border opacity-50" : "border-amber-200"}`}>
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center flex-shrink-0">
-                <d.sourceIcon size={15} className="text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <p className="text-sm font-semibold text-foreground">{d.title}</p>
-                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${i === 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                    {i === 0 ? "Highest impact" : i === 1 ? "High impact" : "Worth adding"}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-1">Source: {d.source}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{d.desc}</p>
-              </div>
-              {status === "pending" && (
-                <div className="flex gap-2 flex-shrink-0">
-                  <button onClick={() => setStatuses(p => ({ ...p, [d.id]: "rejected" }))}
-                    className="text-xs border border-border text-muted-foreground px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
-                    <X size={11} /> Skip
-                  </button>
-                  <button onClick={() => {
-                      /* Added on the user's word, so it enters the record
-                         self-declared. Trust is earned by verification,
-                         not by clicking Add. */
-                      addEvidence({ kind: d.kind, label: d.title, source: d.source, trust: "self-declared", skills: [] });
-                      setStatuses(p => ({ ...p, [d.id]: "accepted" }));
-                      demoToast(`Added "${d.title}" as self-declared — verify it to raise its weight`);
-                    }}
-                    className="text-xs bg-primary text-white px-2.5 py-1.5 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-1">
-                    <Check size={11} /> Add
-                  </button>
-                </div>
-              )}
-              {status === "accepted" && <span className="text-xs text-emerald-600 font-medium flex items-center gap-1 flex-shrink-0"><CheckCircle size={12} /> Added</span>}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-function ImpactTab() {
-  const { profile, scorecard } = useCareerProfile();
-  const entries = entriesFrom(profile);
+/** What is worth adding next for this role, opened on request. */
+function Suggestions({ onClose }: { onClose: () => void }) {
+  const { profile, addEvidence } = useCareerProfile();
+  const suggestions = suggestionsFrom(profile);
+  const [added, setAdded] = useState<Record<string, boolean>>({});
 
-  const verified = entries.filter(e => e.verified === "verified").length;
-  const pending = entries.filter(e => e.verified === "pending").length;
-  const unverified = entries.length - verified - pending;
-
-  /* Evidence quality is the share of the record that something
-     independent stands behind — not a number typed into the file. */
-  const quality = entries.length
-    ? Math.round(((verified * 100 + pending * 65 + unverified * 25) / entries.length))
-    : 0;
-
-  if (!entries.length) {
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
-          Your evidence has no effect on your scores yet, because there is none on
-          file. Each verified item moves the four numbers below.
-        </p>
-        <div className="bg-muted border border-border rounded-xl p-5">
-          <p className="text-sm font-semibold text-foreground mb-1">Nothing to measure</p>
-          <p className="text-xs text-muted-foreground">
-            Add something on the Suggested tab and the impact appears here.
+  return (
+    <div className="bg-white border border-border rounded-xl p-5 mb-6">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <p className="text-base font-semibold text-foreground">What would move your score most</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Ranked for {profile.targetRole || "your target role"}.
           </p>
         </div>
+        <button onClick={onClose} aria-label="Close suggestions" className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+          <X size={15} />
+        </button>
       </div>
-    );
-  }
-
-  const rows: { metric: string; value: string | number; note: string }[] = [
-    {
-      metric: "Career Health Score",
-      value: scorecard.careerHealth,
-      note: `${verified} verified item${verified === 1 ? "" : "s"} counting in full`,
-    },
-    {
-      metric: "AI exposure",
-      value: `${scorecard.aiExposure.percent}%`,
-      note: "Evidence of non-automatable work is what lowers this",
-    },
-    {
-      metric: "Promotion Readiness",
-      value: scorecard.promotionReady,
-      note: "Scope and leadership evidence move this most",
-    },
-    {
-      metric: "Items on record",
-      value: entries.length,
-      note: `${verified} verified · ${pending} corroborated · ${unverified} self-declared`,
-    },
-  ];
-
-  return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
-        How your evidence feeds the four numbers X-Ray scores you on. Verified
-        entries count in full; self-declared ones barely count at all.
-      </p>
-      <div className="grid gap-3">
-        {rows.map(m => (
-          <div key={m.metric} className="bg-white border border-border rounded-xl p-4 flex items-center gap-5">
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{m.metric}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{m.note}</p>
+      <div className="space-y-2.5">
+        {suggestions.map((d, i) => (
+          <div key={d.id} className="flex items-start gap-3 rounded-xl border border-border p-4">
+            <d.sourceIcon size={15} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-semibold text-foreground">{d.title}</p>
+                {i === 0 && <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Highest impact</span>}
+              </div>
+              <p className="text-sm text-muted-foreground leading-snug mt-0.5">{d.desc}</p>
             </div>
-            <span className="text-lg font-bold text-foreground tabular-nums flex-shrink-0">{m.value}</span>
+            {added[d.id] ? (
+              <span className="text-sm text-emerald-600 font-medium flex items-center gap-1 flex-shrink-0"><CheckCircle size={13} /> Added</span>
+            ) : (
+              <button
+                onClick={() => {
+                  /* Added on the user's word, so it enters the record
+                     self-declared. Trust is earned by verification. */
+                  addEvidence({ kind: d.kind, label: d.title, source: d.source, trust: "self-declared", skills: [] });
+                  setAdded(p => ({ ...p, [d.id]: true }));
+                  demoToast(`Added "${d.title}" as self-declared — verify it to raise its weight`);
+                }}
+                className="flex-shrink-0 text-sm bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-1"
+              >
+                <Plus size={13} /> Add
+              </button>
+            )}
           </div>
         ))}
       </div>
-
-      <div className="bg-muted border border-border rounded-xl p-5 mt-2">
-        <div className="flex items-start gap-3">
-          <Shield size={16} className="text-primary mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground mb-1">Overall evidence quality</p>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex-1 h-2 bg-border rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${quality}%` }} />
-              </div>
-              <span className="text-sm font-bold text-primary tabular-nums">{quality}%</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {unverified > 0
-                ? `${unverified} of ${entries.length} entries rest on your word alone. Verifying ${unverified === 1 ? "it" : "them"} with the issuer is the fastest way to raise this.`
-                : `All ${entries.length} entries have something independent behind them.`}
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
 
-const tabs: { id: Tab; label: string; icon: typeof Clock }[] = [
-  { id: "timeline", label: "Career Timeline",    icon: Clock        },
-  { id: "detected", label: "Suggested",        icon: Sparkles     },
-  { id: "impact",   label: "X-Ray Impact",       icon: Shield       },
-];
-
 export function CareerEvidence({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const [active, setActive] = useState<Tab>("timeline");
+  const { profile } = useCareerProfile();
+  const entries = entriesFrom(profile);
+  const [suggesting, setSuggesting] = useState(false);
+
+  const verified = entries.filter(e => e.verified === "verified").length;
+
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-6 lg:p-8 max-w-[1000px] mx-auto">
 
-        {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Career Evidence</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Verified achievements that power your X-Ray scores, blind spot detection, and career simulations.
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Career Evidence</h1>
+            <p className="text-base text-muted-foreground mt-2 max-w-xl leading-relaxed">
+              {entries.length
+                ? <>Read from your résumé and the sources you connected. {verified} of {entries.length} verified.</>
+                : <>Everything you upload or connect lands here automatically.</>}
             </p>
           </div>
-          <button onClick={() => demoToast("Manual entry added to your review queue — or connect a source to auto-import")} className="flex items-center gap-2 bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-            <Plus size={14} /> Add Entry
-          </button>
-        </div>
-
-        {/* Stats strip */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          {[
-            { label: "Entries",    value: "8",   color: "text-foreground"  },
-            { label: "Verified",   value: "6",   color: "text-emerald-600" },
-            { label: "Pending",    value: "2",   color: "text-amber-600"   },
-            { label: "Trust Avg",  value: "93%", color: "text-primary"     },
-          ].map(s => (
-            <div key={s.label} className="bg-white border border-border rounded-xl p-4 text-center">
-              <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 bg-white border border-border rounded-xl p-1.5 mb-6 w-fit shadow-sm">
-          {tabs.map(t => (
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
-              key={t.id}
-              onClick={() => setActive(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                active === t.id
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
+              onClick={() => setSuggesting(v => !v)}
+              className="flex items-center gap-2 border border-border bg-white text-foreground text-sm px-3.5 py-2 rounded-lg hover:bg-muted transition-colors font-medium"
             >
-              <t.icon size={13} /> {t.label}
+              <Sparkles size={14} /> AI suggest
             </button>
-          ))}
+            <button
+              onClick={() => demoToast("Connect a source or upload a file and it appears on your timeline")}
+              className="flex items-center gap-2 bg-primary text-white text-sm px-3.5 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              <Plus size={14} /> Add
+            </button>
+          </div>
         </div>
 
-        {active === "timeline" && <TimelineTab />}
-        {active === "detected" && <DetectedTab />}
-        {active === "impact"   && <ImpactTab />}
+        {suggesting && <Suggestions onClose={() => setSuggesting(false)} />}
+
+        {entries.length ? <Timeline entries={entries} /> : <NoEvidenceYet />}
 
         <div className="mt-6">
           <NextStep currentPage="evidence" onNavigate={onNavigate} />
