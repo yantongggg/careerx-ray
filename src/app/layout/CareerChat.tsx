@@ -85,17 +85,20 @@ export function CareerChat({ page, open, onOpenChange }: CareerChatProps) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          aria-label="Ask the Compass Tapir"
-          className="fixed bottom-5 right-5 xl:right-28 z-40 flex items-center gap-2.5 rounded-full border border-border bg-white py-2 pl-2 pr-4 shadow-lg transition hover:shadow-xl hover:-translate-y-0.5"
+          aria-label="Ask Tapir"
+          title="Ask Tapir"
+          className="group fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-white shadow-lg transition hover:shadow-xl hover:-translate-y-0.5"
         >
-          <TapirMark size={36} idle />
-          <span className="text-sm font-semibold text-foreground">Ask Tapir</span>
+          <TapirMark size={38} idle />
+          <span className="pointer-events-none absolute right-full mr-2 whitespace-nowrap rounded-lg bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 max-sm:hidden">
+            Ask Tapir
+          </span>
         </button>
       )}
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-0 right-0 z-40 flex h-[min(620px,100dvh)] w-full flex-col border-l border-t border-border bg-white shadow-2xl sm:bottom-5 sm:right-5 xl:right-28 sm:h-[620px] sm:w-[400px] sm:rounded-2xl sm:border">
+        <div className="fixed bottom-0 right-0 z-40 flex h-[min(620px,100dvh)] w-full flex-col border-l border-t border-border bg-white shadow-2xl sm:bottom-5 sm:right-5 sm:h-[620px] sm:w-[400px] sm:rounded-2xl sm:border">
 
           {/* Header */}
           <div className="flex items-center gap-3 border-b border-border px-4 py-3">
