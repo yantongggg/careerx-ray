@@ -9,7 +9,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceL
 import { useCareerProfile } from "../state/careerProfile";
 import { NextStep } from "../state/stages";
 import { buildResumeForRole, downloadText } from "../lib/resumeGen";
-import { corpusFor, type Corpus } from "../lib/careerCorpus";
+import { corpusFor, credentialDemand, type Corpus } from "../lib/careerCorpus";
 import type { CareerProfile } from "../lib/profileTypes";
 import type { Risk, Scorecard } from "../lib/careerRisk";
 
@@ -73,9 +73,9 @@ interface TreatmentPhase {
    same fifteen.
    ──────────────────────────────────────────────────────────────── */
 
-function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[]): Record<Phase, TreatmentPhase> {
+function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[], gate: string): Record<Phase, TreatmentPhase> {
   const target = profile.targetRole || "your target role";
-  const cert = corpus.certification;
+  const cert = gate;
   const skill1 = corpus.targetSkills[0] ?? "the core skill of the role";
   const skill2 = corpus.targetSkills[1] ?? "a second core skill";
   const targetFuture = corpus.futures[1];
@@ -94,7 +94,7 @@ function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[]): 
         salaryRisk
           ? { id: "t1", label: "Open a pay conversation with your manager", rationale: `${salaryRisk.comparison.shortfall} Every month you wait compounds the deficit and costs you leverage.`, effort: "1 hr", impact: "Critical", category: "Salary" }
           : { id: "t1", label: "Write down what you want from the next 12 months", rationale: "Your pay is not the current problem, so direction is. A target you have not written down is a wish.", effort: "1 hr", impact: "High", category: "Direction" },
-        { id: "t2", label: `Register for ${cert}`, rationale: `This is the credential that most often gates entry into ${target}. Booking the date is what makes it real.`, effort: "1 hr", impact: "Critical", category: "Certification" },
+        { id: "t2", label: `Start on: ${cert}`, rationale: `This is what ${target} postings screen on hardest. Putting a date on it is what makes it real.`, effort: "1 hr", impact: "Critical", category: "Certification" },
         { id: "t3", label: `Rewrite your résumé headline around ${target}`, rationale: "Your current headline describes what you have done. It should describe what you are moving toward — screeners read it in four seconds.", effort: "2 hrs", impact: "High", category: "Visibility" },
         hasEvidence
           ? { id: "t4", label: "Get one self-declared item verified", rationale: "A verified claim counts in full; a self-declared one barely counts at all. Verification is the cheapest score you will get.", effort: "2 hrs", impact: "High", category: "Evidence" }
@@ -108,7 +108,7 @@ function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[]): 
       scoreGain: 11,
       color: "#A855F7", bg: "bg-purple-50", border: "border-purple-200",
       tasks: [
-        { id: "t6", label: `Pass ${cert}`, rationale: `This credential alone moves you past the screening filter that currently stops you before a human reads anything.`, effort: "40 hrs", impact: "Critical", category: "Certification" },
+        { id: "t6", label: `Have ${cert}`, rationale: `This alone moves you past the filter that currently stops you before a human reads anything.`, effort: "40 hrs", impact: "Critical", category: "Certification" },
         { id: "t7", label: `Ship one piece of work that demonstrates ${skill1}`, rationale: `${skill1} is the first thing ${target} interviews probe. A shipped example ends that conversation in your favour.`, effort: "30 hrs", impact: "Critical", category: "Portfolio" },
         { id: "t8", label: `Close your gap in ${skill2}`, rationale: "The second gap is what separates a shortlist from an offer once the first one is closed.", effort: "20 hrs", impact: "High", category: "Skills" },
         { id: "t9", label: "Take ownership of something end to end", rationale: "Scope, not performance, is what usually blocks the next level. One visibly owned piece of work changes how you are read.", effort: "Ongoing", impact: "High", category: "Leadership" },
@@ -124,7 +124,7 @@ function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[]): 
         { id: "t11", label: `Land ${target} or the promotion into it`, rationale: "This is the goal. Everything in the first two phases exists to make this moment reachable.", effort: "Ongoing", impact: "Critical", category: "Career Move" },
         { id: "t12", label: `Reach ${payGoal}`, rationale: `Market rate for this profile once ${cert} and shipped evidence are behind you. Attainable, not aspirational.`, effort: "Ongoing", impact: "Critical", category: "Salary" },
         { id: "t13", label: `Ship a second piece of ${skill1} work`, rationale: "Two examples is a pattern; one is a fluke. Pattern is what gets you hired.", effort: "40 hrs", impact: "High", category: "Portfolio" },
-        { id: "t14", label: `Add a second credential beyond ${cert}`, rationale: "Depth past the entry credential separates you from everyone else who cleared the same bar.", effort: "50 hrs", impact: "High", category: "Certification" },
+        { id: "t14", label: `Go one step past it`, rationale: "Depth past the entry bar separates you from everyone else who cleared the same one.", effort: "50 hrs", impact: "High", category: "Certification" },
         { id: "t15", label: "Talk publicly about your work once", rationale: "A talk, a write-up, a meetup. Visibility generates inbound conversations that applications never will.", effort: "10 hrs", impact: "Medium", category: "Visibility" },
       ],
     },
@@ -135,14 +135,6 @@ function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[]): 
    own three futures, rather than a fixed AWS-to-Databricks ladder aimed
    at one data-analytics career. */
 
-function buildCertifications(corpus: Corpus) {
-  const primary = corpus.certification;
-  return [
-    { name: primary,                                  priority: 1, effort: "6–8 weeks",  salaryImpact: "Gate-opener",   urgency: "Start this month" },
-    { name: `${corpus.targetSkills[0]} — a shipped example`, priority: 2, effort: "3–4 weeks", salaryImpact: "Proof, not a claim", urgency: "By Day 60" },
-    { name: `${corpus.targetSkills[1] ?? "A second core skill"} — evidenced`, priority: 3, effort: "4–6 weeks", salaryImpact: "Closes the second gap", urgency: "Month 3–4" },
-  ];
-}
 
 function buildRecommendedRoles(corpus: Corpus) {
   const fmt = (n: number) => `RM ${(n / 1000).toFixed(1)}k/mo`;
@@ -189,10 +181,10 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
   const corpus = corpusFor(profile);
   const diagnosis = buildDiagnosis(risks, scorecard);
   const scoreProjection = diagnosis.projection;
-  const certifications = buildCertifications(corpus);
+  const credential = credentialDemand(corpus, profile.targetRole);
   const recommendedRoles = buildRecommendedRoles(corpus);
   const expectedOutcome = buildExpectedOutcome(corpus, diagnosis.projected);
-  const treatment = buildTreatment(profile, corpus, risks);
+  const treatment = buildTreatment(profile, corpus, risks, credential.credential);
 
   const [activePhase, setActivePhase] = useState<Phase>("30day");
   const [checked, setChecked] = useState<Record<string, boolean>>({});
@@ -345,29 +337,54 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
           </div>
         </div>
 
-        {/* ── Recommended Certifications ── */}
+        {/* ── The one credential that opens the most doors ──
+             This was "Prescribed Certifications": three rows, of which
+             two were not certifications at all, with hand-written
+             "salary impact" labels and every item already stated in the
+             plan above with better reasoning. One gate now, counted
+             against the postings the user can go and read on the next
+             page — which is the part the plan does not tell them. */}
         <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-5">
+          <div className="flex items-center gap-2 mb-4">
             <Award size={16} className="text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">Prescribed Certifications</h3>
+            <h3 className="text-lg font-semibold text-foreground">What opens the most doors</h3>
           </div>
-          <div className="space-y-3">
-            {certifications.map(c => (
-              <div key={c.name} className="flex items-center gap-5 p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors">
-                <div className="w-7 h-7 rounded-full border-2 border-border bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
-                  {c.priority}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">{c.name}</p>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock size={10} /> {c.effort}</span>
-                    <span className="text-xs text-muted-foreground">Salary impact: <strong className="text-foreground">{c.salaryImpact}</strong></span>
-                  </div>
-                </div>
-                <span className="text-xs font-semibold text-primary bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full">{c.urgency}</span>
+
+          <p className="text-xl font-semibold text-foreground leading-snug max-w-2xl">
+            {credential.credential}
+          </p>
+
+          {credential.requiredBy.length ? (
+            <>
+              <p className="text-base text-muted-foreground mt-3 max-w-2xl leading-relaxed">
+                <strong className="text-foreground tabular-nums">
+                  {credential.requiredBy.length} of your {credential.total}
+                </strong>{" "}
+                matched postings screen on it. That is not our opinion — it is
+                written into the requirements you can go and read.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {credential.requiredBy.map(job => (
+                  <span key={job} className="text-sm text-foreground bg-muted border border-border px-3 py-1.5 rounded-lg">
+                    {job}
+                  </span>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <p className="text-base text-muted-foreground mt-3 max-w-2xl leading-relaxed">
+              None of your matched postings name it outright, which means it is
+              worth having but is not what is stopping you. The plan above is the
+              better use of your next month.
+            </p>
+          )}
+
+          <button
+            onClick={() => onNavigate?.("jobs")}
+            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+          >
+            See the postings <ArrowRight size={14} />
+          </button>
         </div>
 
         {/* ── Recommended Roles ── */}

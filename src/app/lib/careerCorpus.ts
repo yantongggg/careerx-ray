@@ -112,6 +112,10 @@ export interface FamilyContent {
   targetSkills: string[];
   /** Concrete certification name, not a category. */
   certification: string;
+  /** What a leadership posting in this family asks for instead. A cloud
+      certificate does not open a manager's door; evidence of having led
+      does, and pretending otherwise sends people on the wrong course. */
+  leadCredential: string;
   /** How long a serious transition into the target takes. */
   transitionMonths: [number, number];
   evidenceSamples: CorpusEvidenceSample[];
@@ -143,6 +147,7 @@ const SOFTWARE: FamilyContent = {
   foundationSkills: ["Git", "one production language", "REST APIs", "SQL basics"],
   targetSkills: ["System design", "Automated testing", "CI/CD", "Cloud deployment", "Code review"],
   certification: "AWS Certified Developer – Associate",
+  leadCredential: "Evidence you have led engineers — a mentee, a hire, or a team you ran",
   transitionMonths: [6, 12],
   evidenceSamples: [
     { kind: "project", title: "Full-stack side project, deployed", issuer: "Self-directed", detail: "A running URL beats a repository. Deploy it and put the link on the resume." },
@@ -326,6 +331,7 @@ const DATA: FamilyContent = {
   foundationSkills: ["SQL", "Python", "Dashboarding", "Stakeholder communication"],
   targetSkills: ["Data modelling", "Pipeline orchestration", "Cloud warehouse", "Experiment design", "Version-controlled transforms"],
   certification: "AWS Certified Data Engineer – Associate",
+  leadCredential: "Evidence you have led analysts — a mentee, a hire, or a team you ran",
   transitionMonths: [9, 14],
   evidenceSamples: [
     { kind: "project", title: "End-to-end analysis with a decision attached", issuer: "Self-directed", detail: "A dashboard nobody acted on is not evidence. Name the decision it changed." },
@@ -610,6 +616,7 @@ function buildGeneric(profile: CareerProfile, family: RoleFamily, band: Seniorit
     foundationSkills: ["What you already do daily", "Communication", "Reliability"],
     targetSkills: track.skills,
     certification: track.cert,
+    leadCredential: `Evidence you have led people — a mentee, a hire, or a team you ran`,
     transitionMonths: [6, 12],
     evidenceSamples: [
       { kind: "experience", title: `Documented results from your ${titleCase(profile.currentRole || "current")} work`, issuer: "Your employer", detail: "Numbers you can defend beat adjectives every time." },
@@ -1002,6 +1009,51 @@ function overlaps(a: string, b: string): boolean {
   const wa = a.split(/[^a-z]+/).filter(w => w.length > 2 && !stop.has(w));
   const wb = new Set(b.split(/[^a-z]+/).filter(w => w.length > 2 && !stop.has(w)));
   return wa.some(w => wb.has(w));
+}
+
+/* ── Credential demand ───────────────────────────────────────── */
+
+export interface CredentialDemand {
+  credential: string;
+  /** Postings in this person's own matched list that ask for it. */
+  requiredBy: string[];
+  total: number;
+}
+
+/* Words that mean "this posting wants the family's gate credential".
+   Kept beside the corpus because it is the corpus that authored both
+   the credential and the requirement lines being matched. */
+const CREDENTIAL_TERMS: Record<RoleFamily, string[]> = {
+  software:  ["cloud", "aws", "azure", "gcp", "certification", "certified"],
+  data:      ["cloud", "aws", "bigquery", "snowflake", "warehouse", "certification", "certified", "dbt"],
+  design:    ["portfolio", "case study", "certification"],
+  marketing: ["google ads", "meta", "hubspot", "certification", "certified"],
+  product:   ["certification", "case study"],
+  business:  ["licence", "license", "registration", "certified", "chartered"],
+  service:   ["certification", "certified", "food", "safety", "training"],
+  generic:   ["certification", "certified", "licence", "license"],
+};
+
+/** What a leadership posting screens on, in any family. */
+const LEAD_TERMS = ["lead", "leading", "manage", "managing", "mentor", "mentoring", "people", "hiring", "team"];
+
+/**
+ * How many of the jobs this person actually matched ask for the
+ * credential we are telling them to get.
+ *
+ * Without this the recommendation is an assertion. With it, it is a
+ * count they can check against the postings on the next page.
+ */
+export function credentialDemand(corpus: Corpus, targetRole: string): CredentialDemand {
+  const aimingAtLead = levelOf(targetRole) === "lead";
+  const terms = aimingAtLead ? LEAD_TERMS : CREDENTIAL_TERMS[corpus.family];
+  const credential = aimingAtLead ? corpus.leadCredential : corpus.certification;
+
+  const requiredBy = corpus.rankedJobs
+    .filter(job => [...job.requirements, ...job.gaps].some(r => terms.some(t => r.toLowerCase().includes(t))))
+    .map(job => `${job.position} at ${job.company}`);
+
+  return { credential, requiredBy, total: corpus.rankedJobs.length };
 }
 
 /* ── Application angle ───────────────────────────────────────── */

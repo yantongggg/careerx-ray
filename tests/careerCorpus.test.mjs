@@ -174,6 +174,24 @@ for (const fam of [devCorpus, analyst, server]) {
 
 assert.deepEqual(corpusFor(dev), devCorpus, "the same profile must produce the same corpus");
 
+/* The recommended gate must match what the target level screens on. A
+   cloud certificate does not open a manager's door. */
+const { credentialDemand } = await loadTs("src/app/lib/careerCorpus.ts");
+const leadGate = credentialDemand(managerBound, "Data Science Manager");
+assert.ok(/led|lead|team|mentee/i.test(leadGate.credential),
+  `a lead target was told to get: ${leadGate.credential}`);
+assert.ok(leadGate.requiredBy.length > 0,
+  "the recommended gate must be named by at least one matched posting");
+
+const icCorpus = corpusFor(profile({
+  currentRole: "Data Analyst", targetRole: "Analytics Engineer",
+  salaryRange: "RM 5k-8k/mo", experience: "3-5 years",
+}));
+const icGate = credentialDemand(icCorpus, "Analytics Engineer");
+assert.ok(/certifi/i.test(icGate.credential), "an IC target should still get a certification");
+assert.notEqual(icGate.credential, leadGate.credential,
+  "the gate must change with the level being aimed at");
+
 console.log("careerCorpus tests passed");
 
 /* ── The six pages must not re-grow a persona ─────────────────── */
