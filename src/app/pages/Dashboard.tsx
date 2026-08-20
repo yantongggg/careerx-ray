@@ -12,7 +12,7 @@ const RISK_ACTION: Record<string, { label: string; page: string }> = {
   readiness:  { label: "Add evidence",   page: "evidence" },
   automation: { label: "See the plan",   page: "prescription" },
   salary:     { label: "Compare paths",  page: "decisionlab" },
-  leadership: { label: "See the plan",   page: "prescription" },
+  skills:     { label: "Close the gap",  page: "blindspots" },
 };
 
 // ─── Score explanation modals ───────────────────────────────────────────────
@@ -183,28 +183,29 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
 
         {/* ── Strengths & what needs attention ── */}
-        <div className="grid lg:grid-cols-[0.85fr_1.15fr] gap-4 items-start">
-
-          {/* Left: the two things that are working, shown as measurements */}
-          <div className="bg-white border border-border rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle size={18} className="text-emerald-600" />
-              <h3 className="text-lg font-semibold text-foreground">What&apos;s working for you</h3>
+        {/* What's working — one wide band, read left to right */}
+        <div className="bg-white border border-border rounded-xl p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
+            <div className="lg:w-56 flex-shrink-0">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle size={18} className="text-emerald-600" />
+                <h3 className="text-lg font-semibold text-foreground">What&apos;s working for you</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">Your strongest areas, from your calibration.</p>
             </div>
-            <p className="text-sm text-muted-foreground mb-5">Your strongest areas, from your calibration.</p>
 
             {topDimensions.length ? (
-              <div className="space-y-5">
+              <div className="flex-1 grid sm:grid-cols-2 gap-6 lg:gap-10 min-w-0">
                 {topDimensions.map((d, i) => (
-                  <div key={d.dimension}>
-                    <div className="flex items-baseline justify-between mb-2">
-                      <div>
-                        <p className="text-base font-semibold text-foreground">{d.dimension}</p>
+                  <div key={d.dimension} className="min-w-0">
+                    <div className="flex items-baseline justify-between gap-3 mb-2">
+                      <div className="min-w-0">
+                        <p className="text-base font-semibold text-foreground truncate">{d.dimension}</p>
                         <p className="text-sm text-muted-foreground">
                           {i === 0 ? "Your strongest area" : "Your second strongest"}
                         </p>
                       </div>
-                      <p className="text-2xl font-bold text-emerald-700 tabular-nums">
+                      <p className="text-3xl font-bold text-emerald-700 tabular-nums flex-shrink-0">
                         {d.score}<span className="text-base font-normal text-muted-foreground">/100</span>
                       </p>
                     </div>
@@ -215,16 +216,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Finish your scan and your strongest areas appear here.</p>
+              <p className="flex-1 text-sm text-muted-foreground">Finish your scan and your strongest areas appear here.</p>
             )}
 
             {verifiedEvidence.length > 0 && (
-              <div className="mt-6 pt-5 border-t border-border">
-                <p className="text-sm font-semibold text-foreground mb-3">Backed by evidence</p>
-                <div className="space-y-2">
+              <div className="lg:w-64 flex-shrink-0 lg:border-l lg:border-border lg:pl-8">
+                <p className="text-sm font-semibold text-foreground mb-2">Backed by evidence</p>
+                <div className="space-y-1.5">
                   {verifiedEvidence.map(e => (
-                    <div key={e.id} className="flex items-start gap-2.5">
-                      <CheckCircle size={15} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div key={e.id} className="flex items-start gap-2">
+                      <CheckCircle size={14} className="text-emerald-600 flex-shrink-0 mt-1" />
                       <p className="text-sm text-foreground leading-snug">
                         {e.label} <span className="text-muted-foreground">· {e.trust}</span>
                       </p>
@@ -234,9 +235,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               </div>
             )}
           </div>
+        </div>
 
-          {/* Right: four categories, one expanded at a time */}
-          <div className="bg-white border border-border rounded-xl p-6">
+        {/* Four categories, full width, one expanded at a time */}
+        <div className="bg-white border border-border rounded-xl p-6">
             <div className="flex items-start justify-between gap-3 mb-1">
               <h3 className="text-lg font-semibold text-foreground">Areas that need attention</h3>
               <span className="text-sm font-semibold text-foreground bg-muted border border-border px-2.5 py-1 rounded-md whitespace-nowrap">
@@ -337,7 +339,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 );
               })}
             </div>
-          </div>
         </div>
 
         {/* ── Salary benchmark ── */}

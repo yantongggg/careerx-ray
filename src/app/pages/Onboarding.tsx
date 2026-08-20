@@ -196,6 +196,36 @@ const goals = [
   { id: "stability", label: "Career Stability", icon: Briefcase },
 ];
 
+/* ────────────────────────────────────────────────────────────────
+   Demo preset.
+
+   The form opens on one fixed persona so the grand-final walkthrough is
+   the same every time and does not depend on typing accurately under
+   stage lights. Everything is still editable — these are starting
+   values, not a locked profile — and the résumé upload and evidence
+   steps stay live, because those are the moments that prove the scan is
+   real rather than replayed.
+
+   Remove this block and the four `useState(DEMO_PRESET...)` calls to go
+   back to an empty form.
+   ──────────────────────────────────────────────────────────────── */
+const DEMO_PRESET = {
+  currentRole: "Data Analyst",
+  targetRole: "Data Science Manager",
+  experience: "3-5 years",
+  salaryRange: "RM 5k-8k/mo",
+  /* Scores Technical 92 / Execution 84 → Forge Beaver, and opens all
+     four risk categories against the RM 8.2k data-family median. */
+  calibration: {
+    ambiguity:     "Break it into technical steps and start building",
+    team:          "Build the main solution",
+    problem:       "Research deeply until I understand the system",
+    motivation:    "Building something that actually works",
+    communication: "The technical logic behind it",
+    environment:   "A stable team with clear tasks and systems",
+  } as Record<string, string>,
+};
+
 const scanSteps = [
   { id: "dna", label: "Generating Career DNA", detail: "Combining profile evidence with your Career Calibration answers", duration: 1800 },
   { id: "market", label: "Benchmarking Market Demand", detail: "Comparing your profile against our Malaysian role, salary and demand datasets", duration: 2200 },
@@ -217,16 +247,16 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
   const [evidence, setEvidence] = useState<EvidenceItem[]>([]);
   const [linkDraft, setLinkDraft] = useState("");
   const [openDoor, setOpenDoor] = useState<string | null>(null);
-  const [currentRole, setCurrentRole] = useState("");
+  const [currentRole, setCurrentRole] = useState(DEMO_PRESET.currentRole);
   const [customCurrentRole, setCustomCurrentRole] = useState("");
-  const [targetRole, setTargetRole] = useState("");
+  const [targetRole, setTargetRole] = useState(DEMO_PRESET.targetRole);
   const [customTargetRole, setCustomTargetRole] = useState("");
-  const [experience, setExperience] = useState("");
-  const [salaryRange, setSalaryRange] = useState("");
+  const [experience, setExperience] = useState(DEMO_PRESET.experience);
+  const [salaryRange, setSalaryRange] = useState(DEMO_PRESET.salaryRange);
   const [customSalary, setCustomSalary] = useState("");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   /* No preset answers — the archetype must reflect the user's own calibration */
-  const [calibrationAnswers, setCalibrationAnswers] = useState<Record<string, string>>({});
+  const [calibrationAnswers, setCalibrationAnswers] = useState<Record<string, string>>({ ...DEMO_PRESET.calibration });
   const [scanProgress, setScanProgress] = useState<Record<string, "pending" | "running" | "done">>({});
   const [currentScanStep, setCurrentScanStep] = useState(0);
   /* Shuffle option display order once per session so straight-line clicking
