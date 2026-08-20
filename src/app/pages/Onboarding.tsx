@@ -869,11 +869,12 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground block mb-1">What do you think is holding you back?</label>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Your answer is compared against what we measure. Where the two disagree is worth knowing.
-                  </p>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                  {/* Quieter than the fields above it: this one is optional
+                      and nothing on screen depends on the answer. */}
+                  <label className="text-xs font-medium text-muted-foreground block mb-2">
+                    What do you think is holding you back? <span className="font-normal">(optional)</span>
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
                     {SELF_ASSESSMENT_OPTIONS.map(o => {
                       const active = selfAssessment === o.id;
                       return (
@@ -881,7 +882,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                           key={o.id}
                           type="button"
                           onClick={() => setSelfAssessment(active ? "" : o.id)}
-                          className={`text-left text-sm px-3 py-2.5 rounded-xl border transition-all ${
+                          className={`text-xs px-2.5 py-1.5 rounded-lg border transition-all ${
                             active
                               ? "border-primary bg-primary/5 text-foreground font-medium"
                               : "border-border bg-white text-muted-foreground hover:border-primary/40"
