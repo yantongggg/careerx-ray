@@ -214,6 +214,32 @@ const SOFTWARE: FamilyContent = {
       },
     },
     {
+      id: "sw-grab-lead",
+      company: "Grab", companyId: "grab",
+      title: "Engineering Team Lead, Payments",
+      position: "Engineering Team Lead",
+      location: "Petaling Jaya / Hybrid",
+      type: "Full-time",
+      salaryLow: 12000, salaryHigh: 17000,
+      description: "Lead a team of five engineers on the payments platform. Still technical, but your output is now what the team ships, not what you write.",
+      requirements: ["Senior engineering experience", "Mentoring or tech-lead experience", "System design across services", "Comfortable owning delivery, not just code"],
+      strengths: ["Technical depth", "System design"],
+      gaps: ["Direct people management", "Delivery planning"],
+      companyColors: pal("grab").colors, companyGlow: pal("grab").glow,
+      hr: { name: "Daniel Lim", title: "Talent Acquisition, Engineering", replyRate: 80, avgReply: "~3 hrs", responseHours: "10 AM – 7 PM", lastSeen: "40 min ago" },
+      interview: {
+        questions: [
+          "How do you decide what to delegate and what to keep?",
+          "Your best engineer wants to leave. What do you do first?",
+          "Walk me through how you would plan a quarter for five people.",
+          "How do you stay technical enough to be useful?",
+        ],
+        aiFrame: "The trap is answering everything as an engineer. They want to hear that you measure yourself by what the team ships. Name one thing you deliberately did not build yourself so someone else could learn it.",
+        activeQ: 0,
+        promptLabel: "Question 1 · Leading engineers",
+      },
+    },
+    {
       id: "sw-paynet-qa",
       company: "PayNet", companyId: "paynet",
       title: "Software Engineer in Test",
@@ -310,6 +336,32 @@ const DATA: FamilyContent = {
         aiFrame: "Lead with the business metric the pipeline serves, walk through your model layers from staging to marts, then explain the testing strategy: schema tests, freshness checks, and how failures alert someone.",
         activeQ: 0,
         promptLabel: "Question 1 · dbt pipeline design",
+      },
+    },
+    {
+      id: "da-shopee-mgr",
+      company: "Shopee Malaysia", companyId: "shopee",
+      title: "Analytics Manager, Marketplace",
+      position: "Analytics Manager",
+      location: "Kuala Lumpur",
+      type: "Full-time",
+      salaryLow: 11000, salaryHigh: 16000,
+      description: "Lead a team of four analysts covering marketplace health. You will own what the team measures, what it stops measuring, and how its work reaches the people who act on it.",
+      requirements: ["Experience leading or mentoring analysts", "Strong analytical background", "Stakeholder management at director level", "Hiring and performance conversations"],
+      strengths: ["Analytical depth", "Stakeholder communication"],
+      gaps: ["Direct people management", "Headcount planning"],
+      companyColors: pal("shopee").colors, companyGlow: pal("shopee").glow,
+      hr: { name: "Nurul Izzati", title: "Regional Talent Acquisition", replyRate: 66, avgReply: "~8 hrs", responseHours: "9 AM – 6 PM", lastSeen: "5 hrs ago" },
+      interview: {
+        questions: [
+          "Tell me about the first time you had to give someone difficult feedback.",
+          "How would you decide what your team should stop working on?",
+          "A director wants a number you know is misleading. What do you do?",
+          "How do you keep your own analytical skills current once you are managing?",
+        ],
+        aiFrame: "They are testing whether you want to manage or just want the title. Lead with a moment where you chose someone else's growth over your own output — that is the shift, and it is the thing an analyst promotion panel cannot fake.",
+        activeQ: 0,
+        promptLabel: "Question 1 · People leadership",
       },
     },
     {
@@ -789,8 +841,10 @@ export function fitFor(profile: CareerProfile, job: CorpusJob): number {
   if (target && position.includes(target)) score += 24;
   else if (target && overlaps(target, position)) score += 14;
 
-  // Already doing something close means the resume reads correctly.
-  if (current && position.includes(current)) score += 10;
+  /* Doing something close means the résumé reads correctly for it. But
+     a posting for the role they already hold is not progress, so the
+     credit is small and the ranking below discounts it separately. */
+  if (current && position.includes(current)) score += 4;
   else if (current && overlaps(current, position)) score += 6;
 
   // Evidence is what turns a claim into a match.
@@ -805,6 +859,28 @@ export function fitFor(profile: CareerProfile, job: CorpusJob): number {
   }
 
   return Math.max(38, Math.min(97, Math.round(score)));
+}
+
+/**
+ * How far a posting moves this person toward the role they named.
+ *
+ * Readiness alone ranked the job they already have at the top — they are
+ * of course most ready for it, and it is of no use to someone trying to
+ * move. Ranking multiplies readiness by this, so "can I get it" and
+ * "does it take me anywhere" both count.
+ */
+export function advancementFor(profile: CareerProfile, job: CorpusJob): number {
+  const target = (profile.targetRole || "").toLowerCase();
+  const current = (profile.currentRole || "").toLowerCase();
+  const position = job.position.toLowerCase();
+
+  if (!target) return 0.7;
+  if (position.includes(target) || target.includes(position)) return 1;
+  /* The role they already hold: a sideways move, worth something —
+     a better employer is a real reason — but not the point. */
+  if (current && (position.includes(current) || current.includes(position))) return 0.35;
+  if (overlaps(target, position)) return 0.8;
+  return 0.55;
 }
 
 /** Chance of converting an application into an offer, given the fit. */
@@ -869,7 +945,7 @@ export function angleFor(profile: CareerProfile, job: CorpusJob): JobAngle {
 
 export interface Corpus extends FamilyContent {
   /** Jobs ranked against this profile, best fit first. */
-  rankedJobs: (CorpusJob & { fit: number; successChance: number })[];
+  rankedJobs: (CorpusJob & { fit: number; successChance: number; advancement: number })[];
   futures: CorpusFuture[];
   salaryLandscape: LandscapePosition[];
 }
@@ -887,8 +963,16 @@ export function corpusFor(profile: CareerProfile): Corpus {
   const content = AUTHORED[family] ?? buildGeneric(profile, family, band);
 
   const rankedJobs = content.jobs
-    .map(job => ({ ...job, fit: fitFor(profile, job), successChance: successChanceFor(profile, job) }))
-    .sort((a, b) => b.fit - a.fit || a.company.localeCompare(b.company));
+    .map(job => ({
+      ...job,
+      fit: fitFor(profile, job),
+      successChance: successChanceFor(profile, job),
+      advancement: advancementFor(profile, job),
+    }))
+    /* Readiness weighted by whether the job takes them anywhere. */
+    .sort((a, b) =>
+      (b.fit * (0.55 + b.advancement * 0.45)) - (a.fit * (0.55 + a.advancement * 0.45))
+      || a.company.localeCompare(b.company));
 
   const futures = buildFutures(profile, content);
   return { ...content, rankedJobs, futures, salaryLandscape: buildSalaryLandscape(profile, futures) };

@@ -110,6 +110,33 @@ assert.ok(withEvidence > noEvidence, "adding evidence must raise fit");
 const mismatch = fitFor(server.rankedJobs[0] ? profile({ currentRole: "Barista", targetRole: "Barista" }) : dev, devCorpus.rankedJobs[0]);
 assert.ok(mismatch < withEvidence, "an unrelated profile must not fit a software posting as well");
 
+/* Ranking must answer "where am I going", not "what am I already doing".
+   Readiness alone put the user's own current role at the top, which is
+   true and useless. */
+const managerBound = corpusFor(profile({
+  currentRole: "Data Analyst", targetRole: "Data Science Manager",
+  salaryRange: "RM 5k-8k/mo", experience: "3-5 years",
+}));
+assert.ok(
+  !managerBound.rankedJobs[0].position.toLowerCase().includes("data analyst"),
+  "the role they already hold must not rank first when they are aiming higher",
+);
+assert.ok(
+  /manager|lead|head/i.test(managerBound.rankedJobs[0].position),
+  "someone targeting a leadership role must see one at the top of the list",
+);
+/* Every family must offer a step up, or the target is unreachable. */
+for (const fam of [devCorpus, managerBound]) {
+  assert.ok(
+    fam.rankedJobs.some(j => /manager|lead|head/i.test(j.position)),
+    "each authored family needs at least one leadership posting",
+  );
+}
+assert.ok(
+  managerBound.rankedJobs.every(j => j.advancement > 0 && j.advancement <= 1),
+  "advancement must be a 0–1 factor",
+);
+
 assert.ok(devCorpus.rankedJobs[0].fit >= devCorpus.rankedJobs.at(-1).fit, "jobs must be ranked best fit first");
 
 /* ── Lookup by id ─────────────────────────────────────────────── */
