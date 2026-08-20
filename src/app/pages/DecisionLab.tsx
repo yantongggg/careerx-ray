@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { NextStep } from "../state/stages";
 import { useCareerProfile } from "../state/careerProfile";
+import { TapirMark } from "../layout/TapirMark";
+import { WhatIfSection } from "./WhatIfSection";
 import { corpusFor, TIMELINE_LABELS, type CorpusFuture, type LandscapePosition } from "../lib/careerCorpus";
 import {
   ChevronRight, Brain, Star, DollarSign, Clock, Zap, ArrowRight,
@@ -34,7 +36,7 @@ const SATISFACTION_TONE: Record<CorpusFuture["satisfactionTone"], string> = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => void }) {
+export function DecisionLab({ onNavigate, onAskTapir }: { onNavigate?: (page: string) => void; onAskTapir?: (q?: string) => void }) {
   const { profile } = useCareerProfile();
   const corpus = corpusFor(profile);
   const futures = corpus.futures;
@@ -66,6 +68,22 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
             Before you make a major career move, understand what your life looks like on the other side of each decision. These are your three possible futures — modeled by AI, grounded in market data.
           </p>
         </div>
+
+        {/* The question this page always provokes, offered rather than
+            waited for. It opens the assistant with it already asked. */}
+        {onAskTapir && (
+          <button
+            onClick={() => onAskTapir(`Why these three paths for me and not others?`)}
+            className="group flex w-full items-center gap-3 rounded-xl border border-border bg-white px-4 py-3 text-left transition hover:border-primary/40 hover:bg-accent"
+          >
+            <TapirMark size={30} className="flex-shrink-0" />
+            <span className="flex-1 text-sm text-foreground">
+              <strong className="font-semibold">Why these three paths?</strong>
+              <span className="text-muted-foreground"> — ask and I&apos;ll show you what they came from.</span>
+            </span>
+            <ArrowRight size={15} className="flex-shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          </button>
+        )}
 
         {/* Future selector — card-based */}
         <div className="grid md:grid-cols-3 gap-4">
@@ -263,6 +281,8 @@ export function DecisionLab({ onNavigate }: { onNavigate?: (page: string) => voi
         </div>
 
         {/* ── Market Salary Comparison ── */}
+        <WhatIfSection />
+
         <MarketSalaryGraph positions={corpus.salaryLandscape} />
 
         <NextStep currentPage="decisionlab" onNavigate={onNavigate} />

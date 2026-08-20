@@ -23,7 +23,7 @@
    ──────────────────────────────────────────────────────────────── */
 
 import type { CareerProfile } from "./profileTypes";
-import { detectRoleFamily, type RoleFamily } from "./roleFamily";
+import { detectRoleFamily, FAMILY_LABEL, type RoleFamily } from "./roleFamily";
 import { automationBase, keyCredential, marketMedian, seniorityBand, type SeniorityBand } from "./careerRisk";
 
 /* ── Shapes ──────────────────────────────────────────────────── */
@@ -87,6 +87,9 @@ export interface FamilyContent {
   adjacentRole: string;
   /** The leadership track for this family. */
   leadRole: string;
+  /** One rung above leadRole, for when the target role is already the
+      leadership role and Future C would otherwise repeat Future B. */
+  execRole: string;
   /** Skills the user most likely already has that transfer. */
   foundationSkills: string[];
   /** What the target role additionally demands. */
@@ -120,6 +123,7 @@ const SOFTWARE: FamilyContent = {
   family: "software",
   adjacentRole: "Backend Engineer",
   leadRole: "Engineering Team Lead",
+  execRole: "Head of Engineering",
   foundationSkills: ["Git", "one production language", "REST APIs", "SQL basics"],
   targetSkills: ["System design", "Automated testing", "CI/CD", "Cloud deployment", "Code review"],
   certification: "AWS Certified Developer – Associate",
@@ -244,6 +248,7 @@ const DATA: FamilyContent = {
   family: "data",
   adjacentRole: "Analytics Engineer",
   leadRole: "Data Science Manager",
+  execRole: "Head of Data",
   foundationSkills: ["SQL", "Python", "Dashboarding", "Stakeholder communication"],
   targetSkills: ["Data modelling", "Pipeline orchestration", "Cloud warehouse", "Experiment design", "Version-controlled transforms"],
   certification: "AWS Certified Data Engineer – Associate",
@@ -418,15 +423,15 @@ const AUTHORED: Partial<Record<RoleFamily, FamilyContent>> = {
 };
 
 /** Adjacent and lead roles for the families that fall back to generic. */
-const GENERIC_TRACKS: Record<RoleFamily, { adjacent: string; lead: string; skills: string[]; cert: string }> = {
-  software:  { adjacent: "Backend Engineer",       lead: "Engineering Team Lead",     skills: ["System design", "Testing", "CI/CD"], cert: "AWS Certified Developer – Associate" },
-  data:      { adjacent: "Analytics Engineer",     lead: "Data Science Manager",      skills: ["Data modelling", "Pipelines"],      cert: "AWS Certified Data Engineer – Associate" },
-  design:    { adjacent: "Product Designer",       lead: "Design Lead",               skills: ["Design systems", "User research", "Prototyping"], cert: "A published end-to-end case study" },
-  marketing: { adjacent: "Performance Marketer",   lead: "Marketing Manager",         skills: ["Paid acquisition", "Analytics", "Copywriting"],  cert: "Google Ads Search Certification" },
-  product:   { adjacent: "Product Owner",          lead: "Head of Product",           skills: ["Discovery", "Roadmapping", "Metrics"],           cert: "A shipped-product case study" },
-  business:  { adjacent: "Key Account Manager",    lead: "Sales Manager",             skills: ["Pipeline management", "Negotiation", "CRM discipline"], cert: "A professional licence or registration" },
-  service:   { adjacent: "Shift Supervisor",       lead: "Operations Manager",        skills: ["Team scheduling", "Service standards", "Stock control"], cert: "A recognised trade or safety certification" },
-  generic:   { adjacent: "Senior specialist track", lead: "Team Manager",             skills: ["Planning", "Communication", "Ownership"],        cert: "A role-relevant certification" },
+const GENERIC_TRACKS: Record<RoleFamily, { adjacent: string; lead: string; exec: string; skills: string[]; cert: string }> = {
+  software:  { adjacent: "Backend Engineer",       lead: "Engineering Team Lead", exec: "Head of Engineering",     skills: ["System design", "Testing", "CI/CD"], cert: "AWS Certified Developer – Associate" },
+  data:      { adjacent: "Analytics Engineer",     lead: "Data Science Manager", exec: "Head of Data",      skills: ["Data modelling", "Pipelines"],      cert: "AWS Certified Data Engineer – Associate" },
+  design:    { adjacent: "Product Designer",       lead: "Design Lead", exec: "Head of Design",               skills: ["Design systems", "User research", "Prototyping"], cert: "A published end-to-end case study" },
+  marketing: { adjacent: "Performance Marketer",   lead: "Marketing Manager", exec: "Head of Marketing",         skills: ["Paid acquisition", "Analytics", "Copywriting"],  cert: "Google Ads Search Certification" },
+  product:   { adjacent: "Product Owner",          lead: "Head of Product", exec: "VP Product",           skills: ["Discovery", "Roadmapping", "Metrics"],           cert: "A shipped-product case study" },
+  business:  { adjacent: "Key Account Manager",    lead: "Sales Manager", exec: "Head of Sales",             skills: ["Pipeline management", "Negotiation", "CRM discipline"], cert: "A professional licence or registration" },
+  service:   { adjacent: "Shift Supervisor",       lead: "Operations Manager", exec: "Regional Operations Manager",        skills: ["Team scheduling", "Service standards", "Stock control"], cert: "A recognised trade or safety certification" },
+  generic:   { adjacent: "Senior specialist track", lead: "Team Manager", exec: "Head of Department",             skills: ["Planning", "Communication", "Ownership"],        cert: "A role-relevant certification" },
 };
 
 function titleCase(role: string): string {
@@ -443,6 +448,7 @@ function buildGeneric(profile: CareerProfile, family: RoleFamily, band: Seniorit
     family,
     adjacentRole: track.adjacent,
     leadRole: track.lead,
+    execRole: track.exec,
     foundationSkills: ["What you already do daily", "Communication", "Reliability"],
     targetSkills: track.skills,
     certification: track.cert,
@@ -477,7 +483,7 @@ function buildGeneric(profile: CareerProfile, family: RoleFamily, band: Seniorit
 /* ── Futures ─────────────────────────────────────────────────── */
 
 export interface CorpusFuture {
-  id: "stay" | "target" | "adjacent";
+  id: "stay" | "target" | "promotion" | "study";
   label: string;
   role: string;
   tagline: string;
@@ -508,6 +514,12 @@ export interface CorpusFuture {
 export const TIMELINE_LABELS = ["Now", "6mo", "1yr", "18mo", "2yr", "2.5yr", "3yr", "3.5yr", "4yr", "5yr"];
 
 const round100 = (n: number) => Math.round(n / 100) * 100;
+
+/** No job to stay in, so "stay put" is not one of their options. */
+export function isStudent(profile: CareerProfile): boolean {
+  const t = `${profile.userType} ${profile.currentRole}`.toLowerCase();
+  return /student|learner|no job yet|fresh grad|graduate|undergrad/.test(t);
+}
 
 /** Ten-point curve from `from` to `to`, easing so growth front-loads or not. */
 function curve(from: number, to: number, shape: "flat" | "climb" | "late"): number[] {
@@ -545,14 +557,18 @@ export function buildFutures(profile: CareerProfile, content: FamilyContent): Co
 
   const currentRole = titleCase(profile.currentRole) || "your current role";
   const targetRole = titleCase(profile.targetRole) || "your target role";
-  const adjacentRole = content.adjacentRole;
+  /* Future C is the promotion track, not a sideways move — people
+     comparing careers want to know where the ladder goes. */
+  const promotionRole = content.leadRole.toLowerCase() === targetRole.toLowerCase()
+    ? content.execRole
+    : content.leadRole;
 
   /* Start from what they actually earn where that is known; fall back to
      the family median for their band. */
   const startPay = parseStart(profile) ?? marketMedian(currentFamily, band);
   const stayPay = round100(Math.max(startPay * 1.14, marketMedian(currentFamily, band) * 1.05));
   const targetPay = round100(Math.max(marketMedian(targetFamily, nextBand), startPay * 1.45));
-  const adjacentPay = round100(marketMedian(targetFamily, nextBand) * 1.06);
+  const promotionPay = round100(marketMedian(targetFamily, 2) * 1.08);
 
   /* Family sets the baseline, seniority modulates it. Within one family
      the junior tasks are the ones tooling takes first, which is why
@@ -560,6 +576,60 @@ export function buildFutures(profile: CareerProfile, content: FamilyContent): Co
   const stayRisk = riskAt(currentFamily, band);
   const targetRisk = riskAt(targetFamily, nextBand);
   const [lo, hi] = content.transitionMonths;
+
+  if (isStudent(profile)) {
+    /* Postgraduate study costs two years of earning and a year of
+       compounding, and the payoff is a higher entry band — not a
+       shortcut. Both sides are shown that way. */
+    const directPay = round100(marketMedian(targetFamily, nextBand));
+    const studyPay = round100(marketMedian(targetFamily, nextBand) * 1.12);
+    return [
+      {
+        id: "target",
+        label: "Future A",
+        role: targetRole,
+        tagline: `You go straight for ${targetRole}.`,
+        color: "#22C55E", dotColor: "bg-emerald-500", borderColor: "border-emerald-200", bgColor: "bg-emerald-50",
+        emoji: "🚀",
+        story: `You start applying now and learn on someone else's payroll. The first job is the hardest one to get; everything after it is easier because you have a track record instead of a transcript.`,
+        oneYear: `You take an entry offer around ${fmtRM(round100(marketMedian(targetFamily, 0)))}. The work is less interesting than you hoped and you learn faster than you expected.`,
+        threeYear: `Three years of real projects behind you, on about ${fmtRM(curve(round100(marketMedian(targetFamily, 0)), directPay, "climb")[6])}. Employers are reading your work, not your grades.`,
+        fiveYear: `You are on roughly ${fmtRM(directPay)} — and the people who studied for two more years are just now catching up to where you already are.`,
+        salary5yr: directPay,
+        aiRiskPct: targetRisk,
+        promotionOddsPct: 62,
+        satisfaction: "High",
+        satisfactionTone: "good",
+        salaryData: curve(round100(marketMedian(targetFamily, 0)), directPay, "climb"),
+        pros: ["Earning three years earlier", "Evidence beats a transcript at every interview after the first", "No debt"],
+        cons: ["The first job is the hardest to get", "Some employers still gate on a postgraduate degree", "You learn what your employer needs, not what you choose"],
+        aiVerdict: `For most ${FAMILY_LABEL[targetFamily].toLowerCase()} roles in Malaysia this is the stronger move. Experience compounds and a degree does not — unless the specific route you want is gated on one.`,
+        confidence: 81,
+      },
+      {
+        id: "study",
+        label: "Future B",
+        role: `Master's, then ${targetRole}`,
+        tagline: `You study first, then go for ${targetRole}.`,
+        color: "#4F46E5", dotColor: "bg-indigo-500", borderColor: "border-indigo-200", bgColor: "bg-indigo-50",
+        emoji: "🎓",
+        story: `Two more years of study before you start. It buys depth, a research network, and access to the routes that genuinely require the qualification — and it costs you two years of earning and the compounding that comes with it.`,
+        oneYear: `You are studying, not earning. Your peers who started working are on about ${fmtRM(round100(marketMedian(targetFamily, 0)))} while you are paying fees.`,
+        threeYear: `You graduate and enter one band higher, at roughly ${fmtRM(round100(marketMedian(targetFamily, nextBand) * 0.9))}. The gap to the people who started working is smaller than it looks, because they have three years of evidence.`,
+        fiveYear: `You are on about ${fmtRM(studyPay)} — ahead on paper, and roughly level once you count the two years you did not earn.`,
+        salary5yr: studyPay,
+        aiRiskPct: Math.max(12, targetRisk - 6),
+        promotionOddsPct: 58,
+        satisfaction: "Steady",
+        satisfactionTone: "mixed",
+        salaryData: curve(0, studyPay, "late"),
+        pros: ["Opens routes that genuinely require the qualification", "Deeper foundation than on-the-job learning gives", "A research network you cannot get otherwise"],
+        cons: ["Two years without income, plus fees", "Most employers hire on evidence, not the certificate", "You are still competing with people who have three years of work"],
+        aiVerdict: `Worth it when the specific thing you want is gated on the degree — research, some public-sector routes, some specialist work. Doing it because you are not ready to apply yet is the expensive version of waiting.`,
+        confidence: 74,
+      },
+    ];
+  }
 
   return [
     {
@@ -607,25 +677,25 @@ export function buildFutures(profile: CareerProfile, content: FamilyContent): Co
       confidence: 84,
     },
     {
-      id: "adjacent",
+      id: "promotion",
       label: "Future C",
-      role: adjacentRole,
-      tagline: `You go ${adjacentRole} instead.`,
+      role: promotionRole,
+      tagline: `You go past ${targetRole} to ${promotionRole}.`,
       color: "#A855F7", dotColor: "bg-purple-500", borderColor: "border-purple-200", bgColor: "bg-purple-50",
-      emoji: "🧭",
-      story: `Same direction, different door. ${adjacentRole} sits beside ${targetRole} and asks for most of the same foundation, with a different emphasis — and it is often the easier role to get hired into first.`,
-      oneYear: `You aim at ${adjacentRole} rather than ${targetRole} directly. The bar is lower, the offers come sooner, and you land around ${fmtRM(curve(startPay, adjacentPay, "late")[2])}.`,
-      threeYear: `You are established in ${adjacentRole} at about ${fmtRM(curve(startPay, adjacentPay, "late")[6])}. From here ${targetRole} is an internal move rather than a career change — a far shorter jump than the one you skipped.`,
-      fiveYear: `You are on roughly ${fmtRM(adjacentPay)}, with ${content.leadRole} now a realistic next step rather than an abstraction.`,
-      salary5yr: adjacentPay,
-      aiRiskPct: Math.max(12, targetRisk - 3),
-      promotionOddsPct: Math.min(78, 48 + Math.round((stayRisk - targetRisk) * 0.4)),
-      satisfaction: "Steady",
+      emoji: "📈",
+      story: `The same first move, then one more. ${targetRole} is the door; ${promotionRole} is what the door leads to — and the people who get there decide early that they are aiming past the first job, not at it.`,
+      oneYear: `Identical to Future B for the first year — you still have to get into ${targetRole} first. The difference is what you take on once you are there: scope other people depend on, not just work you finish.`,
+      threeYear: `You are being handed responsibility above your title, on about ${fmtRM(curve(startPay, promotionPay, "late")[6])}. This is the year the two paths separate.`,
+      fiveYear: `You are on roughly ${fmtRM(promotionPay)} as ${promotionRole}, with automation exposure at its lowest — deciding what gets built is the last thing to be automated.`,
+      salary5yr: promotionPay,
+      aiRiskPct: Math.max(10, targetRisk - 12),
+      promotionOddsPct: Math.min(74, 40 + Math.round((stayRisk - targetRisk) * 0.5)),
+      satisfaction: "Mixed",
       satisfactionTone: "mixed",
-      salaryData: curve(startPay, adjacentPay, "late"),
-      pros: ["The easiest of the three to get hired into", `Keeps ${targetRole} open as a later internal move`, "Shortest time to a first offer"],
-      cons: ["A detour rather than the direct route", `Less of a jump than ${targetRole} in year one`, "Risk of settling once it feels comfortable"],
-      aiVerdict: `Take this if the direct move to ${targetRole} stalls at the interview stage. It reaches nearly the same place with a gentler entry — the danger is stopping here because it is comfortable.`,
+      salaryData: curve(startPay, promotionPay, "late"),
+      pros: ["The highest ceiling of the three", "Lowest automation exposure", "Compounding influence, not just skill"],
+      cons: ["The longest runway", "Less hands-on work than you may want", `A different job from ${targetRole}, not a bigger one`],
+      aiVerdict: `The highest ceiling and the longest wait. It needs you to be deliberate rather than merely good — most people underestimate how different leading is from doing, and find that out after they have taken the job.`,
       confidence: 79,
     },
   ];

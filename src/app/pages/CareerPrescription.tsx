@@ -152,8 +152,8 @@ function buildRecommendedRoles(corpus: Corpus) {
     fit: f.confidence,
     match: f.id === "target"
       ? `Your stated target. ${f.pros[0]}.`
-      : f.id === "adjacent"
-        ? `${f.pros[0]}, and it keeps your target open as a later internal move.`
+      : f.id === "promotion"
+        ? `${f.pros[0]}. The same first move as Future B, then one more.`
         : `Staying put. ${f.cons[0]}.`,
   }));
 }

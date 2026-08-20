@@ -20,7 +20,6 @@ import { LearningWallet } from "./pages/LearningWallet";
 import { PortfolioBuilder } from "./pages/PortfolioBuilder";
 import { Dashboard } from "./pages/Dashboard";
 import { DecisionLab } from "./pages/DecisionLab";
-import { WhatIfLab } from "./pages/WhatIfLab";
 import { BlindSpots } from "./pages/BlindSpots";
 import { CareerPrescription } from "./pages/CareerPrescription";
 import { CareerEvidence } from "./pages/CareerEvidence";
@@ -54,7 +53,6 @@ type Page =
   | "dna-method"
   | "jobs"
   | "apply-prep"
-  | "whatif"
   | "coach"
   | "offers"
   | "portfolio"
@@ -87,7 +85,6 @@ const pageLabels: Record<Page, string> = {
   "dna-method":     "How Career DNA Works",
   jobs:             "Job Match Tracker",
   "apply-prep":     "Application Preparation",
-  whatif:           "What-If Lab",
   coach:            "Interview Coach",
   offers:           "Offer Decision AI",
   portfolio:        "Portfolio Builder",
@@ -112,7 +109,7 @@ const pageLabels: Record<Page, string> = {
 
 const allPages: Page[] = [
   "command", "stage-diagnose", "stage-decide", "stage-prepare", "stage-apply", "stage-prove",
-  "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "whatif", "blindspots",
+  "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "dashboard", "decisionlab", "blindspots",
   "prescription", "evidence", "profile", "employer", "emp-matching", "emp-sla", "emp-reengage",
   "emp-resilience", "emp-pipeline", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
 ];
@@ -128,7 +125,6 @@ const pageRole: Record<Page, Role> = {
   "dna-method": "candidate",
   jobs: "candidate",
   "apply-prep": "candidate",
-  whatif: "candidate",
   coach: "candidate",
   offers: "candidate",
   portfolio: "candidate",
@@ -195,6 +191,8 @@ function AppRouter() {
   /* The assistant is reachable from the sidebar and from its own
      floating launcher, so its open state lives here. */
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatSeed, setChatSeed] = useState<string | null>(null);
+  const askTapir = (question?: string) => { setChatSeed(question ?? null); setChatOpen(true); };
   const [appliedJobs, setAppliedJobs] = useState<Record<string, string>>({});
 
   const navigate = (target: string) => {
@@ -325,7 +323,7 @@ function AppRouter() {
 
   return (
     <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-muted">
-      <Sidebar currentPage={page} currentRole={role} onNavigate={navigate} onAskTapir={() => setChatOpen(true)} />
+      <Sidebar currentPage={page} currentRole={role} onNavigate={navigate} onAskTapir={() => askTapir()} />
 
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
@@ -423,8 +421,7 @@ function AppRouter() {
             {page === "coach"           && <InterviewCoach jobId={prepJobId} onNavigate={navigate} />}
             {page === "offers"          && <OfferDecisionDashboard onNavigate={navigate} />}
             {page === "portfolio"       && <PortfolioBuilder onNavigate={navigate} />}
-            {page === "decisionlab"     && <DecisionLab onNavigate={navigate} />}
-            {page === "whatif"          && <WhatIfLab onNavigate={navigate} />}
+            {page === "decisionlab"     && <DecisionLab onNavigate={navigate} onAskTapir={askTapir} />}
             {page === "blindspots"      && <BlindSpots onNavigate={navigate} />}
             {page === "prescription"    && <CareerPrescription onNavigate={navigate} />}
             {page === "evidence"        && <CareerEvidence onNavigate={navigate} />}
@@ -450,7 +447,7 @@ function AppRouter() {
       {/* Candidate-side only: the assistant reads a career scan, which
           employer and university accounts do not have. */}
       {role === "candidate" && (
-        <CareerChat page={pageLabels[page] ?? page} open={chatOpen} onOpenChange={setChatOpen} />
+        <CareerChat page={pageLabels[page] ?? page} open={chatOpen} onOpenChange={setChatOpen} seed={chatSeed} onSeedConsumed={() => setChatSeed(null)} />
       )}
 
       <ToastHost />

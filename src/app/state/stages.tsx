@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import {
   AlertTriangle, ArrowLeft, ArrowRight, BarChart3, Briefcase, Check, FlaskConical,
-  Fingerprint, FileText, Globe, Layers, MessagesSquare, Pill, Radar, Scale, ShieldCheck, Target, Video,
+  Fingerprint, FileText, Globe, Layers, Pill, Radar, Scale, ShieldCheck, Target, Video,
 } from "lucide-react";
 import { useCareerProfile } from "./careerProfile";
 
@@ -58,8 +58,7 @@ export const JOURNEY: JourneyStage[] = [
     question: "Which move should I make?",
     desc: "Compare the paths open to you with evidence and market data — before committing to one.",
     tools: [
-      { page: "decisionlab", label: "Decision Lab", desc: "Three futures from where you are to where you're aiming, year by year.", icon: FlaskConical },
-      { page: "whatif",      label: "What-If Lab",  desc: "Ask about a specific move — two offers, a pay cut, a detour — and get it argued both ways.", icon: MessagesSquare },
+      { page: "decisionlab", label: "Decision Lab", desc: "Three futures from where you are to where you're aiming — and a box for the move we didn't model.", icon: FlaskConical },
     ],
   },
   {

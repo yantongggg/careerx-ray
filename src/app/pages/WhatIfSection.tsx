@@ -4,21 +4,15 @@ import {
   Send, Sparkles, Target, TrendingUp,
 } from "lucide-react";
 import { useCareerProfile } from "../state/careerProfile";
-import { NextStep } from "../state/stages";
 import { askWhatIf, type WhatIfOption, type WhatIfResult } from "../lib/whatIf";
 
 /* ────────────────────────────────────────────────────────────────
-   What-If Lab — the questions that do not fit a dashboard.
+   What-If — asking about a move the scan did not model.
 
-   Decision Lab models the three paths X-Ray can see from the scan.
-   This is for the ones it cannot: a specific offer, a specific pair of
-   companies, a move nobody planned for. The answer is argued both
-   ways and always names its own downside.
-
-   The rule engine answers when the model is unreachable. The header
-   distinguishes the two quietly; it no longer prints the deployment's
-   configuration, which was a debugging detail rather than something a
-   user or a judge needed to read.
+   This was its own page in the Decide stage, which put two things that
+   answer the same question on two different screens. It lives inside
+   Decision Lab now: the three modelled paths first, then the box for
+   the option that is not one of them.
    ──────────────────────────────────────────────────────────────── */
 
 function suggestionsFor(currentRole: string, targetRole: string): string[] {
@@ -90,7 +84,7 @@ function OptionCard({ option, best }: { option: WhatIfOption; best: boolean }) {
   );
 }
 
-export function WhatIfLab({ onNavigate }: { onNavigate?: (page: string) => void }) {
+export function WhatIfSection() {
   const { profile } = useCareerProfile();
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState<string | null>(null);
@@ -115,25 +109,19 @@ export function WhatIfLab({ onNavigate }: { onNavigate?: (page: string) => void 
     : -1;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-muted">
-      <div className="mx-auto max-w-[1100px] space-y-6 p-4 sm:p-6 lg:p-8">
-
-        <div>
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-            <MessagesSquare size={13} /> What-If Lab
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Ask about a move X-Ray hasn&apos;t modelled.
-          </h1>
-          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Decision Lab covers the three paths your scan can see. This is for the
-            specific one in front of you — two offers, a pay cut, a detour. Name both
-            options and it will argue them against each other.
-          </p>
+    <div className="rounded-2xl border border-border bg-white p-6 shadow-sm space-y-5">
+      <div>
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+          <MessagesSquare size={13} /> Ask about a move we haven&apos;t modelled
         </div>
+        <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+          The three paths above are the ones your scan can see. Name two specific
+          options and this argues them against each other.
+        </p>
+      </div>
 
-        {/* Ask */}
-        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+      {/* Ask */}
+      <div className="rounded-xl border border-border bg-white p-1">
           <form
             onSubmit={e => { e.preventDefault(); ask(question); }}
             className="flex flex-col gap-3 sm:flex-row"
@@ -237,8 +225,6 @@ export function WhatIfLab({ onNavigate }: { onNavigate?: (page: string) => void 
           </div>
         )}
 
-        <NextStep currentPage="whatif" onNavigate={onNavigate} />
-      </div>
     </div>
   );
 }

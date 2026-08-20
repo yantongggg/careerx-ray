@@ -15,6 +15,7 @@
 import type { CareerProfile } from "./profileTypes";
 import type { Corpus } from "./careerCorpus";
 import type { Risk, Scorecard, TargetGap } from "./careerRisk";
+import { FAMILY_LABEL } from "./roleFamily";
 
 export type ChatRole = "user" | "assistant";
 
@@ -48,7 +49,7 @@ export interface ChatContext {
 type Intent =
   | "greeting" | "capability"
   | "archetype" | "risk" | "salary" | "gap" | "plan"
-  | "jobs" | "evidence" | "interview" | "switch" | "score"
+  | "jobs" | "evidence" | "interview" | "switch" | "score" | "paths"
   | "unknown";
 
 /* Ordered: the first pattern that matches wins, so the more specific
@@ -56,6 +57,7 @@ type Intent =
 const INTENT_PATTERNS: { intent: Intent; test: RegExp }[] = [
   { intent: "greeting",   test: /^(hi|hey|hello|yo|halo|hai|helo)\b|^(good )?(morning|afternoon|evening)\b/i },
   { intent: "capability", test: /what can you|who are you|what are you|how do you work|apa yang|你是谁|你能|你可以做/i },
+  { intent: "paths",      test: /why these|three paths|why those|three futures|where.*(paths|futures).*(from|come)|这三条|为什么.*(路|三条)/i },
   { intent: "archetype",  test: /archetype|career dna|\bdna\b|personality|what animal|my type|我的类型|动物/i },
   { intent: "interview",  test: /interview|rehears|mock|apa soalan|面试/i },
   { intent: "salary",     test: /salary|pay|gaji|paid|earn|worth|underpaid|raise|rm ?\d|money|薪水|工资/i },
@@ -163,6 +165,14 @@ export function localChatReply(ctx: ChatContext, question: string): string {
       const t = corpus.futures[1];
       const a = corpus.futures[2];
       return `Moving from ${current} into ${target} takes ${corpus.transitionMonths[0]}–${corpus.transitionMonths[1]} months of real effort, and your ${corpus.foundationSkills[0]} carries over. If the direct move stalls at interview stage, ${a.role} is the easier door into the same place. Decision Lab models all three paths year by year — and if you are weighing two specific offers, What-If Lab compares them properly.`;
+    }
+
+    case "paths": {
+      const f = corpus.futures;
+      if (f.length === 2) {
+        return `You have two, not three, because there is no job for you to stay in yet. ${f[0].role} is going straight at it; ${f[1].role} is buying depth first at the cost of two years of earning. Both are generated from the role you said you want — nothing here is a menu we picked for everyone.`;
+      }
+      return `They come from what you told us, not from a list. ${f[0].role} is you staying where you are — it is on the board because standing still is a real choice with a real cost, ${f[0].aiRiskPct}% automation exposure. ${f[1].role} is the target you set. ${f[2].role} is one rung past it, because most people compare the next job and not the one after. The pay curves come from the Malaysian median for ${FAMILY_LABEL[corpus.family] ?? corpus.family} at your experience band; the automation numbers from your family baseline adjusted for seniority.`;
     }
 
     case "score":

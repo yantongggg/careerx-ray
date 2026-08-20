@@ -27,13 +27,17 @@ interface DisplayTurn extends ChatTurn {
 
 interface CareerChatProps {
   page: string;
+  /* A question to open with, set when something on a page offers to
+     explain itself. Cleared once asked so reopening does not re-ask. */
+  seed?: string | null;
+  onSeedConsumed?: () => void;
   /* Open state lives in the shell so the sidebar entry and the floating
      launcher drive the same panel rather than two of them. */
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function CareerChat({ page, open, onOpenChange }: CareerChatProps) {
+export function CareerChat({ page, open, onOpenChange, seed, onSeedConsumed }: CareerChatProps) {
   const { profile, risks, targetGaps, scorecard } = useCareerProfile();
   const setOpen = onOpenChange;
   const [turns, setTurns] = useState<DisplayTurn[]>([]);
@@ -52,6 +56,15 @@ export function CareerChat({ page, open, onOpenChange }: CareerChatProps) {
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
+
+  /* Opened from a page that handed us a question — ask it immediately
+     rather than making the user retype what they just clicked. */
+  useEffect(() => {
+    if (!open || !seed) return;
+    onSeedConsumed?.();
+    void send(seed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, seed]);
 
   /* Escape closes the panel, which is what every other overlay does. */
   useEffect(() => {
