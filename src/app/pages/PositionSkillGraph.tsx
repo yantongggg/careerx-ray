@@ -100,6 +100,8 @@ interface Props {
   companyLabel: string;
   companyColors: string[];
   companyGlow: string;
+  /** Everything the posting asks for, verbatim from the listing. */
+  requirements?: string[];
   /** What this posting rewards that the candidate already brings. */
   strengths: string[];
   /** What this posting asks for that they do not yet have. */
@@ -108,7 +110,7 @@ interface Props {
   candidateSkills?: string[];
 }
 
-export function PositionSkillGraph({ position, companyLabel, companyColors, companyGlow, strengths, gaps, candidateSkills = [] }: Props) {
+export function PositionSkillGraph({ position, companyLabel, companyColors, companyGlow, requirements = [], strengths, gaps, candidateSkills = [] }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [mouseInGraph, setMouseInGraph] = useState(false);
@@ -126,7 +128,32 @@ export function PositionSkillGraph({ position, companyLabel, companyColors, comp
   /* Fit is higher when the candidate's own resume names the skill —
      the posting says it matters, the resume says they have it. */
   const owned = new Set(candidateSkills.map(sk => sk.toLowerCase()));
-  const matchedSkills: SkillEntry[] = strengths.map(label => {
+  const held = (label: string) => {
+    const words = label.toLowerCase().split(/[^a-z0-9+#]+/).filter(w => w.length > 3);
+    return [...owned].some(o => words.some(w => o.includes(w) || w.includes(o)));
+  };
+
+  /* The orbit is what the posting actually asks for. Strengths and gaps
+     are only the two ends of that list, so building from them alone put
+     everything else — SQL, Python — outside the ring. */
+  const asked = [...new Set([...requirements, ...strengths])];
+
+  /* The corpus phrases the same thing several ways — a requirement says
+     "Mentoring experience", the posting's gap list says "Mentoring",
+     its strengths say "Formal people management". Three bodies in one
+     orbit for one idea reads as noise, so near-duplicates collapse. */
+  const significant = (label: string) =>
+    label.toLowerCase().split(/[^a-z0-9+#]+/).filter(w => w.length > 4);
+  const dedupe = (labels: string[]) => {
+    const kept: string[] = [];
+    for (const label of labels) {
+      const words = significant(label);
+      if (!kept.some(k => significant(k).some(w => words.includes(w)))) kept.push(label);
+    }
+    return kept;
+  };
+
+  const matchedSkills: SkillEntry[] = dedupe(asked.filter(held)).slice(0, 5).map(label => {
     const meta = skillMetaFor(label);
     const evidenced = owned.has(label.toLowerCase());
     return {
@@ -139,14 +166,32 @@ export function PositionSkillGraph({ position, companyLabel, companyColors, comp
     };
   });
 
-  const gapSkills: GapEntry[] = gaps.map((label, i) => {
+  /* Anything the posting asks for that they cannot evidence, plus the
+     blockers the posting names outright. */
+  const gapSkills: GapEntry[] = dedupe([...gaps, ...asked.filter(sk => !held(sk))])
+    .slice(0, 4)
+    .map((label, i) => {
     const meta = gapMetaFor(label);
     /* The first gap listed on a posting is the one that blocks hardest. */
     return { id: slug(label), label: meta.label, importance: 85 - i * 15, colors: meta.colors, glow: meta.glow };
   });
 
-  const allSkillIds = new Set([...matchedSkills.map(s => s.id), ...gapSkills.map(g => g.id)]);
-  const unrelatedSkills = Object.entries(SKILL_META).filter(([id]) => !allSkillIds.has(id)).map(([id, meta]) => ({ id, ...meta }));
+  /* This used to be every skill in the metadata table that the posting
+     did not name, labelled "Not required" — so a Senior Data Analyst
+     listing that happened not to spell out SQL was shown as not needing
+     SQL. A posting omitting a skill says nothing about whether the job
+     needs it.
+
+     What we can honestly show is the other direction: skills the
+     candidate has that this particular listing does not ask for. */
+  const askedWords = asked.join(" ").toLowerCase();
+  const unrelatedSkills = candidateSkills
+    .filter(sk => sk.length > 1 && !askedWords.includes(sk.toLowerCase()))
+    .slice(0, 8)
+    .map(label => {
+      const meta = skillMetaFor(label);
+      return { id: slug(label), label: meta.label, colors: meta.colors, glow: meta.glow };
+    });
 
   const overallMatch = matchedSkills.length > 0
     ? Math.round(matchedSkills.reduce((sum, s) => sum + s.fit, 0) / matchedSkills.length)
@@ -201,7 +246,7 @@ export function PositionSkillGraph({ position, companyLabel, companyColors, comp
             Skill Match — {position}
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            {matchedSkills.length} matched skills · {gapSkills.length} gaps · {overallMatch}% overall fit
+            {matchedSkills.length} of {matchedSkills.length + gapSkills.length} requirements covered · {overallMatch}% fit on what you can evidence
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -414,7 +459,7 @@ export function PositionSkillGraph({ position, companyLabel, companyColors, comp
           {unrelatedSkills.length > 0 && (
             <text x={W * 0.84} y={H * 0.1} textAnchor="middle" fontSize={9} fontWeight={600}
               fill="rgba(255,255,255,0.18)" style={{ fontFamily: "var(--font-sans)", letterSpacing: "0.1em" }}>
-              NOT REQUIRED
+              NOT ASKED FOR HERE
             </text>
           )}
         </svg>
@@ -425,7 +470,7 @@ export function PositionSkillGraph({ position, companyLabel, companyColors, comp
             { emoji: "☀", label: position, color: companyColors[1] },
             { emoji: "🪐", label: "Matched Skills", color: "#64B5F6" },
             { emoji: "☄", label: "Need to Learn", color: "#EF5350" },
-            { emoji: "✦", label: "Not Required", color: "rgba(255,255,255,0.35)" },
+            { emoji: "✦", label: "Not asked for here", color: "rgba(255,255,255,0.35)" },
           ].map(l => (
             <div key={l.label} className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-white/10 rounded-full px-2.5 py-1">
               <span className="text-[10px]">{l.emoji}</span>

@@ -234,6 +234,7 @@ export function ApplicationPrep({ jobId, onBack, onApply, onCoach }: Application
         {/* Skill System */}
         <PositionSkillGraph
           position={job.position}
+          requirements={job.requirements}
           companyLabel={job.company}
           companyColors={job.companyColors}
           companyGlow={job.companyGlow}
