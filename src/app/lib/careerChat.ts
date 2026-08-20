@@ -44,6 +44,108 @@ export interface ChatContext {
   page?: string;
 }
 
+/* ── What the product is ─────────────────────────────────────
+   The assistant used to answer only about the user's own numbers, so
+   "what is Career DNA" or "how do you know my salary" fell through to
+   "that is outside what I can answer" — questions about the product
+   itself, which it should be the best thing in the app at answering.
+
+   One entry per surface and per concept. Written once here rather than
+   scraped from the pages, so it says what the thing is for rather than
+   repeating its heading. */
+
+interface KbEntry {
+  /** Words that mean the user is asking about this. */
+  match: RegExp;
+  answer: string;
+}
+
+const SYSTEM_KB: KbEntry[] = [
+  {
+    match: /command cent(er|re)|home page|dashboard.*home/i,
+    answer: "Command Center is where you land. It shows where you stand, the three things worth doing next, and any live hiring signal that affects your target role. Everything else hangs off the five stages in the sidebar.",
+  },
+  {
+    match: /x.?ray dashboard|career health|health score/i,
+    answer: "The X-Ray Dashboard is stage one. Four numbers — Career Health, AI exposure, position against the market, promotion readiness — and four risk categories. Every one of them opens up to show the arithmetic behind it, including where a number could not be measured.",
+  },
+  {
+    match: /gap to target|blind ?spot/i,
+    answer: "Gap to Target is the distance between the role you hold and the role you want: what the target asks for, what your evidence covers, and what closes each gap. It was called Blind Spot Detection, but a blind spot needs you to be underestimating something, and we do not measure that — so we renamed it to what it does.",
+  },
+  {
+    match: /decision lab|three (paths|futures)|career path/i,
+    answer: "Decision Lab models three futures from your scan: staying where you are, reaching your target role, and the rung past it. Year-by-year pay and automation exposure for each. Below it you can ask about a move we did not model — two specific offers, a pay cut, a detour.",
+  },
+  {
+    match: /prescription|30.?day|90.?day|action plan|treatment/i,
+    answer: "Career Prescription is your 30, 90 and 180-day plan, built from your own open risks and ordered by what costs you most. Each task carries the reason it is there. It also names the one credential your matched postings screen on hardest.",
+  },
+  {
+    match: /career evidence|evidence page|timeline/i,
+    answer: "Career Evidence is your record. Anything you upload or connect is unpacked into a timeline automatically — employers, qualifications, certifications. Each entry carries how far we can vouch for it, and you can add more by hand.",
+  },
+  {
+    match: /living portfolio|portfolio/i,
+    answer: "Living Portfolio writes your CV and a shareable portfolio page from your evidence, and rewrites them whenever the evidence changes. It does not ask you to import anything — it reads what Career Evidence already holds.",
+  },
+  {
+    match: /job match|jobs page|matched (roles|jobs)|apply tracker/i,
+    answer: "Jobs ranks matched roles by readiness weighted against how far each one moves you toward your target — so the job you already hold does not sit at the top. From a job you can tailor an application and rehearse that job's interview.",
+  },
+  {
+    match: /application prep|tailor|cover letter|resume draft/i,
+    answer: "Application Prep writes a résumé and cover letter against one specific posting, built from your scan rather than a template with the company name swapped in. You reach it by picking a job on the Jobs page.",
+  },
+  {
+    match: /interview coach|rehears/i,
+    answer: "Interview Coach rehearses the interview for a specific posting, with questions built from that job's stated requirements. It also scores how you come across before you say anything — evidence quality, technical depth, conciseness, confidence — from your scan.",
+  },
+  {
+    match: /offer (decision|ai)|compare offers/i,
+    answer: "Offer Decision AI compares offers you have in hand on five factors — DNA alignment, skill growth, pay, employer trust, life fit — weighted. The DNA part is computed from your own dimensions, which is why the same three offers rank differently for two people.",
+  },
+  {
+    match: /trust|verified|corroborated|self.?declared/i,
+    answer: "Three levels. Verified means confirmed against the issuer's own record. Corroborated means publicly checkable — a link anyone can open, or a letter from an employer. Self-declared means your word alone. Verified counts in full; self-declared barely counts at all.",
+  },
+  {
+    match: /how.*(work out|calculat|derive|compute)|where.*number.*from|is this made up|trust.*number/i,
+    answer: "Everything on screen is derived from your scan and opens to show its working. No score is a black box: each risk lists the inputs, the threshold and the shortfall. Where we cannot measure something we say so rather than filling the gap — the salary check reads \"not measured\" if you did not give a figure.",
+  },
+  {
+    match: /employer|recruiter|hiring pipeline|company side/i,
+    answer: "There is an employer side. When an employer rejects a candidate we ask for one reason, and that reason becomes an anonymised signal — no names on either end. It reaches the next candidate as something to fix before they apply, and the university as something their graduates keep failing on.",
+  },
+  {
+    match: /universit|curriculum|graduate outcome/i,
+    answer: "Universities see the aggregated rejection reasons for their graduates, which tells them what to teach rather than what to advertise. It is the same signal the candidate sees, from the other end.",
+  },
+  {
+    match: /privacy|my data|store|pdpa|safe|upload.*safe/i,
+    answer: "Your résumé is read in the browser — the file itself never leaves your device. Only the extracted text is sent, and nothing is stored after the response returns. Names and contact details never enter the aggregate market tables.",
+  },
+  {
+    match: /who (made|built)|talentbank|competitor|different from/i,
+    answer: "CareerX-Ray is built for the Malaysian market. What makes it different is not the animals — it is that every number opens to show its working, and that a rejection teaches three parties instead of being thrown away.",
+  },
+  {
+    match: /tapir|who are you|what animal are you/i,
+    answer: "A Malayan tapir — the animal that finds paths through dense forest, which is roughly the job. The twelve archetype animals are who you are; I am not one of them, I am the guide.",
+  },
+];
+
+/* "What is Living Portfolio" and "how are my evidence items doing" are
+   different questions that share a word. The shape of the sentence is
+   what separates them: asking what a thing is, or how it works, or
+   whether it is safe, is a question about the product. */
+const ASKING_ABOUT_THE_PRODUCT =
+  /^\s*(what|which|how|why|who)\b.*\b(is|are|does|do|mean|means|work|works|come from|different)\b|^\s*(explain|tell me about)\b|\bsafe\b|\bprivacy\b|\bwhat is this\b/i;
+
+function kbAnswer(question: string): string | null {
+  return SYSTEM_KB.find(e => e.match.test(question))?.answer ?? null;
+}
+
 /* ── Intents ─────────────────────────────────────────────────── */
 
 type Intent =
@@ -94,6 +196,18 @@ export function localChatReply(ctx: ChatContext, question: string): string {
   const intent = classify(question);
 
   if (!scanned && intent !== "greeting" && intent !== "capability") return nothingScanned();
+
+  /* A question about the product is answered from the knowledge base
+     even when it shares a word with a personal intent. Anything else
+     falls to the KB only after the personal intents have passed. */
+  if (ASKING_ABOUT_THE_PRODUCT.test(question)) {
+    const aboutProduct = kbAnswer(question);
+    if (aboutProduct) return aboutProduct;
+  }
+  if (intent === "unknown") {
+    const fromKb = kbAnswer(question);
+    if (fromKb) return fromKb;
+  }
 
   switch (intent) {
     case "greeting":

@@ -118,4 +118,28 @@ for (const s of starters) {
   assert.ok(ask(dev, s).length > 40, `starter has no real answer: ${s}`);
 }
 
+/* ── It must know the product, not only the person ────────────── */
+
+const productQuestions = [
+  ["What is Living Portfolio?", /portfolio/i],
+  ["Is my resume safe?", /browser|never leaves/i],
+  ["What does verified mean?", /issuer/i],
+  ["How does Gap to Target work?", /target|gap/i],
+  ["What is Decision Lab?", /three futures|futures/i],
+  ["How do you calculate this?", /derived|working|arithmetic|inputs/i],
+  ["What is the employer side?", /employer|signal/i],
+];
+for (const [q, expect] of productQuestions) {
+  const answer = ask(dev, q);
+  assert.match(answer, expect, `"${q}" was not answered from the product knowledge`);
+  assert.doesNotMatch(answer, /outside it|on-device right now/i,
+    `"${q}" fell through to the fallback — the assistant should know its own product`);
+}
+
+/* Questions about the user must not be hijacked by a shared word.
+   "portfolio" appears in both a product question and an evidence one. */
+assert.match(ask(dev, "do I have enough evidence?"), /evidence|word alone|verified/i);
+assert.match(ask(dev, "what are my gaps?"), /Data Science Manager|gap/i);
+assert.match(ask(dev, "am I underpaid?"), /RM/);
+
 console.log("careerChat tests passed");

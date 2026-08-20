@@ -369,6 +369,14 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
     evidence: `Derived from the ${currentRole} → ${targetRole} transition rules and the evidence on your profile.`,
   }));
 
+  const urgentCount = spots.filter(sp => sp.severity === "critical" || sp.severity === "high").length;
+
+  /* The longest single gap, because they run in parallel — you are not
+     doing them one after another. */
+  const longestFix = [...spots]
+    .sort((a, b) => (parseInt(b.timeToFix) || 0) * (/month/i.test(b.timeToFix) ? 4 : 1)
+                  - (parseInt(a.timeToFix) || 0) * (/month/i.test(a.timeToFix) ? 4 : 1))[0]?.timeToFix;
+
   const counts = {
     critical: spots.filter(s => s.severity === "critical").length,
     high: spots.filter(s => s.severity === "high").length,
@@ -450,14 +458,15 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
           </div>
         )}
 
+        {/* Counting the gaps told the reader nothing they could not see by
+            looking at the list. What the list does not say is how long
+            the whole thing takes, and where the line is between the two
+            that block applications today and the rest. */}
         <p className="mb-6 text-base text-muted-foreground leading-relaxed max-w-3xl">
-          <strong className="text-foreground tabular-nums">{spots.length} thing{spots.length === 1 ? "" : "s"}</strong> are
-          blocking this move{counts.critical + counts.high > 0 && (
-            <> — <strong className="text-amber-700">{counts.critical + counts.high}</strong> of them urgent</>
-          )}.
-          {strengths.length > 0 && (
-            <> <strong className="text-emerald-700 tabular-nums">{strengths.length}</strong> already count in your favour.</>
-          )}
+          Hardest first. {urgentCount > 0
+            ? <>The top {urgentCount === 1 ? "one is" : `${urgentCount} are`} what gets you filtered out today — the rest can wait until {urgentCount === 1 ? "it is" : "they are"} closed.</>
+            : <>None of these are urgent, so work down the list in the order you have time for.</>}
+          {longestFix && <> Clearing everything takes around <strong className="text-foreground">{longestFix}</strong>.</>}
         </p>
 
         {/* Gap cards */}
