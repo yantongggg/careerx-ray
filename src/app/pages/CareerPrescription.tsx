@@ -30,22 +30,9 @@ const VERDICT_BANDS: { floor: number; verdict: string; color: string; bg: string
   { floor: 0,  verdict: "High Career Risk",     color: "text-red-600",     bg: "bg-red-50",     border: "border-red-200"     },
 ];
 
-function buildDiagnosis(
-  profile: CareerProfile,
-  risks: Risk[],
-  scorecard: Scorecard,
-  strengthFloor = 70,
-) {
+function buildDiagnosis(risks: Risk[], scorecard: Scorecard) {
   const band = VERDICT_BANDS.find(b => scorecard.careerHealth >= b.floor)!;
   const critical = risks.filter(r => r.severity === "critical" || r.severity === "high").length;
-
-  const strengths = Object.entries(profile.dnaScores)
-    .filter(([, v]) => v >= strengthFloor)
-    .sort((a, b) => b[1] - a[1])
-    .map(([k, v]) => `${k} — ${Math.round(v)}/100 on your scan`);
-
-  const verified = profile.evidence.filter(e => e.trust === "verified");
-  verified.slice(0, 2).forEach(e => strengths.push(`${e.label} — verified with ${e.source}`));
 
   /* Six months of consistent execution is worth roughly this much, and
      it is capped so the projection cannot promise a perfect score. */
@@ -55,18 +42,6 @@ function buildDiagnosis(
     band,
     score: scorecard.careerHealth,
     projected,
-    summary: risks.length
-      ? `${risks.length} structural ${risks.length === 1 ? "problem is" : "problems are"} working against you right now, ${critical > 0 ? `${critical} of them serious` : "none of them yet critical"}. Left alone they compound quietly — the kind of thing that becomes visible as a regret in 18–24 months rather than as a crisis next week.`
-      : `Nothing structural is currently working against you. Keep the evidence current and the plan below is about extending the lead rather than closing a gap.`,
-    detectedRisks: risks.map(r => ({
-      label: r.headline,
-      severity: r.severity,
-      impact: r.comparison.shortfall || r.metric,
-    })),
-    detectedStrengths: strengths.length
-      ? strengths
-      : ["Nothing has scored as a clear strength yet — the plan below is how you build the first one."],
-    prognosis: `Working the plan below puts your Career Health Score on track for about ${projected}/100 within six months, from ${scorecard.careerHealth} today. That is the difference between being screened out and being shortlisted.`,
     projection: [
       { period: "Now", score: scorecard.careerHealth },
       { period: "30d", score: Math.round(scorecard.careerHealth + (projected - scorecard.careerHealth) * 0.3) },
@@ -212,7 +187,7 @@ const severityColors: Record<string, string> = {
 export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const { profile, risks, scorecard } = useCareerProfile();
   const corpus = corpusFor(profile);
-  const diagnosis = buildDiagnosis(profile, risks, scorecard);
+  const diagnosis = buildDiagnosis(risks, scorecard);
   const scoreProjection = diagnosis.projection;
   const certifications = buildCertifications(corpus);
   const recommendedRoles = buildRecommendedRoles(corpus);
@@ -231,71 +206,58 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
     <div className="flex-1 overflow-y-auto bg-muted">
       <div className="p-6 lg:p-8 max-w-[1200px] mx-auto space-y-6">
 
-        {/* ── Current Diagnosis ── */}
+        {/* ── Current diagnosis ──
+             This used to restate the whole dashboard: four risks with their
+             metrics, three strengths, and a prognosis paragraph, all inside
+             one dark card. The Dashboard already says all of that. A
+             prescription's job is the plan, so this is now the score, the
+             verdict, and where the plan takes you. */}
         <div className="bg-slate-950 text-white rounded-2xl p-7">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Pill size={20} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Career Prescription</p>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-7">
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Pill size={17} className="text-white" />
+                </div>
+                <p className="text-sm text-slate-400 font-semibold uppercase tracking-wider">Career Prescription</p>
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${diagnosis.band.bg} ${diagnosis.band.border} ${diagnosis.band.color}`}>
                   {diagnosis.band.verdict}
                 </span>
               </div>
-              <h1 className="text-xl font-bold text-white mb-2">Current Diagnosis</h1>
-              <p className="text-slate-300 text-sm leading-relaxed max-w-2xl">{diagnosis.summary}</p>
-            </div>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-4">
-            {/* Detected Risks */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
-                <AlertTriangle size={12} className="text-red-400" /> Detected Risks
+              <h1 className="text-3xl font-bold text-white leading-tight">
+                {risks.length
+                  ? <>Close {risks.length} thing{risks.length === 1 ? "" : "s"} and you move from {diagnosis.score} to {diagnosis.projected}.</>
+                  : <>Nothing structural is in your way. This plan extends the lead.</>}
+              </h1>
+              <p className="text-base text-slate-300 leading-relaxed mt-3 max-w-xl">
+                {risks.length
+                  ? <>Biggest first: <strong className="text-white">{risks[0].category}</strong>. The plan below is ordered by what costs you most, not by what is easiest.</>
+                  : <>Keep your evidence current and re-scan when the market shifts.</>}
               </p>
-              <div className="space-y-2">
-                {diagnosis.detectedRisks.map(r => (
-                  <div key={r.label} className="flex items-start gap-3">
-                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${r.severity === "critical" ? "bg-red-500" : r.severity === "high" ? "bg-amber-400" : "bg-yellow-400"}`} />
-                    <div>
-                      <span className={`text-xs font-semibold ${severityColors[r.severity]}`}>{r.label}</span>
-                      <p className="text-xs text-slate-400 mt-0.5">{r.impact}</p>
-                    </div>
-                  </div>
-                ))}
+            </div>
+
+            {/* Where you are, where this takes you */}
+            <div className="flex items-center gap-5 lg:gap-7 flex-shrink-0">
+              <div className="text-center">
+                <p className="text-5xl font-bold tabular-nums leading-none">{diagnosis.score}</p>
+                <p className="text-sm text-slate-400 mt-2">today</p>
+              </div>
+              <TrendingUp size={22} className="text-emerald-400 flex-shrink-0" />
+              <div className="text-center">
+                <p className="text-5xl font-bold tabular-nums leading-none text-emerald-400">{diagnosis.projected}</p>
+                <p className="text-sm text-slate-400 mt-2">in 6 months</p>
               </div>
             </div>
-            {/* Detected Strengths */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
-                <CheckCircle size={12} className="text-emerald-400" /> Confirmed Strengths
-              </p>
-              <div className="space-y-2.5">
-                {diagnosis.detectedStrengths.map(s => (
-                  <div key={s} className="flex items-start gap-2.5">
-                    <CheckCircle size={13} className="text-emerald-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-slate-300">{s}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Prognosis */}
-          <div className="mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
-            <p className="text-xs text-emerald-400 font-semibold uppercase tracking-wider mb-1">Prognosis</p>
-            <p className="text-sm text-slate-200 leading-relaxed">{diagnosis.prognosis}</p>
           </div>
         </div>
 
         {/* ── Score projection ── */}
         <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-semibold text-foreground">Expected Recovery Trajectory</h3>
-            <div className="flex items-center gap-1.5 text-emerald-600 font-semibold text-sm">
-              <TrendingUp size={14} /> 74 → 92 · +18 points in 6 months
+            <h3 className="text-lg font-semibold text-foreground">Expected recovery trajectory</h3>
+            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-base">
+              <TrendingUp size={16} /> {diagnosis.score} → {diagnosis.projected} · +{diagnosis.projected - diagnosis.score} points in 6 months
             </div>
           </div>
           <p className="text-xs text-muted-foreground mb-5">Projected if you follow the treatment plan consistently.</p>

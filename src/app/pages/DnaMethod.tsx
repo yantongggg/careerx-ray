@@ -209,9 +209,75 @@ export function DnaMethod({ onNavigate }: DnaMethodProps) {
           </p>
         </section>
 
+        {/* ── The formula, stated, and where it goes next ── */}
+        <section className="bg-white border border-border rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-1">The formula, and what would make it stronger</h2>
+          <p className="text-sm text-muted-foreground mb-5 max-w-3xl leading-relaxed">
+            We would rather print this than describe it. A method you cannot read is a method
+            you cannot check.
+          </p>
+
+          <div className="grid lg:grid-cols-2 gap-5">
+            <div className="border border-border rounded-xl p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                What runs today · heuristic
+              </p>
+              <p className="font-mono text-sm text-foreground bg-muted rounded-lg px-3 py-2.5 mb-3 leading-relaxed">
+                clamp(30 + points ÷ maxPoints × 65, 30, 95)
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Six questions, each contributing to the six dimensions. Your archetype is then the
+                one whose core dimensions score highest <em>against that archetype&apos;s own
+                baseline</em>, not in raw points — otherwise the archetypes with the most
+                reachable dimensions would win every time.
+              </p>
+              <p className="text-sm text-foreground leading-relaxed mt-3">
+                <strong>This is a heuristic.</strong> It is deterministic and it is auditable, but
+                it is not a validated psychometric instrument and we do not call it one.
+              </p>
+            </div>
+
+            <div className="border border-border rounded-xl p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                Where it goes next · Career Operating Style
+              </p>
+              <div className="space-y-2.5 mb-4">
+                {[
+                  ["60%", "Situational judgement", "What you would choose in a specific work situation — not what you think you are like."],
+                  ["25%", "Behavioural evidence", "Project role, ownership, stakeholder and execution signals from your record."],
+                  ["15%", "Optional 360", "Structured peer or manager feedback, only where you authorise it."],
+                ].map(([pct, label, note]) => (
+                  <div key={label as string} className="flex gap-3">
+                    <span className="text-sm font-bold text-foreground tabular-nums w-9 flex-shrink-0">{pct}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{label}</p>
+                      <p className="text-sm text-muted-foreground leading-snug">{note}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                At least 24 situational items, with the construct map built against Malaysian
+                references — TalentCorp MyNext, NOSS and employer input — then tested for
+                reliability, retest stability and whether it behaves the same in Bahasa Malaysia,
+                English and Chinese.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 border border-border rounded-xl p-5 bg-accent/40">
+            <p className="text-sm font-semibold text-foreground mb-1">When an input is missing</p>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
+              We renormalise the weights we do have and lower the stated confidence. We do not
+              score you down for a question you were never asked — an absence of evidence is
+              unknown, not zero.
+            </p>
+          </div>
+        </section>
+
         {/* ── What this is not ── */}
         <section className="bg-accent border border-border rounded-xl p-6">
-          <h2 className="font-semibold text-foreground mb-3">What this is not</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-3">What this is not</h2>
           <div className="space-y-2.5 text-sm text-muted-foreground leading-relaxed max-w-3xl">
             <p>
               <strong className="text-foreground">It is not a clinical instrument.</strong> There is no
