@@ -15,8 +15,10 @@ import { askWhatIf, type WhatIfOption, type WhatIfResult } from "../lib/whatIf";
    companies, a move nobody planned for. The answer is argued both
    ways and always names its own downside.
 
-   Where the answer came from — the model or the on-device rule engine
-   — is stated on the answer itself rather than implied.
+   The rule engine answers when the model is unreachable. The header
+   distinguishes the two quietly; it no longer prints the deployment's
+   configuration, which was a debugging detail rather than something a
+   user or a judge needed to read.
    ──────────────────────────────────────────────────────────────── */
 
 function suggestionsFor(currentRole: string, targetRole: string): string[] {
@@ -191,18 +193,12 @@ export function WhatIfLab({ onNavigate }: { onNavigate?: (page: string) => void 
                 <div className="min-w-0">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      {result.source === "ai" ? "AI comparison" : "On-device comparison"}
+                      {result.source === "ai" ? "AI comparison" : "Comparison"}
                     </p>
-                    {result.source === "local" && (
-                      <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-medium text-amber-300">
-                        No model used
-                      </span>
-                    )}
+
                   </div>
                   <p className="text-sm leading-relaxed text-slate-100">{result.answer.summary}</p>
-                  {result.note && (
-                    <p className="mt-2 text-xs text-slate-400">{result.note}</p>
-                  )}
+
                 </div>
               </div>
             </div>

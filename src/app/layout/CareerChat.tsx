@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Cpu, Send, Sparkles, X } from "lucide-react";
+import { Send, Sparkles, X } from "lucide-react";
 import { TapirMark } from "./TapirMark";
 import { useCareerProfile } from "../state/careerProfile";
 import { corpusFor } from "../lib/careerCorpus";
@@ -16,13 +16,13 @@ import {
    rehearses one posting. This is the one that is always there and takes
    anything — which is why it lives in the shell rather than on a page.
 
-   It answers from the scan, and it labels which engine answered. An
-   on-device reply is never dressed up as a model reply.
+   It answers from the scan. A model reply is marked as one; the
+   on-device fallback goes unmarked rather than announcing that the
+   deployment has no key configured.
    ──────────────────────────────────────────────────────────────── */
 
 interface DisplayTurn extends ChatTurn {
   source?: ChatSource;
-  note?: string;
 }
 
 interface CareerChatProps {
@@ -74,7 +74,7 @@ export function CareerChat({ page, open, onOpenChange }: CareerChatProps) {
     const answer = await askChat(ctx, next.map(({ role, content }) => ({ role, content })));
 
     setTurns(prev => [...prev, {
-      role: "assistant", content: answer.reply, source: answer.source, note: answer.note,
+      role: "assistant", content: answer.reply, source: answer.source,
     }]);
     setPending(false);
   };
@@ -156,11 +156,6 @@ export function CareerChat({ page, open, onOpenChange }: CareerChatProps) {
                     <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3">
                       <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{t.content}</p>
                     </div>
-                    {t.source === "local" && (
-                      <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
-                        <Cpu size={10} /> {t.note ?? "Answered on-device"}
-                      </p>
-                    )}
                     {t.source === "ai" && (
                       <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
                         <Sparkles size={10} /> Answered by the model, from your scan
