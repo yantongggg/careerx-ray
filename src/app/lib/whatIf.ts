@@ -45,24 +45,44 @@ export interface WhatIfResult {
 
 /* ── Question parsing ────────────────────────────────────────── */
 
-const SPLITTERS = /\s+(?:or|vs\.?|versus|against)\s+|,\s*|;\s*|、|，|\s+还是\s+|\s+或者?\s+/i;
+const SPLITTERS = /\s+(?:or|vs\.?|versus|against|and)\s+|,\s*|;\s*|、|，|\s+还是\s+|\s+或者?\s+|\s+和\s+/i;
 
-const LEAD_NOISE = /^(?:what if|should i|would i|is it better to|i (?:got|have|received|am offered)|如果|我)\s+/i;
+/* Everything before the options that is framing rather than a choice.
+   "hi how if i get maybank and cimb jobs for data science manager" was
+   read as one option called "hi how if i get maybank", because the
+   greeting, the framing and the shared role were all still attached. */
+const LEAD_NOISE = /^(?:hi|hey|hello|halo|hai)[\s,!.]*/i;
+const FRAME_NOISE = /^(?:what if|how if|so what if|should i|would i|is it better to|which is better|i (?:got|have|received|am offered)|if i (?:get|got|receive|have))\s+/i;
+const OFFER_NOISE = /^(?:an?\s+)?(?:offers?\s+(?:from|at|by)\s+|jobs?\s+(?:from|at)\s+|roles?\s+at\s+|i\s+get\s+(?:an?\s+)?offers?\s+from\s+|i\s+get\s+)/i;
+
+/* A role named once at the end applies to both options, so it is shared
+   context rather than one of the choices. */
+const TRAILING_CONTEXT = /\s+(?:for|as)\s+(?:an?\s+)?[a-z][a-z\s/]*$/i;
+
 const TRAIL_NOISE = /[?？.!。]+$/;
 
 /**
  * Pull the options out of a free-text question.
  *
- * "Company A offers me SE, Company B offers Security Engineer?" has to
- * become two comparable labels. This is deliberately conservative: when
- * it cannot find two options it returns what it found, and the caller
- * asks the user to rephrase rather than inventing a second option.
+ * Deliberately conservative: when it cannot find two options it returns
+ * what it found, and the caller asks the user to rephrase rather than
+ * inventing a second option.
  */
 export function parseOptions(question: string): string[] {
-  const cleaned = question.trim().replace(LEAD_NOISE, "").replace(TRAIL_NOISE, "");
+  let cleaned = question.trim().replace(TRAIL_NOISE, "").replace(LEAD_NOISE, "");
+  /* Framing stacks — "so what if I get…" is two layers of it. */
+  for (let i = 0; i < 3; i++) cleaned = cleaned.replace(FRAME_NOISE, "");
+  cleaned = cleaned.replace(TRAILING_CONTEXT, "");
+
   return cleaned
     .split(SPLITTERS)
-    .map(part => part.trim().replace(/^(?:take|accept|join|go with|choose|pick)\s+/i, ""))
+    .map(part =>
+      part.trim()
+        .replace(/^(?:take|accept|join|go with|choose|pick|become an?)\s+/i, "")
+        .replace(OFFER_NOISE, "")
+        .replace(/\s+(?:jobs?|roles?|offers?|position)$/i, "")
+        .trim(),
+    )
     .filter(part => part.length >= 2 && part.length <= 80);
 }
 

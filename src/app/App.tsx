@@ -419,7 +419,7 @@ function AppRouter() {
             {page === "jobs"            && <JobMatchTracker onPrepareApp={handlePrepareApp} onCoach={(jobId) => { setPrepJobId(jobId); navigate("coach"); }} appliedJobs={appliedJobs} />}
             {page === "apply-prep"      && <ApplicationPrep jobId={prepJobId} onBack={() => navigate("jobs")} onApply={handleApply} onCoach={() => navigate("coach")} />}
             {page === "coach"           && <InterviewCoach jobId={prepJobId} onNavigate={navigate} />}
-            {page === "offers"          && <OfferDecisionDashboard onNavigate={navigate} />}
+            {page === "offers"          && <OfferDecisionDashboard onNavigate={navigate} appliedJobs={appliedJobs} />}
             {page === "portfolio"       && <PortfolioBuilder onNavigate={navigate} />}
             {page === "decisionlab"     && <DecisionLab onNavigate={navigate} onAskTapir={askTapir} />}
             {page === "blindspots"      && <BlindSpots onNavigate={navigate} />}

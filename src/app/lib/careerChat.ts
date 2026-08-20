@@ -16,6 +16,7 @@ import type { CareerProfile } from "./profileTypes";
 import type { Corpus } from "./careerCorpus";
 import type { Risk, Scorecard, TargetGap } from "./careerRisk";
 import { FAMILY_LABEL } from "./roleFamily";
+import { localWhatIf } from "./whatIf";
 
 export type ChatRole = "user" | "assistant";
 
@@ -151,14 +152,15 @@ function kbAnswer(question: string): string | null {
 type Intent =
   | "greeting" | "capability"
   | "archetype" | "risk" | "salary" | "gap" | "plan"
-  | "jobs" | "evidence" | "interview" | "switch" | "score" | "paths" | "signal"
+  | "jobs" | "evidence" | "interview" | "switch" | "score" | "paths" | "signal" | "compare"
   | "unknown";
 
 /* Ordered: the first pattern that matches wins, so the more specific
    questions are tested before the broad ones. */
 const INTENT_PATTERNS: { intent: Intent; test: RegExp }[] = [
-  { intent: "greeting",   test: /^(hi|hey|hello|yo|halo|hai|helo)\b|^(good )?(morning|afternoon|evening)\b/i },
+  { intent: "greeting",   test: /^\s*(hi|hey|hello|yo|halo|hai|helo|good (morning|afternoon|evening))[\s!.,?]*$/i },
   { intent: "capability", test: /what can you|who are you|what are you|how do you work|apa yang|你是谁|你能|你可以做/i },
+  { intent: "compare",    test: /\bwhat if\b|\bhow if\b|\bor\b.*\boffer|offer.*\bor\b|\b(vs|versus)\b|which (one |offer |job )?should i (take|accept|choose|pick)|两个|哪个更好/i },
   { intent: "signal",     test: /rejected someone|does that affect me|affect me|just rejected|live signal|信号|影响我/i },
   { intent: "paths",      test: /why these|three paths|why those|three futures|where.*(paths|futures).*(from|come)|这三条|为什么.*(路|三条)/i },
   { intent: "archetype",  test: /archetype|career dna|\bdna\b|personality|what animal|my type|我的类型|动物/i },
@@ -280,6 +282,17 @@ export function localChatReply(ctx: ChatContext, question: string): string {
       const t = corpus.futures[1];
       const a = corpus.futures[2];
       return `Moving from ${current} into ${target} takes ${corpus.transitionMonths[0]}–${corpus.transitionMonths[1]} months of real effort, and your ${corpus.foundationSkills[0]} carries over. If the direct move stalls at interview stage, ${a.role} is the easier door into the same place. Decision Lab models all three paths year by year — and if you are weighing two specific offers, What-If Lab compares them properly.`;
+    }
+
+    case "compare": {
+      /* The same engine the What-If box uses, so a comparison asked in
+         chat and the same one typed into Decision Lab agree. */
+      const verdict = localWhatIf(profile, question);
+      if (!verdict.options.length) return verdict.summary;
+      const lines = verdict.options.map(o =>
+        `${o.label} — ${o.alignment}% aligned with ${target}. ${o.distanceToTarget}`,
+      );
+      return `${verdict.summary}\n\n${lines.join("\n\n")}\n\n${verdict.recommendation} Decision Lab has the full side-by-side, including what each one costs you.`;
     }
 
     case "signal": {

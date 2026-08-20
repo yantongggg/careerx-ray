@@ -84,7 +84,11 @@ function credentialsLine(profile: CareerProfile): string | null {
 function evidenceLine(profile: CareerProfile): string | null {
   const items = profile.evidence.filter(e => e.kind !== "resume");
   if (!items.length) return null;
-  return `• Evidence on file: ${items.slice(0, 4).map(e => `${e.label} (${e.trust})`).join(" · ")}.`;
+  /* No trust labels here. How far we can vouch for something is a
+     signal for the person deciding what to shore up — printing
+     "(self-declared)" next to a line on a CV they are about to send an
+     employer is the opposite of useful. */
+  return `• Evidence on file: ${items.slice(0, 4).map(e => e.label).join(" · ")}.`;
 }
 
 function compact(lines: (string | null)[]): string {

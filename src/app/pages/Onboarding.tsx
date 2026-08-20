@@ -10,7 +10,7 @@ import { calculateCareerDna, calibrationQuestions, dimensions } from "../lib/car
 import { demoToast } from "../state/toast";
 import { detectRoleFamily, FAMILY_LABEL, type RoleFamily } from "../lib/roleFamily";
 import { analyzeResume, formatBytes, rejectReasonFor, type AiStatus } from "../lib/resumeParse";
-import { TRUST_LABEL, type CareerProfile, type EvidenceItem, type ParsedResume, type TrustLevel } from "../lib/profileTypes";
+import { TRUST_LABEL, type CareerProfile, type EvidenceItem, type ParsedResume, type TrustLevel , type EvidenceKind} from "../lib/profileTypes";
 import { deriveRisks, deriveScorecard } from "../lib/careerRisk";
 
 interface OnboardingProps {
@@ -78,6 +78,22 @@ const DOOR_LINK: EvidenceDoor = {
   desc: "Paste the URL. Anyone can open it and check, so it counts for more than a claim.",
   input: "link", kind: "link", trust: "corroborated",
 };
+
+/* What a LinkedIn connector returns. Stands in for the integration so
+   the timeline, the portfolio and the résumé all have real entries to
+   build from during a walkthrough. Replace with the API response when
+   the connector is built — the shape is already what the rest of the
+   product consumes.
+
+   No cloud or data-platform certificate here, because Jordan does not
+   have one — that is the credential gap the scan reports. A LinkedIn
+   import that quietly closes the risk it is meant to expose would be
+   telling the user what they want to hear. */
+const LINKEDIN_IMPORT: { kind: EvidenceKind; label: string; skills: string[] }[] = [
+  { kind: "record", label: "Data Analyst · Maybank", skills: ["SQL", "Python", "Dashboarding"] },
+  { kind: "record", label: "Analytics Intern · Grab", skills: ["SQL", "Reporting"] },
+  { kind: "certificate", label: "BSc Computer Science · University of Malaya", skills: [] },
+];
 
 const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
   data: [
@@ -441,7 +457,23 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
       demoToast("That doesn't look like a full URL — include https://");
       return;
     }
-    addEvidenceItem(door, new URL(url).hostname.replace(/^www\./, ""), url);
+    const host = new URL(url).hostname.replace(/^www\./, "");
+
+    /* Stands in for the LinkedIn import. A real integration reads the
+       positions, the qualification and the certifications off the
+       profile; until that connector exists this is what it would
+       return, so the rest of the journey has a record to work from.
+       Everything lands Corroborated — the profile is public and anyone
+       can check it, but nobody has confirmed the claims on it. */
+    if (/linkedin\.com/i.test(host)) {
+      LINKEDIN_IMPORT.forEach(item =>
+        addEvidenceItem({ ...door, kind: item.kind, trust: "corroborated" }, item.label, url, item.skills),
+      );
+      demoToast(`Imported ${LINKEDIN_IMPORT.length} entries from LinkedIn ✓`);
+    } else {
+      addEvidenceItem(door, host, url);
+    }
+
     setLinkDraft("");
     setOpenDoor(null);
   };

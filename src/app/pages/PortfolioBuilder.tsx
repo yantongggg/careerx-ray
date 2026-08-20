@@ -56,7 +56,7 @@ const altEvidenceSources = [
   { id: "behance", name: "Behance", desc: "Design case studies", icon: Palette, iconBg: "bg-blue-100", iconColor: "text-blue-600", action: "Connect", done: "Connected", toast: "Behance linked as a portfolio source ✓" },
   { id: "dribbble", name: "Dribbble", desc: "UI shots & visual work", icon: Dribbble, iconBg: "bg-pink-100", iconColor: "text-pink-500", action: "Connect", done: "Connected", toast: "Dribbble linked as a portfolio source ✓" },
   { id: "transcript", name: "Academic Transcript", desc: "PDF from your university", icon: GraduationCap, iconBg: "bg-emerald-100", iconColor: "text-emerald-700", action: "Upload", done: "Uploaded", toast: "Transcript added to your evidence record ✓" },
-  { id: "certificates", name: "Competition Certificates", desc: "Hackathons, contests, awards", icon: Trophy, iconBg: "bg-amber-100", iconColor: "text-amber-600", action: "Upload", done: "Uploaded", toast: "Certificate added — self-declared until the issuer link is added ✓" },
+  { id: "certificates", name: "Competition Certificates", desc: "Hackathons, contests, awards", icon: Trophy, iconBg: "bg-amber-100", iconColor: "text-amber-600", action: "Upload", done: "Uploaded", toast: "Certificate added to your portfolio ✓" },
   { id: "projectfiles", name: "Project Files", desc: "Slides, reports, design files", icon: File, iconBg: "bg-sky-100", iconColor: "text-sky-600", action: "Upload", done: "Uploaded", toast: "Project file added to your evidence record ✓" },
   { id: "videointro", name: "Video Intro", desc: "60-sec self introduction", icon: Video, iconBg: "bg-rose-100", iconColor: "text-rose-500", action: "Upload", done: "Uploaded", toast: "Video intro added to your portfolio ✓" },
 ];

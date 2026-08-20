@@ -55,12 +55,16 @@ const FAMILY_DNA_WEIGHTS: Record<RoleFamily, Record<string, number>> = {
   generic:   { Execution: 0.30, Communication: 0.30, Strategic: 0.20, Technical: 0.20 },
 };
 
-function buildOffers(profile: CareerProfile): OfferView[] {
+function buildOffers(profile: CareerProfile, appliedIds: string[]): OfferView[] {
   const corpus = corpusFor(profile);
   const family = corpus.family;
   const weights = FAMILY_DNA_WEIGHTS[family];
 
-  return corpus.rankedJobs.slice(0, 3).map(job => {
+  /* Only jobs they actually applied to. Comparing offers you never
+     received is the product skipping a step — Decide asks what to do,
+     Apply asks where to apply, and this stage only exists once someone
+     has come back to you. */
+  return corpus.rankedJobs.filter(job => appliedIds.includes(job.id)).map(job => {
     const mid = Math.round((job.salaryLow + job.salaryHigh) / 2);
     const spread = job.salaryHigh - job.salaryLow;
 
@@ -94,9 +98,36 @@ function buildOffers(profile: CareerProfile): OfferView[] {
   });
 }
 
-export function OfferDecisionDashboard({ onNavigate }: { onNavigate?: (page: string) => void }) {
+/* Nothing has come back yet, which is the normal state for most of the
+   journey. Saying so is better than comparing three offers the person
+   never received. */
+function NoOffersYet({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  return (
+    <div className="flex-1 overflow-y-auto bg-muted">
+      <div className="mx-auto max-w-lg px-6 py-24 text-center">
+        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+          <Scale className="h-5 w-5 text-slate-500" />
+        </div>
+        <h1 className="text-2xl font-bold text-foreground">No offers to compare yet</h1>
+        <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+          This is the last question of the journey — which offer to accept — and it
+          only has an answer once one has landed. Apply first, and every application
+          you send shows up here when it turns into an offer.
+        </p>
+        <button
+          onClick={() => onNavigate?.("jobs")}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800"
+        >
+          See matched roles <ArrowRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function OfferDecisionDashboard({ onNavigate, appliedJobs = {} }: { onNavigate?: (page: string) => void; appliedJobs?: Record<string, string> }) {
   const { profile } = useCareerProfile();
-  const offers = buildOffers(profile);
+  const offers = buildOffers(profile, Object.keys(appliedJobs));
   const dnaScores = Object.keys(profile.dnaScores).length
     ? profile.dnaScores
     : { Technical: 55, Execution: 55, Communication: 55, Strategic: 55, Innovation: 55, Leadership: 55 };
@@ -122,6 +153,8 @@ export function OfferDecisionDashboard({ onNavigate }: { onNavigate?: (page: str
       dnaFit: `${archetype.name} fit — this role leans hardest on ${top.toLowerCase()}, where you score ${dnaScores[top] ?? 55}.`,
     };
   });
+
+  if (!scored.length) return <NoOffersYet onNavigate={onNavigate} />;
 
   const best = scored.reduce((a, b) => (b.total > a.total ? b : a));
   const [selectedCompany, setSelectedCompany] = useState(best.company);
