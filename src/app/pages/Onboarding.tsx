@@ -73,10 +73,10 @@ const DOOR_RESUME: EvidenceDoor = {
   input: "pdf", kind: "resume", trust: "self-declared",
 };
 const DOOR_LINK: EvidenceDoor = {
-  id: "links", name: "LinkedIn or personal site", icon: Linkedin,
+  id: "links", name: "LinkedIn, GitHub or personal site", icon: Linkedin,
   brand: "bg-[#0077B5]", hover: "hover:bg-[#006097]",
-  desc: "Paste the URL. We record it as a source you can point an employer at.",
-  input: "link", kind: "link", trust: "self-declared",
+  desc: "Paste the URL. Anyone can open it and check, so it counts for more than a claim.",
+  input: "link", kind: "link", trust: "corroborated",
 };
 
 const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
@@ -747,8 +747,8 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                 <div>
                   <p className="text-sm font-semibold text-foreground">How much we can vouch for this</p>
                   <p className="text-xs text-muted-foreground leading-relaxed mt-1">
-                    Anything you upload starts as <strong className="text-foreground">Self-declared</strong> — we have read it, but nobody has checked it.
-                    A letter from an employer counts as <strong className="text-foreground">Corroborated</strong>.
+                    A file you upload starts as <strong className="text-foreground">Self-declared</strong> — we have read it, but nobody has checked it.
+                    A public link or a letter from an employer counts as <strong className="text-foreground">Corroborated</strong> — anyone can go and look.
                     Only a credential we can confirm against the issuer's own record becomes <strong className="text-foreground">Verified</strong>.
                     Employers see which is which.
                   </p>

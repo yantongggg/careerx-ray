@@ -19,7 +19,7 @@ export const TRUST_LABEL: Record<TrustLevel, string> = {
 
 export const TRUST_NOTE: Record<TrustLevel, string> = {
   verified:        "Confirmed against the issuer's own verification record.",
-  corroborated:    "Matches a source you connected, but not issuer-confirmed.",
+  corroborated:    "Publicly checkable at a source you connected, but not issuer-confirmed.",
   "self-declared": "Provided by you. Not independently checked.",
 };
 
