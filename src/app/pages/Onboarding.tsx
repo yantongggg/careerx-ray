@@ -187,6 +187,17 @@ const targetRoles = [
   "Team Lead", "Independent Consultant", "Starting my own business",
 ];
 
+/* Their own read on what is holding them back. This is the third input
+   a blind spot needs: we can measure the risk and we can measure our
+   confidence in it, but "they do not see it" has to come from them. */
+const SELF_ASSESSMENT_OPTIONS: { id: string; label: string }[] = [
+  { id: "readiness",  label: "I can't prove what I can do" },
+  { id: "leadership", label: "I haven't led anything yet" },
+  { id: "automation", label: "AI is taking over my kind of work" },
+  { id: "salary",     label: "I'm underpaid for what I do" },
+  { id: "none",       label: "Honestly, I'm not sure" },
+];
+
 const goals = [
   { id: "salary", label: "Maximize Salary", icon: DollarSign },
   { id: "promo", label: "Get Promoted Fast", icon: Target },
@@ -216,6 +227,10 @@ const DEMO_PRESET = {
   salaryRange: "RM 5k-8k/mo",
   /* Scores Technical 92 / Execution 84 → Forge Beaver, and opens all
      four risk categories against the RM 8.2k data-family median. */
+  /* Picked deliberately: they name leadership, while the measurement
+     says the proof gap is what actually blocks them. That mismatch is
+     the blind spot. */
+  selfAssessment: "leadership",
   calibration: {
     ambiguity:     "Break it into technical steps and start building",
     team:          "Build the main solution",
@@ -256,6 +271,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
   const [customSalary, setCustomSalary] = useState("");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   /* No preset answers — the archetype must reflect the user's own calibration */
+  const [selfAssessment, setSelfAssessment] = useState(DEMO_PRESET.selfAssessment);
   const [calibrationAnswers, setCalibrationAnswers] = useState<Record<string, string>>({ ...DEMO_PRESET.calibration });
   const [scanProgress, setScanProgress] = useState<Record<string, "pending" | "running" | "done">>({});
   const [currentScanStep, setCurrentScanStep] = useState(0);
@@ -313,6 +329,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
     salaryRange: salaryRange === "Other…" ? (customSalary.trim() || "Other") : salaryRange,
     experience,
     goals: selectedGoals,
+    selfAssessment,
     dnaScores,
     archetypeName: archetype.name,
     calibrationAnswers,
@@ -848,6 +865,32 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                         className="mt-2 w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       />
                     )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground block mb-1">What do you think is holding you back?</label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Your answer is compared against what we measure. Where the two disagree is worth knowing.
+                  </p>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                    {SELF_ASSESSMENT_OPTIONS.map(o => {
+                      const active = selfAssessment === o.id;
+                      return (
+                        <button
+                          key={o.id}
+                          type="button"
+                          onClick={() => setSelfAssessment(active ? "" : o.id)}
+                          className={`text-left text-sm px-3 py-2.5 rounded-xl border transition-all ${
+                            active
+                              ? "border-primary bg-primary/5 text-foreground font-medium"
+                              : "border-border bg-white text-muted-foreground hover:border-primary/40"
+                          }`}
+                        >
+                          {o.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

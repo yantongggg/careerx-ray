@@ -528,6 +528,54 @@ export function deriveTargetGaps(profile: CareerProfile): TargetGap[] {
 
 /* ── The four headline scores ────────────────────────────────── */
 
+/* ── Blind spots ─────────────────────────────────────────────
+   A blind spot is not just a risk. It needs three things at once:
+   the risk is real, we could actually measure it, and the person does
+   not believe it is their problem. The third condition is why this
+   needs `selfAssessment` — without it we would be renaming risks, not
+   detecting blind spots. */
+
+export interface BlindSpot {
+  risk: Risk;
+  /** What they said was holding them back instead. */
+  believed: string;
+  /** Highest when the risk is severe and they named something else. */
+  confidence: "high" | "moderate";
+}
+
+const RISK_LABEL: Record<string, string> = {
+  automation: "AI taking over your work",
+  salary:     "Being underpaid",
+  readiness:  "Not enough proof of your skills",
+  leadership: "Not enough leadership experience",
+  none:       "nothing in particular",
+};
+
+/** How a risk id reads when the user picks it in their own words. */
+export function selfAssessmentLabel(id: string): string {
+  return RISK_LABEL[id] ?? id;
+}
+
+export function deriveBlindSpots(profile: CareerProfile): BlindSpot[] {
+  /* Never asked, so there is nothing to compare against. We do not
+     guess at what someone believes. */
+  if (!profile.selfAssessment) return [];
+
+  const risks = deriveRisks(profile);
+  const believed = RISK_LABEL[profile.selfAssessment] ?? "something else";
+
+  return risks
+    /* They already know about the one they named — that is a concern,
+       not a blind spot. */
+    .filter(r => r.id !== profile.selfAssessment)
+    .filter(r => r.severity === "critical" || r.severity === "high")
+    .map(r => ({
+      risk: r,
+      believed,
+      confidence: r.severity === "critical" ? "high" as const : "moderate" as const,
+    }));
+}
+
 export function deriveScorecard(profile: CareerProfile): Scorecard {
   const risks = deriveRisks(profile);
   const family = detectRoleFamily(profile.currentRole, profile.targetRole);

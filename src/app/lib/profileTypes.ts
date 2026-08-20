@@ -78,6 +78,11 @@ export interface CareerProfile {
   archetypeName: string;
   /** Kept so "why is my score this?" can point at the actual answers. */
   calibrationAnswers: Record<string, string>;
+  /* What they believe is holding them back, in their own judgement.
+     Without this a blind spot cannot be computed: the whole definition
+     is a gap between what is measured and what the person believes.
+     One of the risk ids, or "none", or "" if never asked. */
+  selfAssessment: string;
   resume: ParsedResume | null;
   evidence: EvidenceItem[];
   scannedAt: string;
@@ -93,6 +98,7 @@ export const EMPTY_PROFILE: CareerProfile = {
   dnaScores: {},
   archetypeName: "",
   calibrationAnswers: {},
+  selfAssessment: "",
   resume: null,
   evidence: [],
   scannedAt: "",

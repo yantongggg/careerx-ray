@@ -48,12 +48,6 @@ interface MarketTrend {
   statLabel: string;
 }
 
-const trendKindStyles = {
-  displacement: { icon: Bot,           card: "border-red-200",     header: "bg-red-50",     iconColor: "text-red-500",     stat: "text-red-600",     tag: "bg-red-100 text-red-700"         },
-  "demand-shift": { icon: TrendingDown, card: "border-amber-200",   header: "bg-amber-50",   iconColor: "text-amber-500",   stat: "text-amber-600",   tag: "bg-amber-100 text-amber-700"     },
-  rising:       { icon: TrendingUp,    card: "border-emerald-200", header: "bg-emerald-50", iconColor: "text-[#115E50]",   stat: "text-[#115E50]",   tag: "bg-emerald-100 text-emerald-800" },
-} as const;
-
 const marketTrends: Record<MarketFamily, { familyLabel: string; trends: MarketTrend[] }> = {
   data: {
     familyLabel: "Data & Analytics — Malaysia",
@@ -456,21 +450,15 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 text-base">
-          <span className="text-muted-foreground">
-            <strong className="text-foreground tabular-nums">{spots.length}</strong> gap{spots.length === 1 ? "" : "s"} to close
-          </span>
-          {counts.critical + counts.high > 0 && (
-            <span className="text-muted-foreground">
-              <strong className="text-amber-700 tabular-nums">{counts.critical + counts.high}</strong> high priority
-            </span>
-          )}
+        <p className="mb-6 text-base text-muted-foreground leading-relaxed max-w-3xl">
+          <strong className="text-foreground tabular-nums">{spots.length} thing{spots.length === 1 ? "" : "s"}</strong> are
+          blocking this move{counts.critical + counts.high > 0 && (
+            <> — <strong className="text-amber-700">{counts.critical + counts.high}</strong> of them urgent</>
+          )}.
           {strengths.length > 0 && (
-            <span className="text-muted-foreground">
-              <strong className="text-emerald-700 tabular-nums">{strengths.length}</strong> already working for you
-            </span>
+            <> <strong className="text-emerald-700 tabular-nums">{strengths.length}</strong> already count in your favour.</>
           )}
-        </div>
+        </p>
 
         {/* Gap cards */}
         <div className="space-y-3 mb-8">
@@ -567,63 +555,45 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
           <div className="flex items-start justify-between gap-4 mb-1.5 flex-wrap">
             <div className="flex items-center gap-2">
               <Radar size={16} className="text-[#8A7038]" />
-              <h3 className="text-lg font-semibold text-foreground">Market reality check — your role vs the market</h3>
+              <h3 className="text-lg font-semibold text-foreground">What the market is doing to your role</h3>
             </div>
             <span className="text-xs font-semibold text-[#8A7038] bg-[#8A7038]/10 px-2.5 py-1 rounded-full">{market.familyLabel}</span>
           </div>
-          <p className="text-sm text-muted-foreground mb-5 max-w-2xl leading-relaxed">
-            What the market is doing around {targetRole ? `${currentRole} → ${targetRole}` : `your role as a ${currentRole}`} — the shifts most candidates only notice once it's already cost them. None of this is destiny; all of it is actionable.
+          <p className="text-base text-foreground mb-5 max-w-2xl leading-relaxed">
+            {market.trends[0]?.headline} Roles on the left are shrinking. Roles on the right are hiring.
+            You sit in the middle, and your skills reach both.
           </p>
 
-          {/* 1 · Market movement snapshot — small cards, not walls of text */}
-          <div className="grid sm:grid-cols-3 gap-3 mb-6">
-            {market.trends.map(trend => {
-              const t = trendKindStyles[trend.kind];
-              return (
-                <div key={trend.kind} className={`border rounded-xl px-4 py-3.5 ${t.card}`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <t.icon size={13} className={`${t.iconColor} flex-shrink-0`} />
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${t.tag}`}>{trend.tag}</span>
-                  </div>
-                  <p className={`text-2xl font-bold ${t.stat}`}>{trend.stat}</p>
-                  <p className="text-[11px] text-muted-foreground">{trend.statLabel}</p>
-                  <p className="text-xs font-medium text-foreground leading-snug mt-2">{trend.headline}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 2 · Role shift map */}
           <div className="mb-6">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">Role shift map</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">Where the work is going</p>
             <div className="grid md:grid-cols-[1fr_auto_1.1fr_auto_1fr] gap-3 items-stretch">
               <div className="rounded-xl border border-red-200 bg-red-50/40 p-3.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-red-600 mb-2.5">Routine work shrinking</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-red-600 mb-3">Shrinking</p>
                 <div className="space-y-2">
                   {moves.declining.map(r => (
                     <div key={r.role} className="flex items-center justify-between gap-2 bg-white border border-red-100 rounded-lg px-3 py-2">
-                      <span className="text-xs font-medium text-foreground truncate">{r.role}</span>
-                      <span className="text-xs font-bold text-red-600 flex-shrink-0">{r.change}</span>
+                      <span className="text-sm font-medium text-foreground truncate">{r.role}</span>
+                      <span className="text-sm font-bold text-red-600 flex-shrink-0">{r.change}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="hidden md:flex items-center text-muted-foreground/40"><ArrowRight size={16} /></div>
               <div className="rounded-xl border-2 p-4 flex flex-col items-center justify-center text-center" style={{ borderColor: "#1B5CA3", backgroundColor: "rgba(27,92,163,0.05)" }}>
-                <span className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "#1B5CA3" }}>You are here</span>
+                <span className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "#1B5CA3" }}>You are here</span>
                 <p className="text-base font-bold text-foreground leading-snug">{currentRole}</p>
                 <span className="mt-2 text-[10px] font-semibold px-2.5 py-1 rounded-full border bg-white" style={{ color: "#1B5CA3", borderColor: "rgba(27,92,163,0.3)" }}>
                   Stable core · routine parts shrinking
                 </span>
-                <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">Your skills transfer to every role on the right.</p>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Your skills transfer to every role on the right.</p>
               </div>
               <div className="hidden md:flex items-center text-muted-foreground/40"><ArrowRight size={16} /></div>
               <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#115E50] mb-2.5">Growth lanes</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#115E50] mb-3">Hiring</p>
                 <div className="space-y-2">
                   {moves.growing.map(r => (
                     <div key={r.role} className="flex items-center justify-between gap-2 bg-white border border-emerald-100 rounded-lg px-3 py-2">
-                      <span className="text-xs font-medium text-foreground truncate">{r.role}</span>
+                      <span className="text-sm font-medium text-foreground truncate">{r.role}</span>
                       <span className="text-xs font-bold text-[#115E50] flex-shrink-0">{r.change}</span>
                     </div>
                   ))}

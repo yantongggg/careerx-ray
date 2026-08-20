@@ -4,6 +4,7 @@ import {
   Info, X, Sparkles, ArrowRight, Zap, Clock
 } from "lucide-react";
 import { useCareerProfile } from "../state/careerProfile";
+import { selfAssessmentLabel } from "../lib/careerRisk";
 import { NextStep } from "../state/stages";
 
 /* Every risk ends in something the user can do, not just a number they
@@ -74,7 +75,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
-  const { profile, risks, riskChecks, salaryBenchmark: salary, scorecard } = useCareerProfile();
+  const { profile, risks, riskChecks, blindSpots, salaryBenchmark: salary, scorecard } = useCareerProfile();
   const [modal, setModal] = useState<MetricKey | null>(null);
   /* One category open at a time — the whole point of the accordion is
      that the page is quiet until you ask it something. */
@@ -156,6 +157,45 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             </div>
           </div>
         </div>
+
+        {/* ── Blind spot ──
+             The only finding here that the user did not walk in with.
+             It exists because we asked what they think is wrong and then
+             compared it with what we measured — a risk they already named
+             is a concern, not a blind spot. */}
+        {blindSpots.length > 0 && (
+          <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle size={20} className="text-amber-700" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold uppercase tracking-wider text-amber-800 mb-1.5">
+                  Blind spot{blindSpots.length > 1 ? "s" : ""}
+                </p>
+                <h2 className="text-2xl font-bold text-foreground leading-tight">
+                  You said the problem was {blindSpots[0].believed.toLowerCase()}. It isn&apos;t.
+                </h2>
+                <p className="text-base text-foreground leading-relaxed mt-3 max-w-3xl">
+                  <strong>{blindSpots[0].risk.category}</strong> is doing more damage —{" "}
+                  {blindSpots[0].risk.comparison.shortfall.toLowerCase()}, and you did not name it.
+                  That is what makes it a blind spot rather than a worry.
+                </p>
+                {blindSpots.length > 1 && (
+                  <p className="text-sm text-amber-900 mt-2">
+                    {blindSpots.length - 1} more you didn&apos;t name: {blindSpots.slice(1).map(b => b.risk.category).join(", ")}.
+                  </p>
+                )}
+                <button
+                  onClick={() => setExpanded(blindSpots[0].risk.id)}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Show me the numbers <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Score cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
