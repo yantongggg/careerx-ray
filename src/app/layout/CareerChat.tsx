@@ -88,9 +88,7 @@ export function CareerChat({ page, open, onOpenChange }: CareerChatProps) {
           aria-label="Ask the Compass Tapir"
           className="fixed bottom-5 right-5 xl:right-28 z-40 flex items-center gap-2.5 rounded-full border border-border bg-white py-2 pl-2 pr-4 shadow-lg transition hover:shadow-xl hover:-translate-y-0.5"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent">
-            <TapirMark size={30} blink />
-          </span>
+          <TapirMark size={36} idle />
           <span className="text-sm font-semibold text-foreground">Ask Tapir</span>
         </button>
       )}
@@ -101,9 +99,7 @@ export function CareerChat({ page, open, onOpenChange }: CareerChatProps) {
 
           {/* Header */}
           <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent">
-              <TapirMark size={30} blink thinking={pending} />
-            </span>
+            <TapirMark size={36} idle thinking={pending} className="flex-shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-foreground leading-tight">Compass Tapir</p>
               <p className="text-xs text-muted-foreground truncate">
@@ -155,9 +151,7 @@ export function CareerChat({ page, open, onOpenChange }: CareerChatProps) {
                 </div>
               ) : (
                 <div key={i} className="flex gap-2.5">
-                  <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-accent">
-                    <TapirMark size={22} />
-                  </span>
+                  <TapirMark size={26} className="mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3">
                       <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{t.content}</p>
@@ -179,9 +173,7 @@ export function CareerChat({ page, open, onOpenChange }: CareerChatProps) {
 
             {pending && (
               <div className="flex gap-2.5">
-                <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-accent">
-                  <TapirMark size={22} thinking />
-                </span>
+                <TapirMark size={26} thinking className="mt-0.5 flex-shrink-0" />
                 <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-muted px-4 py-3.5">
                   {[0, 150, 300].map(delay => (
                     <span

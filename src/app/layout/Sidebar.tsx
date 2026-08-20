@@ -158,9 +158,7 @@ export function Sidebar({ currentPage, currentRole, onNavigate, onAskTapir }: Si
             onClick={onAskTapir}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
           >
-            <span className="w-5 h-5 -ml-0.5 flex items-center justify-center flex-shrink-0">
-              <TapirMark size={20} />
-            </span>
+            <TapirMark size={22} className="-ml-1 flex-shrink-0" />
             <span className="flex-1 text-left">Ask Tapir</span>
             <span className="text-[10px] font-semibold text-primary bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-full">AI</span>
           </button>
