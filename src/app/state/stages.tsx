@@ -17,6 +17,12 @@ export interface StageTool {
   desc: string;
   icon: any;
   badge?: string;
+  /* Reachable, but not offered as its own entry point. Application Prep
+     and Interview Coach only mean anything once a job is picked, and
+     you pick one on the Jobs page — a card here just lands people on
+     "choose a job first". They stay in PAGE_ORDER so the forward and
+     back chain through Apply still runs jobs → prep → coach → offers. */
+  viaJob?: boolean;
 }
 
 export interface JourneyStage {
@@ -87,8 +93,8 @@ export const JOURNEY: JourneyStage[] = [
     desc: "Find the job, tailor for it, rehearse it, and choose between what comes back.",
     tools: [
       { page: "jobs",       label: "Jobs + Applications", desc: "Matched roles ranked by your real readiness, not keyword overlap.", icon: Briefcase },
-      { page: "apply-prep", label: "Application Prep",    desc: "Resume and cover letter tailored to the job you picked.", icon: FileText },
-      { page: "coach",      label: "Interview Coach",     desc: "Rehearse that job's interview, built from its actual requirements.", icon: Video },
+      { page: "apply-prep", label: "Application Prep",    desc: "Resume and cover letter tailored to the job you picked.", icon: FileText, viaJob: true },
+      { page: "coach",      label: "Interview Coach",     desc: "Rehearse that job's interview, built from its actual requirements.", icon: Video, viaJob: true },
       { page: "offers",     label: "Offer Decision AI",   desc: "Once offers land, compare them on long-term fit, not starting salary.", icon: Scale },
     ],
   },
@@ -215,7 +221,7 @@ export function StageHub({ stage, onNavigate, children }: { stage: JourneyStage;
 
         {/* Tools */}
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {stage.tools.map(tool => (
+          {stage.tools.filter(t => !t.viaJob).map(tool => (
             <button
               key={tool.page}
               onClick={() => onNavigate(tool.page)}
