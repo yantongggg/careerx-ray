@@ -179,7 +179,7 @@ export default function App() {
 }
 
 function AppRouter() {
-  const { profile, hasScanned, risks, setProfile, reset: resetProfile } = useCareerProfile();
+  const { profile, hasScanned, risks, setProfile, reset: resetProfile, setAccountName } = useCareerProfile();
   const [appState, setAppState] = useState<AppState>("landing");
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
   const [authed, setAuthed]     = useState(false);
@@ -234,7 +234,7 @@ function AppRouter() {
   };
 
   const signOut = () => {
-    setAuthed(false); setUser(null); resetProfile();
+    setAuthed(false); setUser(null); resetProfile(); setAccountName("");
     setHistory([]); setPage("command"); setRole("candidate");
     setAppState("landing");
   };
@@ -274,6 +274,7 @@ function AppRouter() {
           onAuthed={u => {
             setAuthed(true);
             setUser({ name: u.name, email: u.email });
+            setAccountName(u.name);
             const scanned = u.isNew ? false : hasScanned;
             if (u.isNew) resetProfile();
             const target = pendingTarget;

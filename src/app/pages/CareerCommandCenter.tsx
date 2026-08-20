@@ -123,6 +123,8 @@ export function CareerCommandCenter({ onNavigate, appliedJobs = {} }: CareerComm
   const applications = buildApplications(profile, corpus, appliedJobs);
   const evidenceStrength = buildEvidenceStrength(profile, corpus);
   const firstName = profile.resume?.name?.split(" ")[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const topGap = targetGaps[0]?.skill ?? risks[0]?.category.toLowerCase() ?? "your evidence record";
   const currentRole = profile.currentRole || "your current role";
   const targetRole = profile.targetRole || "your target role";
@@ -146,24 +148,32 @@ export function CareerCommandCenter({ onNavigate, appliedJobs = {} }: CareerComm
           <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
-                <span className="inline-flex items-center gap-1.5 text-xs bg-white/10 border border-white/10 px-2.5 py-1 rounded-full text-slate-200">
-                  <Sparkles size={12} /> Priority
+                <span className="inline-flex items-center gap-1.5 text-sm bg-white/10 border border-white/10 px-2.5 py-1 rounded-full text-slate-200">
+                  <Sparkles size={13} /> {greeting}
                 </span>
               </div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                {firstName ? `${firstName}, close ` : "Close "}your biggest gap: {topGap}.
+              {/* This opened on "Rehearse now", which pushed an interview
+                  at someone who had not applied to anything yet. The
+                  Command Center is where you arrive, so it greets you
+                  and says where you stand. */}
+              <h1 className="text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
+                {firstName ? `${firstName}, here's where you stand.` : "Here's where you stand."}
               </h1>
-              <p className="text-sm text-slate-300 leading-relaxed mt-2 max-w-2xl">
-                {topRisks[0]?.detail ?? `You're moving from ${currentRole} to ${targetRole}. Start where the market filters hardest.`}
+              <p className="text-base text-slate-300 leading-relaxed mt-3 max-w-2xl">
+                You&apos;re moving from <strong className="text-white">{currentRole}</strong> to{" "}
+                <strong className="text-white">{targetRole}</strong>.{" "}
+                {risks.length
+                  ? <>We found <strong className="text-white">{risks.length} thing{risks.length === 1 ? "" : "s"}</strong> standing in the way — the biggest is {topGap}.</>
+                  : <>Nothing structural is standing in your way right now.</>}
               </p>
-              <div className="flex flex-wrap items-center gap-4 mt-5">
-                <button onClick={() => onNavigate("coach")} className="inline-flex items-center gap-2 bg-white text-slate-950 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100">
-                  Rehearse now <ArrowRight size={14} />
+              <div className="flex flex-wrap items-center gap-4 mt-6">
+                <button onClick={() => onNavigate("dashboard")} className="inline-flex items-center gap-2 bg-white text-slate-950 px-5 py-3 rounded-xl text-base font-semibold hover:bg-slate-100">
+                  See the full scan <ArrowRight size={16} />
                 </button>
-                <button onClick={() => onNavigate("jobs")} className="text-xs text-slate-400 hover:text-white transition-colors underline underline-offset-4">
+                <button onClick={() => onNavigate("jobs")} className="text-sm text-slate-400 hover:text-white transition-colors underline underline-offset-4">
                   Job matches
                 </button>
-                <button onClick={() => onNavigate("onboarding")} className="text-xs text-slate-400 hover:text-white transition-colors underline underline-offset-4">
+                <button onClick={() => onNavigate("onboarding")} className="text-sm text-slate-400 hover:text-white transition-colors underline underline-offset-4">
                   Re-scan
                 </button>
               </div>

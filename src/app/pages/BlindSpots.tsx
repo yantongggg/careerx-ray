@@ -404,10 +404,10 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+          <h1 className="text-3xl font-bold text-foreground tracking-tight leading-tight">
             {targetRole ? `What stands between you and ${targetRole}` : "Blind Spots"}
           </h1>
-          <p className="text-muted-foreground text-sm mt-2 max-w-2xl leading-relaxed">
+          <p className="text-muted-foreground text-base mt-3 max-w-2xl leading-relaxed">
             {targetRole
               ? <>Your dashboard covers the risks in the role you have today. This is the other half — the things that quietly filter you out of <strong className="text-foreground">{targetRole}</strong> applications, and what closes each one.</>
               : <>Set a target role and this page shows exactly what stands between you and it: what the role asks for, what your evidence already covers, and where applicants like you get filtered out.</>}
@@ -434,19 +434,42 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
           </div>
         ) : (
         <>
-        {/* Summary */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Gaps to close",  value: String(spots.length), color: "text-red-500",    bg: "bg-red-50",    border: "border-red-100"    },
-            { label: "High priority",  value: String(counts.critical + counts.high), color: "text-amber-500",  bg: "bg-amber-50",  border: "border-amber-100"  },
-            { label: "Worth watching", value: String(counts.medium), color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-100" },
-            { label: "Strengths",      value: String(strengths.length), color: "text-emerald-500",bg: "bg-emerald-50",border: "border-emerald-100"},
-          ].map(s => (
-            <div key={s.label} className={`${s.bg} border ${s.border} rounded-xl p-4 text-center`}>
-              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+        {/* Start here — one gap named, with the action. Four equal number
+            tiles used to sit here, which told you the totals and nothing
+            about where to begin. */}
+        {spots[0] && (
+          <div className="bg-slate-950 text-white rounded-2xl p-6 lg:p-7 mb-6">
+            <p className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-2.5">Start here</p>
+            <h2 className="text-2xl lg:text-[1.75rem] font-bold leading-tight">{spots[0].headline}</h2>
+            <p className="text-base text-slate-300 leading-relaxed mt-3 max-w-2xl">{spots[0].recommendedAction}</p>
+            <div className="flex flex-wrap items-center gap-4 mt-5">
+              <button
+                onClick={() => { setOpen(0); }}
+                className="inline-flex items-center gap-2 bg-white text-slate-950 px-5 py-2.5 rounded-xl text-base font-semibold hover:bg-slate-100 transition-colors"
+              >
+                See what closes it <ArrowRight size={16} />
+              </button>
+              <span className="inline-flex items-center gap-1.5 text-sm text-slate-400">
+                <Clock size={14} /> Around {spots[0].timeToFix}
+              </span>
             </div>
-          ))}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 text-base">
+          <span className="text-muted-foreground">
+            <strong className="text-foreground tabular-nums">{spots.length}</strong> gap{spots.length === 1 ? "" : "s"} to close
+          </span>
+          {counts.critical + counts.high > 0 && (
+            <span className="text-muted-foreground">
+              <strong className="text-amber-700 tabular-nums">{counts.critical + counts.high}</strong> high priority
+            </span>
+          )}
+          {strengths.length > 0 && (
+            <span className="text-muted-foreground">
+              <strong className="text-emerald-700 tabular-nums">{strengths.length}</strong> already working for you
+            </span>
+          )}
         </div>
 
         {/* Blind Spot Cards */}
@@ -467,12 +490,12 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.badge}`}>{s.label}</span>
-                      <span className="text-xs text-muted-foreground">{spot.category}</span>
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${s.badge}`}>{s.label}</span>
+                      <span className="text-sm text-muted-foreground">{spot.category}</span>
                     </div>
-                    <p className="text-sm font-semibold text-foreground leading-snug">{spot.headline}</p>
+                    <p className="text-lg font-semibold text-foreground leading-snug">{spot.headline}</p>
                     {!isOpen && (
-                      <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">{spot.humanContext}</p>
+                      <p className="text-sm text-muted-foreground mt-1.5 line-clamp-1">{spot.humanContext}</p>
                     )}
                   </div>
                   <div className="flex-shrink-0 mt-1">
@@ -488,18 +511,18 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
 
                     {/* Context */}
                     <div className="px-6 py-5">
-                      <p className="text-sm text-foreground leading-relaxed">{spot.humanContext}</p>
+                      <p className="text-base text-foreground leading-relaxed">{spot.humanContext}</p>
                     </div>
 
                     <div className="border-t border-border grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border">
 
                       {/* Why it matters */}
                       <div className="px-6 py-5">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
                           <span className="w-4 h-4 rounded bg-amber-100 text-amber-600 flex items-center justify-center text-xs">?</span>
                           Why this matters
                         </p>
-                        <p className="text-sm text-foreground leading-relaxed">{spot.whyItMatters}</p>
+                        <p className="text-base text-foreground leading-relaxed">{spot.whyItMatters}</p>
                       </div>
 
                       {/* If ignored */}
@@ -508,7 +531,7 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                           <AlertTriangle size={12} className={s.icon} />
                           If you ignore this
                         </p>
-                        <p className="text-sm text-foreground leading-relaxed">{spot.ifIgnored}</p>
+                        <p className="text-base text-foreground leading-relaxed">{spot.ifIgnored}</p>
                       </div>
 
                       {/* What to do */}
@@ -517,17 +540,17 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                           <CheckCircle size={12} className="text-emerald-500" />
                           What to do next
                         </p>
-                        <p className="text-sm text-foreground leading-relaxed mb-4">{spot.recommendedAction}</p>
+                        <p className="text-base text-foreground leading-relaxed mb-4">{spot.recommendedAction}</p>
                         <div className="space-y-2">
                           {spot.actionSteps.map((step, i) => (
                             <div key={i} className="flex items-start gap-2.5">
                               <span className="w-4 h-4 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
-                              <p className="text-xs text-foreground leading-snug">{step}</p>
+                              <p className="text-sm text-foreground leading-snug">{step}</p>
                             </div>
                           ))}
                         </div>
-                        <div className="flex items-center gap-1.5 mt-4 text-xs text-muted-foreground">
-                          <Clock size={11} /> Time to fix: <strong className="text-foreground">{spot.timeToFix}</strong>
+                        <div className="flex items-center gap-1.5 mt-4 text-sm text-muted-foreground">
+                          <Clock size={13} /> Time to fix: <strong className="text-foreground">{spot.timeToFix}</strong>
                         </div>
                       </div>
                     </div>
@@ -535,7 +558,7 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                     {/* Evidence footer */}
                     <div className="border-t border-border px-6 py-3 flex items-center gap-2 bg-muted/40">
                       <BarChart3 size={12} className="text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Evidence: {spot.evidence}</span>
+                      <span className="text-sm text-muted-foreground">Evidence: {spot.evidence}</span>
                     </div>
                   </div>
                 )}
@@ -551,7 +574,7 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
           <div className="flex items-start justify-between gap-4 mb-1.5 flex-wrap">
             <div className="flex items-center gap-2">
               <Radar size={16} className="text-[#8A7038]" />
-              <h3 className="font-semibold text-foreground">Market reality check — your role vs the market</h3>
+              <h3 className="text-lg font-semibold text-foreground">Market reality check — your role vs the market</h3>
             </div>
             <span className="text-xs font-semibold text-[#8A7038] bg-[#8A7038]/10 px-2.5 py-1 rounded-full">{market.familyLabel}</span>
           </div>
@@ -698,7 +721,7 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
           <div className="bg-white border border-border rounded-xl p-6">
             <div className="flex items-center gap-2 mb-5">
               <CheckCircle size={16} className="text-emerald-500" />
-              <h3 className="font-semibold text-foreground">What you already have going for you</h3>
+              <h3 className="text-lg font-semibold text-foreground">What you already have going for you</h3>
             </div>
             <div className="grid lg:grid-cols-2 gap-3">
               {strengths.map(c => (

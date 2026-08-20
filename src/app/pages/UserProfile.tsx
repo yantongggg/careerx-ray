@@ -66,11 +66,11 @@ function EmptySection({ text }: { text: string }) {
 }
 
 export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const { profile, scorecard } = useCareerProfile();
+  const { profile, scorecard, displayName } = useCareerProfile();
   const primary = archetypeFor(profile);
   const corpus = corpusFor(profile);
 
-  const name = profile.resume?.name || "Your profile";
+  const name = displayName;
   const role = profile.resume?.currentTitle || profile.currentRole;
   const years = profile.resume?.yearsExperience;
   const employers = profile.resume?.employers ?? [];

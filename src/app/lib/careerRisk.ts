@@ -344,8 +344,8 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
     evidence: `Baseline for ${family} roles (${automation.baselinePct}%), adjusted for your Innovation ${Math.round(dim(profile, "Innovation"))} and Strategic ${Math.round(dim(profile, "Strategic"))} scores${automation.evidenceAdjustmentPct ? " and your shipped project evidence" : ""}.`,
     comparison: {
       current: `${exposurePct}% exposed`,
-      benchmark: `<${RISK_POLICY.automationLowRiskCeiling}% low-risk band`,
-      shortfall: `${exposurePct - (RISK_POLICY.automationLowRiskCeiling - 1)} pts above low-risk band`,
+      benchmark: `Under ${RISK_POLICY.automationLowRiskCeiling}% recommended`,
+      shortfall: `${exposurePct - (RISK_POLICY.automationLowRiskCeiling - 1)} points above recommended range`,
     },
     calculation: [
       `${automation.baselinePct}% baseline for ${family} roles`,
@@ -367,16 +367,16 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
     if (missingProof) missing.push(`proof depth of ${RISK_POLICY.proofMinimum} sources`);
     risks.push({
       id: "readiness",
-      category: "Proof & Credential Readiness",
+      category: "Proof & Credentials",
       headline: `You need ${readiness.additionsNeeded} more evidence item${readiness.additionsNeeded === 1 ? "" : "s"}; ${missing.join(" and ")} must be covered.`,
       severity: missingGate ? "high" : "medium",
       metric: `${gateCount}/${RISK_POLICY.roleGateMinimum} gate · ${proofCount}/${RISK_POLICY.proofMinimum} sources`,
       horizon: "blocks applications today",
       evidence: `Counted ${gateCount} role-relevant gate item${gateCount === 1 ? "" : "s"} and ${proofCount} evidence source${proofCount === 1 ? "" : "s"} from your scan.`,
       comparison: {
-        current: `${gateCount}/${RISK_POLICY.roleGateMinimum} gate · ${proofCount}/${RISK_POLICY.proofMinimum} proof`,
-        benchmark: `${RISK_POLICY.roleGateMinimum} role gate · ${RISK_POLICY.proofMinimum} proof sources`,
-        shortfall: `${readiness.additionsNeeded} item${readiness.additionsNeeded === 1 ? "" : "s"} total`,
+        current: `${gateCount} credential · ${proofCount} proof source${proofCount === 1 ? "" : "s"}`,
+        benchmark: `${RISK_POLICY.roleGateMinimum} credential · ${RISK_POLICY.proofMinimum} proof sources`,
+        shortfall: `${readiness.additionsNeeded} evidence item${readiness.additionsNeeded === 1 ? "" : "s"} missing`,
       },
       calculation: [
         `Role gate for target ${readiness.family}: ${KEY_CREDENTIAL[readiness.family]}`,
@@ -409,8 +409,8 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
         evidence: `Your stated RM ${current.toLocaleString()}/mo against the RM ${band.toLocaleString()}/mo median for ${family} roles at your experience level.`,
         comparison: {
           current: `${salary.basis === "upper-bound" ? "<" : salary.basis === "lower-bound" ? "≥" : ""}RM ${current.toLocaleString()}/mo`,
-          benchmark: `RM ${band.toLocaleString()}/mo median`,
-          shortfall: `${salary.basis === "upper-bound" ? "At least " : ""}RM ${gap.toLocaleString()}/mo (${Math.abs(deltaPct)}%)`,
+          benchmark: `RM ${band.toLocaleString()}/mo typical`,
+          shortfall: `RM ${gap.toLocaleString()}/mo below${salary.basis === "upper-bound" ? " at least" : ""} (${Math.abs(deltaPct)}%)`,
         },
         calculation: [
           `Used the ${salary.basis.replace("-", " ")} of your stated salary range: RM ${current.toLocaleString()}/mo`,
@@ -437,8 +437,8 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
       evidence: `Leadership scored ${Math.round(leadership)} from your Career Calibration answers, against a target role of "${profile.targetRole}".`,
       comparison: {
         current: `${Math.round(leadership)}/100`,
-        benchmark: `${RISK_POLICY.leadershipReady}/100 leadership signal`,
-        shortfall: `${Math.ceil(RISK_POLICY.leadershipReady - leadership)} points`,
+        benchmark: `${RISK_POLICY.leadershipReady}/100 needed`,
+        shortfall: `${Math.ceil(RISK_POLICY.leadershipReady - leadership)} points short`,
       },
       calculation: [
         `Target title "${profile.targetRole}" matched a leadership-level role`,

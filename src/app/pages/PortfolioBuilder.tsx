@@ -70,11 +70,11 @@ const defaultSections = [
 ];
 
 export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const { profile } = useCareerProfile();
+  const { profile, displayName } = useCareerProfile();
 
-  const previewName = profile.resume?.name || "Your name";
+  const previewName = displayName;
   const previewContact = [profile.resume?.email, profile.resume?.phone].filter(Boolean).join(" · ");
-  const previewSlug = (profile.resume?.name || "your-name")
+  const previewSlug = displayName
     .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const resumeText = buildResumeForRole(profile, profile.targetRole || "your target role");
   /* Pulled from a connected source rather than assumed — an unconnected

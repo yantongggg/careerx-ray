@@ -18,6 +18,11 @@ import { deriveRiskCategoryChecks, deriveRisks, deriveScorecard, deriveTargetGap
 
 interface CareerProfileContextValue {
   profile: CareerProfile;
+  /* The name to put on screen. The résumé is the better source when it
+     has one; the signed-in name fills in when it does not, so the
+     published portfolio stops saying "Your name". */
+  displayName: string;
+  setAccountName: (name: string) => void;
   hasScanned: boolean;
   risks: Risk[];
   riskChecks: RiskCategoryCheck[];
@@ -35,6 +40,7 @@ const CareerProfileContext = createContext<CareerProfileContextValue | null>(nul
 
 export function CareerProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<CareerProfile>(EMPTY_PROFILE);
+  const [accountName, setAccountName] = useState("");
 
   const hasScanned = !!profile.scannedAt;
 
@@ -60,6 +66,8 @@ export function CareerProfileProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<CareerProfileContextValue>(() => ({
     profile,
+    displayName: profile.resume?.name?.trim() || accountName.trim() || "Your name",
+    setAccountName,
     hasScanned,
     risks: deriveRisks(profile),
     riskChecks: deriveRiskCategoryChecks(profile),
@@ -71,7 +79,7 @@ export function CareerProfileProvider({ children }: { children: ReactNode }) {
     removeEvidence,
     setResume,
     reset: () => setProfileState(EMPTY_PROFILE),
-  }), [profile, hasScanned]);
+  }), [profile, hasScanned, accountName]);
 
   return <CareerProfileContext.Provider value={value}>{children}</CareerProfileContext.Provider>;
 }
