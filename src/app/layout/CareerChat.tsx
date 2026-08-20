@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Send, Sparkles, X } from "lucide-react";
 import { TapirMark } from "./TapirMark";
 import { useCareerProfile } from "../state/careerProfile";
+import { useIntelligence } from "../state/intelligence";
 import { corpusFor } from "../lib/careerCorpus";
 import {
   askChat, starterQuestions,
@@ -39,6 +40,19 @@ interface CareerChatProps {
 
 export function CareerChat({ page, open, onOpenChange, seed, onSeedConsumed }: CareerChatProps) {
   const { profile, risks, targetGaps, scorecard } = useCareerProfile();
+  const { liveCount, latest } = useIntelligence();
+  const [dismissedNudge, setDismissedNudge] = useState(false);
+
+  /* A mentor who only ever answers when spoken to is a search box. This
+     is the one thing worth interrupting for: a live rejection signal
+     naming a skill, which is new information the user cannot see from
+     any page they are on. Nothing else raises it. */
+  const nudge = !open && !dismissedNudge && liveCount > 0 && latest
+    ? {
+        skill: latest.skill,
+        question: `An employer just rejected someone for ${latest.skill}. Does that affect me?`,
+      }
+    : null;
   const setOpen = onOpenChange;
   const [turns, setTurns] = useState<DisplayTurn[]>([]);
   const [input, setInput] = useState("");
@@ -103,10 +117,39 @@ export function CareerChat({ page, open, onOpenChange, seed, onSeedConsumed }: C
           className="group fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-white shadow-lg transition hover:shadow-xl hover:-translate-y-0.5"
         >
           <TapirMark size={38} idle />
+          {nudge && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
+              <span className="relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-white bg-amber-500" />
+            </span>
+          )}
           <span className="pointer-events-none absolute right-full mr-2 whitespace-nowrap rounded-lg bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 max-sm:hidden">
             Ask Tapir
           </span>
         </button>
+      )}
+
+      {/* What it wants to say, offered once and dismissible. It never
+          speaks twice about the same thing. */}
+      {nudge && (
+        <div className="fixed bottom-24 right-5 z-40 w-[min(300px,calc(100vw-2.5rem))] rounded-2xl rounded-br-sm border border-border bg-white p-4 shadow-xl">
+          <button
+            onClick={() => setDismissedNudge(true)}
+            aria-label="Dismiss"
+            className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X size={13} />
+          </button>
+          <p className="pr-5 text-sm leading-relaxed text-foreground">
+            An employer just rejected someone for <strong>{nudge.skill}</strong>.
+          </p>
+          <button
+            onClick={() => { setDismissedNudge(true); setOpen(true); void send(nudge.question); }}
+            className="mt-3 text-sm font-semibold text-primary hover:underline"
+          >
+            Does that affect me? →
+          </button>
+        </div>
       )}
 
       {/* Panel */}

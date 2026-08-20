@@ -344,8 +344,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         {/* ── Salary benchmark ── */}
         <div className="grid grid-cols-1 gap-4">
           <div className="bg-white border border-border rounded-xl p-6">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-lg font-semibold text-foreground">Salary vs market benchmark</h3>
+            {/* Named, because this is the sharpest thing the scan does and
+                it was sitting mid-page as an unlabelled section. Nothing
+                below it changed — same figures, same derivation. */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Fair Pay Engine</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Are you paid what you&apos;re worth, or what you accepted?
+                </p>
+              </div>
               <button onClick={() => setModal("salary")} className={`text-xs px-2 py-1 rounded-full font-medium transition-colors inline-flex items-center gap-1 ${!scorecard.vsMarket.conclusive ? "bg-amber-50 text-amber-700 border border-amber-100 hover:bg-amber-100" : scorecard.vsMarket.percent < 0 ? "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100" : "bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100"}`}>
                 {scorecard.vsMarket.label} vs market <Info size={11} /> <span className="underline underline-offset-2">why?</span>
               </button>

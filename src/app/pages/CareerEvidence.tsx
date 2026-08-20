@@ -12,7 +12,7 @@ import type { CareerProfile, TrustLevel } from "../lib/profileTypes";
 
 interface Entry {
   id: string;
-  type: "work" | "project" | "cert" | "hackathon" | "competition" | "leadership" | "volunteer" | "publication" | "opensource";
+  type: "work" | "project" | "cert" | "hackathon" | "competition" | "leadership" | "volunteer" | "publication" | "opensource" | "profile";
   title: string;
   org: string;
   date: string;
@@ -27,6 +27,7 @@ const typeLabel: Record<Entry["type"], string> = {
   work: "Work", project: "Project", cert: "Certification",
   hackathon: "Hackathon", competition: "Competition", leadership: "Leadership",
   volunteer: "Volunteer", publication: "Publication", opensource: "Open Source",
+  profile: "Profile",
 };
 
 const typeColor: Record<Entry["type"], { text: string; bg: string; border: string }> = {
@@ -39,6 +40,7 @@ const typeColor: Record<Entry["type"], { text: string; bg: string; border: strin
   volunteer:   { text: "text-teal-600",    bg: "bg-teal-50",    border: "border-teal-200"    },
   publication: { text: "text-slate-600",   bg: "bg-slate-50",   border: "border-slate-200"   },
   opensource:  { text: "text-gray-700",    bg: "bg-gray-50",    border: "border-gray-200"    },
+  profile:     { text: "text-sky-700",     bg: "bg-sky-50",     border: "border-sky-200"     },
 };
 
 /* ────────────────────────────────────────────────────────────────
@@ -59,7 +61,7 @@ const KIND_TO_TYPE: Record<string, Entry["type"]> = {
   certificate: "cert",
   project: "project",
   portfolio: "project",
-  link: "project",
+  link: "profile",
   reference: "leadership",
   record: "work",
   resume: "work",
@@ -68,7 +70,7 @@ const KIND_TO_TYPE: Record<string, Entry["type"]> = {
 
 const TYPE_EMOJI: Record<Entry["type"], string> = {
   work: "💼", project: "💻", cert: "🎓", hackathon: "⚡", competition: "🏆",
-  leadership: "👥", volunteer: "🤝", publication: "📝", opensource: "🔧",
+  leadership: "👥", volunteer: "🤝", publication: "📝", opensource: "🔧", profile: "🔗",
 };
 
 const TRUST_TO_STATUS: Record<TrustLevel, Entry["verified"]> = {

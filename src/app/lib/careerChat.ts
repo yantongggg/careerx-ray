@@ -151,7 +151,7 @@ function kbAnswer(question: string): string | null {
 type Intent =
   | "greeting" | "capability"
   | "archetype" | "risk" | "salary" | "gap" | "plan"
-  | "jobs" | "evidence" | "interview" | "switch" | "score" | "paths"
+  | "jobs" | "evidence" | "interview" | "switch" | "score" | "paths" | "signal"
   | "unknown";
 
 /* Ordered: the first pattern that matches wins, so the more specific
@@ -159,6 +159,7 @@ type Intent =
 const INTENT_PATTERNS: { intent: Intent; test: RegExp }[] = [
   { intent: "greeting",   test: /^(hi|hey|hello|yo|halo|hai|helo)\b|^(good )?(morning|afternoon|evening)\b/i },
   { intent: "capability", test: /what can you|who are you|what are you|how do you work|apa yang|你是谁|你能|你可以做/i },
+  { intent: "signal",     test: /rejected someone|does that affect me|affect me|just rejected|live signal|信号|影响我/i },
   { intent: "paths",      test: /why these|three paths|why those|three futures|where.*(paths|futures).*(from|come)|这三条|为什么.*(路|三条)/i },
   { intent: "archetype",  test: /archetype|career dna|\bdna\b|personality|what animal|my type|我的类型|动物/i },
   { intent: "interview",  test: /interview|rehears|mock|apa soalan|面试/i },
@@ -279,6 +280,22 @@ export function localChatReply(ctx: ChatContext, question: string): string {
       const t = corpus.futures[1];
       const a = corpus.futures[2];
       return `Moving from ${current} into ${target} takes ${corpus.transitionMonths[0]}–${corpus.transitionMonths[1]} months of real effort, and your ${corpus.foundationSkills[0]} carries over. If the direct move stalls at interview stage, ${a.role} is the easier door into the same place. Decision Lab models all three paths year by year — and if you are weighing two specific offers, What-If Lab compares them properly.`;
+    }
+
+    case "signal": {
+      /* Answered against their own record rather than repeating the
+         signal back at them — the only useful question is whether the
+         thing that sank someone else is covered on their profile. */
+      const skills = [
+        ...(profile.resume?.skills ?? []),
+        ...profile.evidence.flatMap(e => e.skills),
+      ].map(sk => sk.toLowerCase());
+      const words = question.toLowerCase().split(/[^a-z0-9+#]+/).filter(w => w.length > 3);
+      const covered = skills.some(sk => words.some(w => sk.includes(w) || w.includes(sk)));
+
+      return covered
+        ? `You have that on your profile, so the same reason should not sink you — but check what backs it. If it is self-declared, an employer reading your record sees a claim, not proof, which is close to not having it at all.`
+        : `Nothing on your record covers it. That does not mean it will sink you, but it is the reason someone applying for the kind of role you want was turned down this week, and you have nothing to point at. Career Evidence is where you fix that.`;
     }
 
     case "paths": {

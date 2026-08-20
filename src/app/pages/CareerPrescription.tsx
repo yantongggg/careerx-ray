@@ -8,7 +8,6 @@ import {
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useCareerProfile } from "../state/careerProfile";
 import { NextStep } from "../state/stages";
-import { buildResumeForRole, downloadText } from "../lib/resumeGen";
 import { corpusFor, credentialDemand, type Corpus } from "../lib/careerCorpus";
 import type { CareerProfile } from "../lib/profileTypes";
 import type { Risk, Scorecard } from "../lib/careerRisk";
@@ -448,7 +447,6 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
         </div>
 
         {/* ── Resume Gen ── */}
-        <ResumeFromPortfolio />
 
         <NextStep currentPage="prescription" onNavigate={onNavigate} />
       </div>
@@ -459,78 +457,3 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
 /* The general-purpose resume: aimed at where you want to go, built from
    what is on your profile. The job-specific version lives in
    Application Prep, which tailors this to one posting. */
-function ResumeFromPortfolio() {
-  const { profile } = useCareerProfile();
-  /* The three roles this person is actually choosing between, not a
-     fixed analytics ladder. */
-  const targets = [...new Set(corpusFor(profile).futures.map(f => f.role))].filter(Boolean);
-  const [target, setTarget] = useState(targets[0] ?? "your target role");
-  const [draft, setDraft] = useState<string | null>(null);
-  const [edited, setEdited] = useState(false);
-
-  const generate = () => {
-    setDraft(buildResumeForRole(profile, target));
-    setEdited(false);
-  };
-
-  return (
-    <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center">
-          <FileText size={16} className="text-primary" />
-        </div>
-        <div>
-          <h3 className="font-semibold text-foreground">Generate a resume from your evidence</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Everything below comes from your own scan. Edit anything before you use it.</p>
-        </div>
-      </div>
-      <div className="flex items-end gap-4">
-        <div className="flex-1">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Target role</label>
-          <select value={target} onChange={e => { setTarget(e.target.value); setDraft(null); }}
-            className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
-            {[...new Set(targets)].map(t => <option key={t}>{t}</option>)}
-          </select>
-        </div>
-        <button onClick={generate}
-          className="flex items-center gap-2 bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium">
-          <Sparkles size={14} /> {draft ? "Regenerate" : "Generate"}
-        </button>
-      </div>
-
-      {draft !== null && (
-        <div className="mt-5">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Preview {edited && <span className="ml-2 normal-case tracking-normal text-[10px] bg-amber-50 border border-amber-200 text-amber-700 rounded-full px-2 py-0.5">Edited</span>}
-            </p>
-            <div className="flex items-center gap-2">
-              {edited && (
-                <button onClick={generate} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  Reset to draft
-                </button>
-              )}
-              <button
-                onClick={() => downloadText(`resume-${target.toLowerCase().replace(/\s+/g, "-")}.txt`, draft)}
-                className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
-              >
-                <FileText size={12} /> Download
-              </button>
-            </div>
-          </div>
-          <textarea
-            value={draft}
-            onChange={e => { setDraft(e.target.value); setEdited(true); }}
-            rows={12}
-            className="w-full text-sm font-mono leading-relaxed border border-border rounded-xl p-4 bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-          />
-          {!profile.resume && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
-              This was built from your scan answers alone. Upload a resume on a re-scan and it will fill in employers, dates and detail.
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
