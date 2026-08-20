@@ -87,7 +87,7 @@ const pageLabels: Record<Page, string> = {
   "apply-prep":     "Application Preparation",
   coach:            "Interview Coach",
   offers:           "Offer Decision AI",
-  portfolio:        "Portfolio Builder",
+  portfolio:        "Living Portfolio",
   dashboard:        "Career Dashboard",
   decisionlab:      "Decision Lab",
   blindspots:       "Gap to Target",

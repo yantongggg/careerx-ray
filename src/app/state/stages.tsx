@@ -77,7 +77,7 @@ export const JOURNEY: JourneyStage[] = [
     desc: "Turn projects, internships, and certifications into verified career evidence employers trust.",
     tools: [
       { page: "evidence",  label: "Career Evidence", desc: "Your living, verified profile — the backbone of every recommendation.", icon: Layers },
-      { page: "portfolio", label: "Portfolio Builder", desc: "Publish your evidence as a shareable portfolio.", icon: Globe },
+      { page: "portfolio", label: "Living Portfolio", desc: "Your CV, written from your evidence — and updated whenever it changes.", icon: Globe },
     ],
   },
   {

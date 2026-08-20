@@ -86,11 +86,28 @@ const TRUST_SCORE: Record<TrustLevel, number> = {
   "self-declared": 45,
 };
 
-/** Turn what the user actually gave us into the timeline's shape. */
+/**
+ * Build the timeline from everything we already hold.
+ *
+ * This used to show the résumé as a single row — one entry saying "a PDF
+ * was uploaded" — while the employers, qualifications and certifications
+ * inside it stayed buried. Anyone who had just uploaded a CV saw an
+ * almost-empty record and was told to start adding things by hand.
+ *
+ * Everything readable is unpacked into its own entry. Nothing is
+ * invented: an entry appears only where the source actually named one,
+ * and everything read out of a document the user wrote themselves is
+ * self-declared until an issuer confirms it.
+ */
 function entriesFrom(profile: CareerProfile): Entry[] {
-  const items: Entry[] = profile.evidence.map(e => {
+  const items: Entry[] = [];
+  const r = profile.resume;
+
+  /* Connected sources first — these carry the strongest trust and are
+     what the user consciously linked. */
+  profile.evidence.forEach(e => {
     const type = KIND_TO_TYPE[e.kind] ?? "work";
-    return {
+    items.push({
       id: e.id,
       type,
       emoji: TYPE_EMOJI[type],
@@ -102,26 +119,61 @@ function entriesFrom(profile: CareerProfile): Entry[] {
       trustScore: TRUST_SCORE[e.trust],
       verified: TRUST_TO_STATUS[e.trust],
       aiImpact: impactOf(e),
-    };
+    });
   });
 
-  /* The uploaded resume is evidence too — it is where most of the
-     profile came from, and hiding it made the record look emptier
-     than it is. */
-  if (profile.resume) {
-    items.unshift({
-      id: "resume",
-      type: "work",
-      emoji: "📄",
-      title: profile.resume.fileName,
-      org: profile.resume.employers[0] ?? profile.currentRole ?? "Your history",
-      date: "Uploaded during your scan",
-      skills: profile.resume.skills.slice(0, 6),
-      evidenceSource: profile.resume.method === "ai" ? "AI extraction" : "On-device parsing",
-      trustScore: TRUST_SCORE["self-declared"],
-      verified: "unverified",
-      aiImpact: `Read ${profile.resume.skills.length} skills and ${profile.resume.employers.length} employer${profile.resume.employers.length === 1 ? "" : "s"} from this file. A resume is your own account of your history — it raises detail, not trust. Verify the claims that matter with an issuer.`,
+  if (r) {
+    const already = new Set(profile.evidence.map(e => e.label.toLowerCase()));
+
+    r.employers.forEach((employer, i) => {
+      items.push({
+        id: `cv-emp-${i}`,
+        type: "work",
+        emoji: TYPE_EMOJI.work,
+        title: i === 0 && r.currentTitle ? r.currentTitle : profile.currentRole || "Role not stated",
+        org: employer,
+        date: i === 0 ? "Most recent" : "Earlier",
+        skills: r.skills.slice(0, 4),
+        evidenceSource: r.fileName,
+        trustScore: TRUST_SCORE["self-declared"],
+        verified: "unverified",
+        aiImpact: `Read from your résumé. Employment is the easiest thing on a CV to confirm — a reference or a payslip moves this to verified and it starts counting in full.`,
+      });
     });
+
+    r.education.forEach((edu, i) => {
+      items.push({
+        id: `cv-edu-${i}`,
+        type: "cert",
+        emoji: "🎓",
+        title: edu,
+        org: "Qualification",
+        date: "From your résumé",
+        skills: [],
+        evidenceSource: r.fileName,
+        trustScore: TRUST_SCORE["self-declared"],
+        verified: "unverified",
+        aiImpact: `Qualifications verify quickly through the issuing institution, and Malaysian employers check them more often than anything else on a CV.`,
+      });
+    });
+
+    r.certifications
+      .filter(c => !already.has(c.toLowerCase()))
+      .forEach((cert, i) => {
+        items.push({
+          id: `cv-cert-${i}`,
+          type: "cert",
+          emoji: TYPE_EMOJI.cert,
+          title: cert,
+          org: "Certification",
+          date: "From your résumé",
+          skills: [],
+          evidenceSource: r.fileName,
+          trustScore: TRUST_SCORE["self-declared"],
+          verified: "unverified",
+          aiImpact: `Named on your résumé but not confirmed with the issuer. Most certification bodies expose a public verification page — one link moves this to verified.`,
+        });
+      });
   }
 
   return items;

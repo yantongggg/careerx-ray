@@ -4,6 +4,7 @@ import { NextStep } from "../state/stages";
 import { buildResumeForRole, downloadText } from "../lib/resumeGen";
 import { useState } from "react";
 import {
+  Shield,
   Globe,
   FileText,
   Github,
@@ -76,12 +77,31 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
   const previewContact = [profile.resume?.email, profile.resume?.phone].filter(Boolean).join(" · ");
   const previewSlug = displayName
     .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const resumeText = buildResumeForRole(profile, profile.targetRole || "your target role");
   /* Pulled from a connected source rather than assumed — an unconnected
      GitHub link on a published portfolio is a dead link. */
   const githubHandle = profile.evidence
     .map(e => /github\.com\/([A-Za-z0-9_-]+)/.exec(e.source ?? ""))
     .find(Boolean)?.[1];
+
+  const sourceSummary = [
+    profile.resume && {
+      label: "Résumé", icon: FileText,
+      detail: `${profile.resume.skills.length} skills · ${profile.resume.employers.length} employer${profile.resume.employers.length === 1 ? "" : "s"}`,
+    },
+    profile.evidence.some(e => /linkedin/i.test(e.source ?? "")) && {
+      label: "LinkedIn", icon: Linkedin, detail: "Linked as a source",
+    },
+    githubHandle && { label: "GitHub", icon: Github, detail: `github.com/${githubHandle}` },
+    Object.keys(profile.dnaScores).length > 0 && {
+      label: "Career DNA", icon: Sparkles, detail: profile.archetypeName || "Archetype and strengths",
+    },
+    profile.evidence.length > 0 && {
+      label: "Evidence", icon: Shield,
+      detail: `${profile.evidence.length} item${profile.evidence.length === 1 ? "" : "s"} on record`,
+    },
+  ].filter(Boolean) as { label: string; icon: typeof FileText; detail: string }[];
+
+  const resumeText = buildResumeForRole(profile, profile.targetRole || "your target role");
 
   /* Whatever the user added during their scan is already imported. This
      page used to start every source at false, so someone who had just
@@ -143,10 +163,10 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
             AI-Powered Builder
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-            Resume & Portfolio Website Builder
+            Living Portfolio
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Create a stunning portfolio website from your LinkedIn, GitHub, and existing resume in minutes
+            Your CV, written from your evidence — and updated whenever your evidence changes.
           </p>
           <button
             onClick={() => setPreviewOpen(true)}
@@ -158,192 +178,52 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
           </button>
         </div>
 
-        {/* Step 1: Import Sources */}
+        {/* Step 1 used to ask the user to connect LinkedIn, GitHub, their
+            résumé and their Career DNA — all four of which they had
+            already connected one page earlier under Career Evidence.
+            This reads that record instead of asking for it twice. */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold">1</span>
-            <h2 className="text-xl font-semibold text-foreground">Import Your Sources</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* LinkedIn */}
-            <div
-              className={`relative rounded-xl border-2 p-5 cursor-pointer transition-all hover:shadow-md ${
-                linkedinConnected ? "border-green-400 bg-green-50" : "border-border bg-card"
-              }`}
-              onClick={() => setLinkedinConnected(!linkedinConnected)}
-            >
-              {linkedinConnected && (
-                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white" />
-                </div>
-              )}
-              <div className="w-10 h-10 rounded-lg bg-[#0A66C2] flex items-center justify-center mb-3">
-                <Linkedin className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="font-semibold text-foreground">Connect LinkedIn</h3>
-              <p className="text-sm text-muted-foreground mt-1">Import experience & skills</p>
-              <button onClick={() => { setLinkedinConnected(true); demoToast("LinkedIn connected — experience & skills imported \u2713"); }} className="mt-3 text-sm font-medium text-[#0A66C2] hover:underline">
-                {linkedinConnected ? "Connected" : "Connect"}
-              </button>
-            </div>
-
-            {/* GitHub */}
-            <div
-              className={`relative rounded-xl border-2 p-5 cursor-pointer transition-all hover:shadow-md ${
-                githubConnected ? "border-green-400 bg-green-50" : "border-border bg-card"
-              }`}
-              onClick={() => setGithubConnected(!githubConnected)}
-            >
-              {githubConnected && (
-                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white" />
-                </div>
-              )}
-              <div className="w-10 h-10 rounded-lg bg-[#24292e] flex items-center justify-center mb-3">
-                <Github className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="font-semibold text-foreground">Connect GitHub</h3>
-              <p className="text-sm text-muted-foreground mt-1">Showcase your projects</p>
-              <button onClick={() => { setGithubConnected(true); demoToast("GitHub connected — 12 repos scanned for project evidence \u2713"); }} className="mt-3 text-sm font-medium text-[#24292e] hover:underline">
-                {githubConnected ? "Connected" : "Connect"}
-              </button>
-            </div>
-
-            {/* Upload Resume */}
-            <div
-              className={`relative rounded-xl border-2 p-5 cursor-pointer transition-all hover:shadow-md ${
-                resumeUploaded ? "border-green-400 bg-green-50" : "border-border bg-card border-dashed"
-              }`}
-              onClick={() => setResumeUploaded(!resumeUploaded)}
-            >
-              {resumeUploaded && (
-                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white" />
-                </div>
-              )}
-              <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-3">
-                <Upload className="w-5 h-5 text-orange-600" />
-              </div>
-              <h3 className="font-semibold text-foreground">Upload Resume</h3>
-              <p className="text-sm text-muted-foreground mt-1">Drag & drop PDF or DOCX</p>
-              <button onClick={() => { setResumeUploaded(true); demoToast("Resume uploaded and parsed \u2713"); }} className="mt-3 text-sm font-medium text-orange-600 hover:underline">
-                {resumeUploaded ? "Uploaded" : "Upload"}
-              </button>
-            </div>
-
-            {/* Career DNA */}
-            <div
-              className={`relative rounded-xl border-2 p-5 cursor-pointer transition-all hover:shadow-md ${
-                dnaImported ? "border-green-400 bg-green-50" : "border-border bg-card"
-              }`}
-              onClick={() => setDnaImported(!dnaImported)}
-            >
-              {dnaImported && (
-                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white" />
-                </div>
-              )}
-              <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center mb-3">
-                <Sparkles className="w-5 h-5 text-violet-600" />
-              </div>
-              <h3 className="font-semibold text-foreground">CareerX-Ray DNA</h3>
-              <p className="text-sm text-muted-foreground mt-1">Auto-pull from your profile</p>
-              <button onClick={() => { setDnaImported(true); demoToast("Career DNA imported — archetype and strengths added \u2713"); }} className="mt-3 text-sm font-medium text-violet-600 hover:underline">
-                {dnaImported ? "Imported" : "Import"}
-              </button>
-            </div>
+            <h2 className="text-xl font-semibold text-foreground">What we&apos;re building from</h2>
           </div>
 
-          {/* Alternative evidence picker */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-            <div>
-              <h3 className="font-semibold text-foreground">No LinkedIn or GitHub? Build from what you have.</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Your portfolio builds from <span className="font-semibold text-[#8A7038]">ANY</span> evidence — pick what you have, skip what you don't.
-              </p>
-            </div>
-
-            {/* Portfolio website URL */}
-            <div
-              className={`flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border-2 p-3 transition-all ${
-                altAdded.website ? "border-green-400 bg-green-50" : "border-border bg-muted"
-              }`}
-            >
-              <div className="flex items-center gap-2.5 sm:w-56 shrink-0">
-                <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
-                  <Globe className="w-4 h-4 text-[#115E50]" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                    Portfolio Website
-                    {altAdded.website && (
-                      <span className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-white" />
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Link your own site or blog</p>
-                </div>
+          {sourceSummary.length ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {sourceSummary.map(src => (
+                  <div key={src.label} className="rounded-xl border-2 border-green-400 bg-green-50 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <src.icon className="w-5 h-5 text-green-700 flex-shrink-0" />
+                      <Check className="w-4 h-4 text-green-700 flex-shrink-0" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground mt-3">{src.label}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{src.detail}</p>
+                  </div>
+                ))}
               </div>
-              <input
-                type="text"
-                value={portfolioUrl}
-                onChange={(e) => setPortfolioUrl(e.target.value)}
-                placeholder="e.g. aisyah-designs.my"
-                className="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#115E50]/30"
-              />
               <button
-                onClick={handleAddPortfolioUrl}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  altAdded.website
-                    ? "bg-green-100 text-green-700"
-                    : "bg-[#115E50] text-white hover:bg-[#0d4a3f]"
-                }`}
+                onClick={() => onNavigate?.("evidence")}
+                className="text-sm font-medium text-violet-600 hover:underline inline-flex items-center gap-1.5"
               >
-                {altAdded.website ? "Linked" : "Add Site"}
+                Add or change what this is built from <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border p-8 text-center">
+              <p className="text-sm font-semibold text-foreground">Nothing on your record yet</p>
+              <p className="text-sm text-muted-foreground mt-1.5 max-w-md mx-auto leading-relaxed">
+                A portfolio is only as good as what backs it. Add something under Career
+                Evidence and it appears here automatically.
+              </p>
+              <button
+                onClick={() => onNavigate?.("evidence")}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Go to Career Evidence <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-
-            {/* Evidence chips */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {altEvidenceSources.map((s) => {
-                const added = !!altAdded[s.id];
-                const Icon = s.icon;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => toggleAltEvidence(s.id, s.toast)}
-                    className={`relative flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all hover:shadow-sm ${
-                      added ? "border-green-400 bg-green-50" : "border-border bg-card hover:border-[#8A7038]/40"
-                    }`}
-                  >
-                    {added && (
-                      <span className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-white" />
-                      </span>
-                    )}
-                    <span className={`w-9 h-9 rounded-lg ${s.iconBg} flex items-center justify-center shrink-0`}>
-                      <Icon className={`w-4 h-4 ${s.iconColor}`} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-foreground">{s.name}</span>
-                      <span className="block text-xs text-muted-foreground mt-0.5">{s.desc}</span>
-                      <span className={`mt-1.5 inline-flex items-center gap-1 text-xs font-medium ${added ? "text-green-700" : "text-[#8A7038]"}`}>
-                        {added ? (
-                          <>{s.done}</>
-                        ) : (
-                          <>
-                            <Plus className="w-3 h-3" />
-                            {s.action}
-                          </>
-                        )}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Step 2: Choose Style */}
