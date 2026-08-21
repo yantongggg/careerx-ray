@@ -24,17 +24,21 @@ interface EmbeddedDocProps {
   srcZh?: string;
   /** Frame height. These documents set their own internal scrolling. */
   height?: number;
+  /** Page width. The diagrams scale to fit, so a wider frame makes
+      everything inside them larger — the safe way to enlarge a
+      fixed-coordinate SVG whose boxes were tuned by hand. */
+  maxWidth?: number;
   onNavigate?: (page: string) => void;
 }
 
-export function EmbeddedDoc({ title, lede, src, srcZh, height = 1400, onNavigate }: EmbeddedDocProps) {
+export function EmbeddedDoc({ title, lede, src, srcZh, height = 1400, maxWidth = 1240, onNavigate }: EmbeddedDocProps) {
   /* Same document, same layout, same numbers — only the language
      differs, so switching is a source swap rather than a second page. */
   const [lang, setLang] = useState<"en" | "zh">("en");
   const active = lang === "zh" && srcZh ? srcZh : src;
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
-      <div className="mx-auto max-w-[1240px] p-6 lg:p-8">
+      <div className="mx-auto p-6 lg:p-8" style={{ maxWidth }}>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
