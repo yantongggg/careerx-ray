@@ -114,6 +114,12 @@ const DOOR_GITHUB: EvidenceDoor = {
 const DEMO_LINKEDIN_URL = "https://www.linkedin.com/in/jordanhkimm/";
 const DEMO_GITHUB_URL = "https://github.com/jordanhkimm";
 
+/* The résumé the demo persona uploads. Real uploads still run the full
+   path — file validation, in-browser text extraction, AI or rule-based
+   field reading — and this stands in for the result of that, so every
+   page downstream of the scan sees the shape it would have produced. */
+const DEMO_RESUME_FILE = "Jordan_Kim_Resume_2026.pdf";
+
 const DEMO_RESUME: ParsedResume = {
   fileName: "LinkedIn profile · jordanhkimm",
   fileSize: 0,
@@ -174,7 +180,7 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
     { id: "certificate", name: "A data or cloud certificate", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
       desc: "AWS, Google Cloud, Azure, Coursera — or a university transcript.", input: "pdf", kind: "certificate", trust: "self-declared",
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
-    DOOR_LINK, DOOR_GITHUB, DOOR_RESUME,
+    DOOR_LINK, DOOR_GITHUB,
   ],
   software: [
     { id: "project", name: "Something you shipped", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
@@ -182,7 +188,7 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
     { id: "certificate", name: "A technical certificate", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
       desc: "Cloud, security, or a completed course. Diplomas and TVET count.", input: "pdf", kind: "certificate", trust: "self-declared",
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
-    DOOR_LINK, DOOR_GITHUB, DOOR_RESUME,
+    DOOR_LINK, DOOR_GITHUB,
   ],
   design: [
     { id: "portfolio", name: "A case study from your portfolio", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
@@ -191,7 +197,6 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
       desc: "A diploma, a course certificate, a competition result.", input: "pdf", kind: "certificate", trust: "self-declared",
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
     { ...DOOR_LINK, name: "Behance, Dribbble or your site", desc: "Paste the URL where your work lives." },
-    DOOR_RESUME,
   ],
   marketing: [
     { id: "record", name: "Results you owned", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
@@ -200,7 +205,6 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
       desc: "Google Ads, Meta Blueprint, HubSpot — or a marketing diploma.", input: "pdf", kind: "certificate", trust: "self-declared",
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
     { ...DOOR_LINK, name: "Published work or your profile", desc: "A campaign page, an article, a LinkedIn URL." },
-    DOOR_RESUME,
   ],
   product: [
     { id: "project", name: "A product you helped ship", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
@@ -208,7 +212,7 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
     { id: "certificate", name: "A qualification", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
       desc: "A degree, a diploma, or a product or agile certification.", input: "pdf", kind: "certificate", trust: "self-declared",
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
-    DOOR_LINK, DOOR_GITHUB, DOOR_RESUME,
+    DOOR_LINK, DOOR_GITHUB,
   ],
   business: [
     { id: "certificate", name: "Your licence or registration", icon: ShieldCheck, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
@@ -218,7 +222,6 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
       desc: "Sales figures, transactions handled, targets met. A PDF summary is enough.", input: "pdf", kind: "record", trust: "self-declared" },
     { id: "reference", name: "A letter from an employer", icon: GraduationCap, brand: "bg-[#4F46E5]", hover: "hover:bg-[#4338ca]",
       desc: "A reference or confirmation of employment, on company letterhead.", input: "pdf", kind: "reference", trust: "corroborated" },
-    DOOR_RESUME,
   ],
   service: [
     { id: "reference", name: "A letter from where you worked", icon: GraduationCap, brand: "bg-[#4F46E5]", hover: "hover:bg-[#4338ca]",
@@ -228,7 +231,6 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
     { id: "record", name: "Proof of responsibility", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
       desc: "A promotion letter, a shift-lead roster, anything showing what you ran.", input: "pdf", kind: "record", trust: "self-declared" },
-    DOOR_RESUME,
   ],
   generic: [
     { id: "record", name: "Proof of what you've done", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
@@ -238,7 +240,7 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
     { id: "reference", name: "A letter from an employer", icon: GraduationCap, brand: "bg-[#4F46E5]", hover: "hover:bg-[#4338ca]",
       desc: "A reference or confirmation of employment.", input: "pdf", kind: "reference", trust: "corroborated" },
-    DOOR_LINK, DOOR_GITHUB, DOOR_RESUME,
+    DOOR_LINK, DOOR_GITHUB,
   ],
 };
 
@@ -345,7 +347,7 @@ type Step = "upload" | "connect" | "profile" | "calibration" | "scan" | "done";
 export function Onboarding({ onComplete, onBack }: OnboardingProps) {
   const [step, setStep] = useState<Step>("upload");
   const [userType, setUserType] = useState("");
-  const [parsedResume, setParsedResume] = useState<ParsedResume | null>(DEMO_RESUME);
+  const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
   const [resumeState, setResumeState] = useState<"idle" | "reading" | "done" | "error">("idle");
   const [resumeError, setResumeError] = useState<string | null>(null);
   const [resumeNote, setResumeNote] = useState<string | null>(null);
@@ -489,6 +491,22 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
             addedAt: "Just now",
           }],
     );
+  };
+
+  /* Clicking the dropzone loads the persona's résumé rather than opening
+     a file picker. It runs the same reading state so the step behaves as
+     it does for a real upload; a real file dropped on it still takes the
+     full path below. */
+  const loadDemoResume = () => {
+    if (resumeState === "done") return;
+    setResumeState("reading");
+    setResumeError(null);
+    window.setTimeout(() => {
+      const resume = { ...DEMO_RESUME, fileName: DEMO_RESUME_FILE };
+      setParsedResume(resume);
+      setResumeState("done");
+      addEvidenceItem(DOOR_RESUME, resume.fileName, resume.fileName, resume.skills);
+    }, 700);
   };
 
   const handleResumeFile = async (file: File | undefined | null) => {
@@ -666,10 +684,10 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                   setIsDragging(false);
                   void handleResumeFile(e.dataTransfer.files?.[0]);
                 }}
-                onClick={() => resumeState !== "reading" && fileInputRef.current?.click()}
+                onClick={() => resumeState !== "reading" && loadDemoResume()}
                 role="button"
                 tabIndex={0}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") loadDemoResume(); }}
                 className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all mb-4 ${
                   isDragging ? "border-primary bg-blue-50" :
                   resumeState === "done" ? "border-emerald-300 bg-emerald-50" :
