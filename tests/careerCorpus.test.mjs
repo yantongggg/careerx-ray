@@ -249,4 +249,33 @@ for (const id of seeded) {
   assert.ok(jobById(demoPersona, id), `seeded application "${id}" is not a posting in the corpus`);
 }
 
+/* One connector returns many items that all share a single source URL.
+   Both de-dupe predicates have to match on what the item is, or the
+   import silently collapses to one row per kind — which it did, twice,
+   in two different files. */
+const onboarding = await readFile("src/app/pages/Onboarding.tsx", "utf8");
+assert.match(
+  onboarding,
+  /prev\.some\(e => e\.label === label && e\.source === source\)/,
+  "Onboarding must de-duplicate evidence on the label, not the door it came through",
+);
+assert.match(
+  await readFile("src/app/state/careerProfile.tsx", "utf8"),
+  /e\.label === item\.label && e\.source === item\.source/,
+  "addEvidence must de-duplicate evidence on the label, not the source alone",
+);
+
+/* Replay the demo import through that predicate: every authored entry
+   has to survive it, or the evidence page is back to three rows. */
+const authored = [
+  ...[...onboarding.matchAll(/\{ kind: "\w+", label: "((?:[^"\\]|\\.)*)"/g)].map(m => ["linkedin", m[1]]),
+  ...[...onboarding.matchAll(/\{ label: "([^"]+)", language: "\w+", active: (?:true|false) \}/g)].map(m => ["github", m[1]]),
+];
+const kept = [];
+for (const [source, label] of authored) {
+  if (!kept.some(([s2, l2]) => l2 === label && s2 === source)) kept.push([source, label]);
+}
+assert.equal(kept.length, authored.length, "authored demo evidence contains duplicate labels");
+assert.ok(authored.length >= 14, `demo persona should import at least 14 evidence items, found ${authored.length}`);
+
 console.log("page-wiring assertions passed");

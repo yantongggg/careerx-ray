@@ -14,6 +14,7 @@
 import type { CareerProfile } from "./profileTypes";
 import { detectRoleFamily, FAMILY_LABEL } from "./roleFamily";
 import { automationBase, marketMedian, seniorityBand } from "./careerRisk";
+import { corpusFor } from "./careerCorpus";
 
 export interface WhatIfOption {
   label: string;
@@ -78,9 +79,14 @@ export function parseOptions(question: string): string[] {
     .split(SPLITTERS)
     .map(part =>
       part.trim()
-        .replace(/^(?:take|accept|join|go with|choose|pick|become an?)\s+/i, "")
+        /* "I take the AirAsia offer" arrived with the pronoun still
+           attached, so the comparison read "I take the AirAsia edges
+           ahead on…". The subject and any article go with the verb. */
+        .replace(/^(?:i|we|you)\s+(?:should\s+|would\s+|do\s+)?/i, "")
+        .replace(/^(?:take|accept|join|go with|choose|pick|become an?|get)\s+/i, "")
+        .replace(/^(?:the|a|an)\s+/i, "")
         .replace(OFFER_NOISE, "")
-        .replace(/\s+(?:jobs?|roles?|offers?|position)$/i, "")
+        .replace(/\s+(?:jobs?|roles?|offers?|position|one)$/i, "")
         .trim(),
     )
     .filter(part => part.length >= 2 && part.length <= 80);
@@ -105,7 +111,19 @@ function overlapScore(a: string, b: string): number {
 
 /** Answer from the benchmark tables when the model is unavailable. */
 export function localWhatIf(profile: CareerProfile, question: string): WhatIfAnswer {
-  const labels = parseOptions(question);
+  /* People name the employer, not the job title — "the AirAsia offer".
+     Scored on the words alone that reads as 0% aligned with the target,
+     so the posting that IS the target role came back as "lengthens the
+     path". Anything that matches a matched posting is resolved to the
+     role it is actually for. */
+  const postings = corpusFor(profile).rankedJobs;
+  const labels = parseOptions(question).map(label => {
+    const hit = postings.find(j => {
+      const l = label.toLowerCase();
+      return j.company.toLowerCase().includes(l) || l.includes(j.company.toLowerCase());
+    });
+    return hit ? `${hit.position} at ${hit.company}` : label;
+  });
   const target = profile.targetRole || "your target role";
   const targetFamily = detectRoleFamily(profile.targetRole, profile.currentRole);
   const band = seniorityBand(profile);

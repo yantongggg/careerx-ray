@@ -13,7 +13,7 @@
    ──────────────────────────────────────────────────────────────── */
 
 import type { CareerProfile } from "./profileTypes";
-import type { Corpus } from "./careerCorpus";
+import { credentialDemand, type Corpus } from "./careerCorpus";
 import type { Risk, Scorecard, TargetGap } from "./careerRisk";
 import { FAMILY_LABEL } from "./roleFamily";
 import { localWhatIf } from "./whatIf";
@@ -153,13 +153,14 @@ type Intent =
   | "greeting" | "capability"
   | "archetype" | "risk" | "salary" | "gap" | "plan"
   | "jobs" | "evidence" | "interview" | "switch" | "score" | "paths" | "signal" | "compare"
-  | "unknown";
+  | "recommend" | "unknown";
 
 /* Ordered: the first pattern that matches wins, so the more specific
    questions are tested before the broad ones. */
 const INTENT_PATTERNS: { intent: Intent; test: RegExp }[] = [
   { intent: "greeting",   test: /^\s*(hi|hey|hello|yo|halo|hai|helo|good (morning|afternoon|evening))[\s!.,?]*$/i },
   { intent: "capability", test: /what can you|who are you|what are you|how do you work|apa yang|你是谁|你能|你可以做/i },
+  { intent: "recommend",  test: /\b(what|which)\b.*\b(do|would|can) you (actually |really |honestly )?(recommend|suggest|advise|pick|choose)\b|\bwhat should i do\b.*\b(then|instead)\b|\byour recommendation\b|which (one|path|route|future) (do you|would you)|你(会)?(推荐|建议)|哪一条?(比较)?好/i },
   { intent: "compare",    test: /\bwhat if\b|\bhow if\b|\bor\b.*\boffer|offer.*\bor\b|\b(vs|versus)\b|which (one |offer |job )?should i (take|accept|choose|pick)|两个|哪个更好/i },
   { intent: "signal",     test: /rejected someone|does that affect me|affect me|just rejected|live signal|信号|影响我/i },
   { intent: "paths",      test: /why these|three paths|why those|three futures|where.*(paths|futures).*(from|come)|这三条|为什么.*(路|三条)/i },
@@ -251,11 +252,19 @@ export function localChatReply(ctx: ChatContext, question: string): string {
     }
 
     case "plan": {
-      const cert = corpus.certification;
+      /* corpus.certification is the family's cert — AWS for anyone in
+         data. For a lead-level target the gate is not a certificate at
+         all, so this told people to sit an AWS exam while Career
+         Prescription told them to go and lead someone. Same question,
+         two answers, two pages apart. */
+      const gate = credentialDemand(corpus, profile.targetRole).credential;
+      const blocker = targetGaps[0];
       const first = profile.evidence.length === 0
         ? "add one piece of real evidence, because right now every claim on your profile rests on your word alone"
-        : `register for ${cert}`;
-      return `Start here: ${first}. After that, ship one piece of work that shows ${corpus.targetSkills[0]}, and get one self-declared item verified. Career Prescription lays this out as a 30/90-day plan with the reasoning on each step.`;
+        : blocker
+          ? `${blocker.action.charAt(0).toLowerCase()}${blocker.action.slice(1)}`
+          : `start on ${gate}`;
+      return `Start here: ${first} After that: ${gate.charAt(0).toLowerCase()}${gate.slice(1)}, and get one self-declared item verified. Career Prescription lays this out as a 30/90-day plan with the reasoning on each step.`;
     }
 
     case "jobs": {
@@ -309,6 +318,35 @@ export function localChatReply(ctx: ChatContext, question: string): string {
       return covered
         ? `You have that on your profile, so the same reason should not sink you — but check what backs it. If it is self-declared, an employer reading your record sees a claim, not proof, which is close to not having it at all.`
         : `Nothing on your record covers it. That does not mean it will sink you, but it is the reason someone applying for the kind of role you want was turned down this week, and you have nothing to point at. Career Evidence is where you fix that.`;
+    }
+
+    /* Asked right after "why these three paths", and previously the one
+       question the engine refused — it fell through to "that is outside
+       my scan" while holding every number needed to answer it. A tool
+       that lays out three futures and then declines to say which one is
+       not being careful, it is being useless. */
+    case "recommend": {
+      const f = corpus.futures;
+      const goal = f[1] ?? f[0];
+      const blocker = targetGaps[0];
+      if (!goal) {
+        return `You have not set a target role yet, so there is nothing for me to weigh. Re-scan and name where you want to go.`;
+      }
+      const stay = f.length === 3 ? f[0] : null;
+      const beyond = f.length === 3 ? f[2] : null;
+      return [
+        `${goal.role} — the one you named.`,
+        stay
+          ? `Not because it pays more, though it does. Because staying put carries ${stay.aiRiskPct}% automation exposure against ${goal.aiRiskPct}% there, and that gap widens rather than closes.`
+          : `It is the move your evidence is closest to supporting.`,
+        beyond
+          ? `${beyond.role} is real, but it is the rung after this one — you reach it from ${goal.role}, not from ${current}.`
+          : "",
+        blocker
+          ? `What decides whether you get it is ${blocker.title.toLowerCase()}: ${blocker.timeToClose} of work, and nothing else on your gap list moves until it does.`
+          : `Nothing on your gap list is blocking it, which means the constraint is applications, not readiness.`,
+        `That is a read of your scan, not a life decision — if you are weighing two specific offers, What-If Lab compares them side by side.`,
+      ].filter(Boolean).join(" ");
     }
 
     case "paths": {

@@ -158,17 +158,22 @@ const LINKEDIN_IMPORT: { kind: EvidenceKind; label: string; skills: string[] }[]
   { kind: "record", label: "Data Analyst · Maybank · 2023–Present", skills: ["SQL", "Python", "Dashboarding", "Stakeholder communication", "Fraud analytics", "Financial services domain"] },
   { kind: "record", label: "Analytics Intern · Grab · 2022–2023", skills: ["SQL", "Reporting", "Tableau", "Product analytics"] },
   { kind: "certificate", label: "BSc Computer Science · Universiti Malaya · 2019–2023", skills: [] },
+  /* Named results with the month attached. "Champion · Maybank Data
+     Hackathon" is a thing an employer can look up; "participated in
+     hackathons" is not, and that difference is the whole page. */
+  { kind: "record", label: "Champion · Maybank Data Hackathon · January 2026", skills: ["Experiment design", "Python", "Machine learning"] },
+  { kind: "record", label: "Runner-up · MDEC National Data Challenge · August 2025", skills: ["Statistical modelling", "Model evaluation"] },
+  { kind: "record", label: "Published · \"Measuring fraud alerts that actually get actioned\" · Maybank Tech Blog · December 2025", skills: ["Fraud analytics", "Stakeholder communication"] },
   /* Some leadership, but not the formal kind a manager posting asks
      for. Leading a project is not the same as managing people, and the
      gap list should keep saying so — none of these entries name people
      management, headcount or a budget, because Jordan has none of
      those and they are the three gaps the scan reports. */
-  { kind: "project", label: "Led the fraud dashboard rebuild · 3 analysts, 8 weeks", skills: ["Mentoring", "Stakeholder communication", "Data modelling"] },
-  { kind: "project", label: "Led the churn model rollout · 2 squads, shipped to production", skills: ["Machine learning", "Model evaluation", "Experiment design"] },
-  { kind: "project", label: "Rebuilt the weekly exec reporting pack · cut turnaround from 2 days to 20 minutes", skills: ["Dashboarding", "SQL", "Stakeholder communication"] },
+  { kind: "project", label: "Led the fraud dashboard rebuild · 3 analysts · March–May 2025", skills: ["Mentoring", "Stakeholder communication", "Data modelling"] },
+  { kind: "project", label: "Led the churn model rollout · 2 squads, shipped to production · October 2025", skills: ["Machine learning", "Model evaluation", "Experiment design"] },
+  { kind: "project", label: "Rebuilt the weekly exec reporting pack · 2 days to 20 minutes · February 2025", skills: ["Dashboarding", "SQL", "Stakeholder communication"] },
   { kind: "record", label: "Ran analytics onboarding for 4 new joiners · 2024–2025", skills: ["Mentoring", "Product analytics"] },
-  { kind: "record", label: "Runner-up · Maybank Data Hackathon 2024", skills: ["Experiment design", "Python", "Machine learning", "Model evaluation"] },
-  { kind: "record", label: "Speaker · Malaysia Data Community meetup 2025", skills: ["Stakeholder communication", "Analytical problem solving"] },
+    { kind: "record", label: "Speaker · Malaysia Data Community meetup · June 2025", skills: ["Stakeholder communication", "Analytical problem solving"] },
 ];
 
 /* What the GitHub connector returns for the demo persona. The live
@@ -491,7 +496,13 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
 
   const addEvidenceItem = (door: EvidenceDoor, label: string, source: string, skills: string[] = []) => {
     setEvidence(prev =>
-      prev.some(e => e.id.startsWith(door.id) && e.source === source)
+      /* Matched on what the item is, not which door it came through.
+         Keyed on door + source, one connector could only ever add one
+         item: nine LinkedIn entries and four repositories all share a
+         single profile URL, so eight of the nine and three of the four
+         were dropped here before the profile was ever built. Clicking
+         the same door twice still no-ops, because the labels match. */
+      prev.some(e => e.label === label && e.source === source)
         ? prev
         : [...prev, {
             id: `${door.id}-${prev.length + 1}`,
