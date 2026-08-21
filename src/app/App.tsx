@@ -26,6 +26,7 @@ import { CareerEvidence } from "./pages/CareerEvidence";
 import { UserProfile } from "./pages/UserProfile";
 import { ArchitectureDiagram } from "./pages/ArchitectureDiagram";
 import { ValidationBlueprint } from "./pages/ValidationBlueprint";
+import { NextPlan } from "./pages/NextPlan";
 import { Sidebar } from "./layout/Sidebar";
 import { CareerChat } from "./layout/CareerChat";
 import { ApplicationPrep } from "./pages/ApplicationPrep";
@@ -57,6 +58,7 @@ type Page =
   | "apply-prep"
   | "architecture"
   | "blueprint"
+  | "nextplan"
   | "coach"
   | "offers"
   | "portfolio"
@@ -91,6 +93,7 @@ const pageLabels: Record<Page, string> = {
   "apply-prep":     "Application Preparation",
   architecture:     "Technical Architecture",
   blueprint:        "Validation Blueprint",
+  nextplan:         "Next Plan",
   coach:            "Interview Coach",
   offers:           "Offer Decision AI",
   portfolio:        "Living Portfolio",
@@ -115,7 +118,7 @@ const pageLabels: Record<Page, string> = {
 
 const allPages: Page[] = [
   "command", "stage-diagnose", "stage-decide", "stage-prepare", "stage-apply", "stage-prove",
-  "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "architecture", "blueprint", "dashboard", "decisionlab", "blindspots",
+  "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "architecture", "blueprint", "nextplan", "dashboard", "decisionlab", "blindspots",
   "prescription", "evidence", "profile", "employer", "emp-matching", "emp-sla", "emp-reengage",
   "emp-resilience", "emp-pipeline", "insights", "uni-outcomes", "uni-curriculum", "uni-internships", "uni-wallet",
 ];
@@ -133,6 +136,7 @@ const pageRole: Record<Page, Role> = {
   "apply-prep": "candidate",
   architecture: "candidate",
   blueprint: "candidate",
+  nextplan: "candidate",
   coach: "candidate",
   offers: "candidate",
   portfolio: "candidate",
@@ -436,6 +440,7 @@ function AppRouter() {
             {page === "profile"         && <UserProfile onNavigate={navigate} />}
             {page === "architecture"    && <ArchitectureDiagram onNavigate={navigate} />}
             {page === "blueprint"       && <ValidationBlueprint onNavigate={navigate} />}
+            {page === "nextplan"        && <NextPlan onNavigate={navigate} />}
             {page === "employer"        && <EmployerDashboard />}
             {page === "emp-matching"    && <SmartTalentMatching />}
             {page === "emp-sla"         && <ReplySlaMonitor />}

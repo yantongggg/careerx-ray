@@ -1,7 +1,7 @@
 import { demoToast } from "../state/toast";
 import { archetypeFor } from "../lib/careerDna.js";
 import { useCareerProfile } from "../state/careerProfile";
-import { MapPin, Briefcase, GraduationCap, Award, Code, Star, ExternalLink, Edit3, Plus, ArrowRight, Network, FileSearch } from "lucide-react";
+import { MapPin, Briefcase, GraduationCap, Award, Code, Star, ExternalLink, Edit3, Plus, ArrowRight, Network, FileSearch, CalendarRange } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 import { dimensions } from "../lib/careerDna.js";
 import { corpusFor } from "../lib/careerCorpus";
@@ -212,6 +212,33 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                 <EmptySection text="Nothing here yet. Add a project or portfolio under Career Evidence and it shows up on your profile." />
               )}
             </div>
+            {/* Skills — moved out of the narrow column. It was the
+                tallest block on the page sitting in the third that had
+                least room, while the two-thirds column ran out of
+                content and left the page half empty below the fold. */}
+            <div className="bg-white rounded-xl border border-border shadow-sm p-6">
+              <h2 className="font-semibold text-foreground mb-4">Skills</h2>
+              {skills.length === 0 ? (
+                <EmptySection text="Skills appear here once a resume is read or evidence is added." />
+              ) : (
+                <div className="grid gap-x-8 gap-y-3.5 sm:grid-cols-2">
+                  {skills.map((sk) => (
+                    <div key={sk.name} title={sk.why}>
+                      <div className="flex justify-between mb-1.5">
+                        <span className="text-sm font-medium text-foreground">{sk.name}</span>
+                        <span className="text-sm text-muted-foreground tabular-nums">{sk.level}%</span>
+                      </div>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${sk.level}%`, opacity: sk.level < 50 ? 0.5 : 1 }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right column */}
@@ -240,30 +267,6 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                 <button onClick={() => onNavigate?.("dna")} className="mt-3 text-xs text-primary font-semibold inline-flex items-center gap-1">
                   Open full DNA map <ArrowRight size={12} />
                 </button>
-              </div>
-            </div>
-
-            {/* Skills */}
-            <div className="bg-white rounded-xl border border-border shadow-sm p-6">
-              <h2 className="font-semibold text-foreground mb-4">Skills</h2>
-              <div className="space-y-3">
-                {skills.length === 0 && (
-                  <EmptySection text="Skills appear here once a resume is read or evidence is added." />
-                )}
-                {skills.map((s) => (
-                  <div key={s.name} title={s.why}>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-xs font-medium text-foreground">{s.name}</span>
-                      <span className="text-xs text-muted-foreground">{s.level}%</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${s.level}%`, opacity: s.level < 50 ? 0.5 : 1 }}
-                      />
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
 
@@ -327,6 +330,12 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
             >
               <FileSearch size={15} /> Validation blueprint
+            </button>
+            <button
+              onClick={() => onNavigate?.("nextplan")}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
+            >
+              <CalendarRange size={15} /> Next plan
             </button>
           </div>
         </div>

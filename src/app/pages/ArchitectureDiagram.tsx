@@ -108,6 +108,27 @@ const ZONE_STROKE: Record<Node["zone"], string> = {
   store:  "rgba(124,135,160,0.45)",
 };
 
+/* The seven stages of one scan, and the two points a model touches it.
+   Timings describe the shape of the design — they are illustrative, not
+   measured benchmarks, and the page says so. */
+const PIPELINE = [
+  { id: "01", title: "Intake",      detail: "Consent, signed URL, MIME check, malware scan, file hash", ms: "240ms", model: false },
+  { id: "02", title: "Extract",     detail: "OCR, layout, semantic units, claims as JSON with page citations", ms: "1.9s", model: true },
+  { id: "03", title: "Verify",      detail: "Issuer and registry checks, cross-source match, confidence status", ms: "620ms", model: false },
+  { id: "04", title: "Normalize",   detail: "Title to MASCO, skills to canonical IDs, taxonomy version stored", ms: "310ms", model: false },
+  { id: "05", title: "Snapshot",    detail: "Freeze evidence, market and rubric versions so the run can be replayed", ms: "90ms", model: false },
+  { id: "06", title: "Orchestrate", detail: "Fan out to five independent scoring engines", ms: "60ms", model: false },
+  { id: "07", title: "Explain",     detail: "Structured JSON in, citations and uncertainty out, output checked", ms: "1.4s", model: true },
+];
+
+const ENGINES = [
+  { name: "Salary",      out: "P25 · P50 · P75 with a confidence band", ms: "140ms", example: "RM 8.4k–11.2k · n=612 · DOSM anchored" },
+  { name: "Demand",      out: "Posting frequency and growth",           ms: "210ms", example: "−7% postings 12m · Selangor" },
+  { name: "Skill gap",   out: "Required against proven",                ms: "480ms", example: "3 gaps · cloud evidence missing" },
+  { name: "AI exposure", out: "Task-level exposure",                    ms: "350ms", example: "0.61 exposure — not job-loss probability" },
+  { name: "Promotion",   out: "Next-role competency",                   ms: "260ms", example: "unknown · insufficient evidence, not a low score" },
+];
+
 const byId = (id: string) => NODES.find(n => n.id === id)!;
 
 /** Anchor on the edge of a box facing the other box. */
@@ -152,10 +173,94 @@ export function ArchitectureDiagram({ onNavigate }: { onNavigate?: (page: string
         </button>
 
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Technical architecture</h1>
-        <p className="mt-2 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Solid lines are what runs in this build and can be opened in the repository.
-          Dashed lines are what the Malaysia blueprint adds before this is a production
-          system. Both are on the same canvas on purpose.
+        <p className="mt-2 max-w-3xl text-base leading-relaxed text-muted-foreground">
+          Two views. First what one scan does in five seconds — seven stages, five
+          deterministic engines in parallel, and the only two places a model is allowed to
+          touch it. Then the components underneath.
+        </p>
+
+        {/* ── One scan, stage by stage ── */}
+        <section className="mt-8">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-xl font-bold tracking-tight text-foreground">One scan, end to end</h2>
+            <p className="font-mono text-xs text-muted-foreground">~5s · 7 stages · 5 engines · 2 model calls</p>
+          </div>
+          <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+            Every stage is idempotent and retryable — a failure resumes from the last one
+            that succeeded rather than re-running the scan. Timings describe the design,
+            not measured benchmarks.
+          </p>
+
+          <div className="mt-5 space-y-2.5">
+            {PIPELINE.map(st => (
+              <div key={st.id} className="flex flex-col gap-3 rounded-xl border border-border bg-white p-4 sm:flex-row sm:items-center">
+                <div className="flex items-center gap-3 sm:w-52 sm:flex-shrink-0">
+                  <span className="font-mono text-xs font-bold text-[#8A7038]">{st.id}</span>
+                  <span className="text-base font-semibold text-foreground">{st.title}</span>
+                </div>
+                <p className="min-w-0 flex-1 text-sm text-muted-foreground">{st.detail}</p>
+                <div className="flex items-center gap-2 sm:flex-shrink-0">
+                  {st.model && (
+                    <span className="rounded-md border border-dashed border-[#8A7038]/50 bg-[#8A7038]/10 px-2 py-1 font-mono text-xs text-[#8A7038]">
+                      model call
+                    </span>
+                  )}
+                  <span className="w-14 text-right font-mono text-xs tabular-nums text-muted-foreground">{st.ms}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-xl border border-border bg-white p-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-base font-semibold text-foreground">Five engines, in parallel, no model involved</p>
+              <p className="font-mono text-xs text-muted-foreground">stage 06 fan-out</p>
+            </div>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              Each is deterministic: same inputs, same output, every time. This is the part
+              that has to be reproducible, so it is the part a model never touches.
+            </p>
+            <div className="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              {ENGINES.map(e => (
+                <div key={e.name} className="rounded-lg border border-border p-3.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-sm font-bold text-foreground">{e.name}</p>
+                    <span className="font-mono text-xs text-muted-foreground">{e.ms}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{e.out}</p>
+                  <p className="mt-1.5 font-mono text-xs leading-relaxed text-[#8A7038]">{e.example}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-border bg-white p-5">
+              <p className="text-base font-semibold text-foreground">Where a model is allowed</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                Twice, both marked above. Once to read a document into structured claims,
+                once to put finished numbers into sentences. Both pass a gateway that strips
+                identifying detail first, and the second only ever consumes JSON the engines
+                produced — it cannot introduce a number of its own.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-white p-5">
+              <p className="text-base font-semibold text-foreground">The reason-code firewall</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                An employer&apos;s rejection reason becomes an anonymised code before it
+                leaves their side. It reaches the candidate and the university as a signal
+                about a skill, never as anything traceable to a person on either end.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <h2 className="mt-12 border-t border-border pt-10 text-xl font-bold tracking-tight text-foreground">
+          What is built, and what is planned
+        </h2>
+        <p className="mt-1.5 max-w-2xl text-base leading-relaxed text-muted-foreground">
+          Solid is what runs in this build and can be opened in the repository. Dashed is
+          what the plan adds before this is production. Both on one canvas on purpose.
         </p>
 
         <div className="mt-5 inline-flex rounded-xl border border-border bg-white p-1">
