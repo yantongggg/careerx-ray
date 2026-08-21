@@ -346,22 +346,6 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
   const currentRole = profile.currentRole || "your current role";
   const targetRole = profile.targetRole;
 
-  const family = toMarketFamily(detectRoleFamily(profile.currentRole, profile.targetRole));
-  const market = marketTrends[family];
-  const moves = marketMoves[family];
-  const trendData = buildTrendData(moves.series);
-
-  /* Averaged from the same lists the two columns below are drawn from,
-     so the sentence at the top and the boxes under it cannot disagree. */
-  const avgChange = (rows: { change: string }[]) => {
-    const nums = rows.map(r => parseInt(r.change, 10)).filter(n => !Number.isNaN(n));
-    if (!nums.length) return "flat";
-    const mean = Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
-    return `${mean > 0 ? "+" : ""}${mean}%`;
-  };
-  const avgDeclining = avgChange(moves.declining);
-  const avgGrowing = avgChange(moves.growing);
-
   /* Blind spots are about the role you WANT. The risks on your current
      role live on the dashboard — this page would just restate them
      otherwise, which is exactly what it used to do. */
@@ -369,13 +353,12 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
     id: i,
     severity: gap.severity,
     icon: severityIcon[gap.severity],
+    kind: gap.kind,
+    title: gap.title,
     headline: gap.headline,
-    humanContext: gap.why,
     whyItMatters: gap.why,
     ifIgnored: gap.ifIgnored,
-    /* Only worth showing when it says something the headline did not.
-       The rule set often makes the gap and the action the same sentence. */
-    recommendedAction: gap.action.trim() === gap.headline.trim() ? null : gap.action,
+    recommendedAction: gap.action,
     timeToFix: gap.timeToClose,
     evidence: gap.basis,
   }));
@@ -453,8 +436,15 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
         {spots[0] && (
           <div className="bg-slate-950 text-white rounded-2xl p-6 lg:p-7 mb-6">
             <p className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-2.5">Start here</p>
-            <h2 className="text-2xl lg:text-[1.75rem] font-bold leading-tight">{spots[0].headline}</h2>
-            <p className="text-base text-slate-300 leading-relaxed mt-3 max-w-2xl">{spots[0].whyItMatters}</p>
+            {/* Same shape as the cards below, so the eye reads the panel
+                and the list the same way. */}
+            <h2 className="text-2xl lg:text-[1.75rem] leading-tight">
+              <span className="font-normal text-slate-400">{spots[0].kind}: </span>
+              <span className="font-bold">{spots[0].title}</span>
+            </h2>
+            <p className="text-base text-slate-300 leading-relaxed mt-3 max-w-2xl">
+              {spots[0].headline} {spots[0].whyItMatters}
+            </p>
             <div className="flex flex-wrap items-center gap-4 mt-5">
               <button
                 onClick={() => { setOpen(0); }}
@@ -500,10 +490,16 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${s.badge}`}>{s.label}</span>
                     </div>
-                    <p className="text-lg font-semibold text-foreground leading-snug">{spot.headline}</p>
-                    {!isOpen && (
-                      <p className="text-sm text-muted-foreground mt-1.5 line-clamp-1">{spot.humanContext}</p>
-                    )}
+                    {/* Two or three words carry the card. The sentence
+                        that used to be the headline reads as the
+                        subtitle, where it explains rather than has to be
+                        decoded — four cards of full sentences all looked
+                        the same at a glance. */}
+                    <p className="text-lg leading-snug text-foreground">
+                      <span className="text-muted-foreground">{spot.kind}: </span>
+                      <span className="font-bold">{spot.title}</span>
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{spot.headline}</p>
                   </div>
                   <div className="flex-shrink-0 mt-1">
                     {isOpen
@@ -547,7 +543,7 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                           What to do next
                         </p>
                         <p className="text-base text-foreground leading-relaxed">
-                          {spot.recommendedAction ?? spot.headline}
+                          {spot.recommendedAction}
                         </p>
                         <div className="flex items-center gap-1.5 mt-4 text-sm text-muted-foreground">
                           <Clock size={13} /> Time to fix: <strong className="text-foreground">{spot.timeToFix}</strong>
@@ -569,146 +565,9 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
         </>
         )}
 
-        {/* Market Reality Check */}
-        <div className="bg-white border border-border rounded-xl p-6 mb-8">
-          <div className="flex items-start justify-between gap-4 mb-1.5 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Radar size={16} className="text-[#8A7038]" />
-              <h3 className="text-lg font-semibold text-foreground">Is my role growing or shrinking?</h3>
-            </div>
-            <span className="text-xs font-semibold text-[#8A7038] bg-[#8A7038]/10 px-2.5 py-1 rounded-full">{market.familyLabel}</span>
-          </div>
-          {/* The section asked a yes/no question and then showed three
-              charts without ever answering it. The answer is "both ends
-              at once", which is genuinely the confusing part — so it is
-              stated first, with the numbers the charts below are drawn
-              from rather than a separate claim. */}
-          <p className="text-base text-foreground mb-2 max-w-2xl leading-relaxed">
-            <strong>Both — and that is the whole problem.</strong>
-          </p>
-          <p className="text-base text-muted-foreground mb-5 max-w-2xl leading-relaxed">
-            The junior and report-writing end of this field is losing postings
-            (<strong className="text-red-600">{avgDeclining}</strong> over 12 months).
-            The end that decides things is gaining them
-            (<strong className="text-[#115E50]">{avgGrowing}</strong>).
-            {" "}<strong className="text-foreground">{currentRole} sits between the two</strong> — which is
-            why nothing feels wrong yet, and why waiting is the one thing that does not work.
-          </p>
-
-          <div className="mb-6">
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">The two ends, in postings</p>
-            <div className="grid md:grid-cols-[1fr_auto_1.1fr_auto_1fr] gap-3 items-stretch">
-              <div className="rounded-xl border border-red-200 bg-red-50/40 p-3.5">
-                <p className="text-xs font-bold uppercase tracking-wider text-red-600 mb-3">Losing postings</p>
-                <div className="space-y-2">
-                  {moves.declining.map(r => (
-                    <div key={r.role} className="flex items-center justify-between gap-2 bg-white border border-red-100 rounded-lg px-3 py-2">
-                      <span className="text-sm font-medium text-foreground truncate">{r.role}</span>
-                      <span className="text-sm font-bold text-red-600 flex-shrink-0">{r.change}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="hidden md:flex items-center text-muted-foreground/40"><ArrowRight size={16} /></div>
-              <div className="rounded-xl border-2 p-4 flex flex-col items-center justify-center text-center" style={{ borderColor: "#1B5CA3", backgroundColor: "rgba(27,92,163,0.05)" }}>
-                <span className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "#1B5CA3" }}>You are here</span>
-                <p className="text-base font-bold text-foreground leading-snug">{currentRole}</p>
-                <span className="mt-2 text-[10px] font-semibold px-2.5 py-1 rounded-full border bg-white" style={{ color: "#1B5CA3", borderColor: "rgba(27,92,163,0.3)" }}>
-                  Stable core · routine parts shrinking
-                </span>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Your skills already reach the column on the right.</p>
-              </div>
-              <div className="hidden md:flex items-center text-muted-foreground/40"><ArrowRight size={16} /></div>
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#115E50] mb-3">Gaining postings</p>
-                <div className="space-y-2">
-                  {moves.growing.map(r => (
-                    <div key={r.role} className="flex items-center justify-between gap-2 bg-white border border-emerald-100 rounded-lg px-3 py-2">
-                      <span className="text-sm font-medium text-foreground truncate">{r.role}</span>
-                      <span className="text-xs font-bold text-[#115E50] flex-shrink-0">{r.change}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 3 · Reposition paths */}
-          <div className="mb-6">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">Where you could go with the skills you already have</p>
-            <div className="space-y-2">
-              {moves.paths.map((path, i) => (
-                <button
-                  key={path.role}
-                  onClick={() => onNavigate?.("decisionlab")}
-                  className="w-full flex flex-col lg:flex-row lg:items-center gap-3 border border-border rounded-xl px-4 py-3 text-left hover:border-[#115E50]/40 hover:shadow-sm transition-all bg-white"
-                >
-                  <div className="flex items-center gap-3 lg:w-[28%] min-w-0">
-                    <span className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-200 text-[#115E50] flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
-                    <span className="text-sm font-semibold text-foreground truncate">{path.role}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 lg:w-[14%]">
-                    <TrendingUp size={12} className="text-[#115E50] flex-shrink-0" />
-                    <span className="text-xs font-bold text-[#115E50] whitespace-nowrap">{path.demand} demand</span>
-                  </div>
-                  <div className="flex items-center gap-2 lg:w-[19%]">
-                    <div className="w-14 h-1.5 rounded-full bg-muted overflow-hidden flex-shrink-0">
-                      <div className="h-full rounded-full" style={{ width: `${path.overlap}%`, backgroundColor: "#1B5CA3" }} />
-                    </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap"><strong className="text-foreground">{path.overlap}%</strong> overlap</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap lg:flex-1 min-w-0">
-                    {path.missing.map(m => (
-                      <span key={m} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">+ {m}</span>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">{path.time}</span>
-                    <ArrowRight size={13} className="text-muted-foreground" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 4 · 12-month demand trend */}
-          <div className="mb-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">12-month hiring demand — key roles compared</p>
-            <p className="text-[11px] text-muted-foreground mb-2">Modelled demand index, 12 months ago = 100 · Malaysian market</p>
-            <div className="flex items-center gap-4 flex-wrap mb-1">
-              {moves.series.map(sr => (
-                <span key={sr.name} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <span className="w-3 h-0.5 rounded-full inline-block" style={{ backgroundColor: sr.color }} /> {sr.name}
-                </span>
-              ))}
-            </div>
-            <div style={{ width: "100%", height: 190 }}>
-              <ResponsiveContainer width="100%" height={190}>
-                <LineChart data={trendData}>
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94A3B8" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94A3B8" }} domain={[75, 135]} />
-                  <Tooltip />
-                  {moves.series.map(sr => (
-                    <Line key={sr.name} type="monotone" dataKey={sr.name} stroke={sr.color} strokeWidth={2} dot={false} isAnimationActive={false} />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-4 flex-wrap pt-4 border-t border-border">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Globe size={12} className="flex-shrink-0" />
-              <span>Modelled from authored Malaysian market datasets · see docs/data-sources.md</span>
-            </div>
-            <button
-              onClick={() => onNavigate?.("decisionlab")}
-              className="flex-shrink-0 flex items-center gap-2 bg-[#115E50] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#0d4a3f] transition-colors font-semibold"
-            >
-              See how to reposition <ArrowRight size={14} />
-            </button>
-          </div>
-        </div>
+        {/* The market section — "Is my role growing or shrinking?" —
+            is hidden. Its data tables and helpers are left in place
+            above so it can come back without being rebuilt. */}
 
         {/* Strengths */}
         {strengths.length > 0 && (

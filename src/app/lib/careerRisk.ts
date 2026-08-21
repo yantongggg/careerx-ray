@@ -48,6 +48,11 @@ export interface Risk {
 export interface TargetGap {
   id: string;
   skill: string;
+  /** "Missing Experience" / "Missing Skill" / "Missing Technical Skill" */
+  kind: string;
+  /** The short noun the eye lands on: "Team Leadership". */
+  title: string;
+  /** The conversational line, now a subtitle rather than the headline. */
   headline: string;
   /** Why this one matters, in terms of this move specifically. */
   why: string;
@@ -564,6 +569,8 @@ export function deriveRiskCategoryChecks(profile: CareerProfile): RiskCategoryCh
    it were. */
 interface LevelDemand {
   skill: string;
+  kind: string;
+  title: string;
   headline: string;
   why: string;
   ifIgnored: string;
@@ -575,7 +582,9 @@ const LEVEL_DEMANDS: Record<string, LevelDemand[]> = {
   lead: [
     {
       skill: "People leadership",
-      headline: "You have not led anyone yet, and every posting at this level asks for it",
+      kind: "Missing Experience",
+      title: "Team Leadership",
+      headline: "You have not led anyone yet, and every posting at this level asks for it.",
       why: "This is the one thing that separates the job you have from the job you want. Nothing else on this list matters if this stays empty.",
       ifIgnored:
         "You keep being read as the strongest analyst in the room. That is how people get handed more work — not a team.",
@@ -585,7 +594,9 @@ const LEVEL_DEMANDS: Record<string, LevelDemand[]> = {
     },
     {
       skill: "Owning a roadmap",
-      headline: "Deciding what the team does not work on, not only what it does",
+      kind: "Missing Skill",
+      title: "Project Prioritization",
+      headline: "Deciding what the team does not work on — not only what it does.",
       why: "Managers are hired on judgement about priorities. Being excellent at the work is what got you considered; choosing the work is the job.",
       ifIgnored:
         "Interviews keep testing what you built, and you do well. Then the manager questions arrive — what did you kill, what did you refuse — and there is nothing to answer with.",
@@ -597,7 +608,9 @@ const LEVEL_DEMANDS: Record<string, LevelDemand[]> = {
   senior: [
     {
       skill: "Mentoring",
-      headline: "Someone else's work getting better because of you",
+      kind: "Missing Experience",
+      title: "Mentoring Others",
+      headline: "Someone else's work getting better because of you.",
       why: "Senior is the rung where you stop being measured on your own output alone.",
       ifIgnored:
         "You stay the person who does the hard piece personally. That is valuable and it is also why the promotion keeps going to someone else.",
@@ -609,6 +622,35 @@ const LEVEL_DEMANDS: Record<string, LevelDemand[]> = {
   entry: [],
   mid: [],
 };
+
+/* ── How a gap is labelled ───────────────────────────────────
+   The card used to lead with a full sentence, so every one of them
+   took a moment to parse and they all looked alike at a glance. The
+   eye now lands on two or three words, and the sentence moves down to
+   the subtitle where it belongs. */
+
+/* Words that mark a skill as technical rather than behavioural. Applied
+   only in families where the distinction holds — "Pipeline management"
+   in sales is a book of deals, not a data pipeline. */
+const TECHNICAL_MARKER = /(cloud|pipeline|warehouse|ci\/cd|deploy|test|code|data|sql|orchestrat|model|prototyp|accessib|automation|analytics|metric|system)/i;
+const TECHNICAL_FAMILIES: RoleFamily[] = ["software", "data", "design", "product"];
+
+/* Where the internal name is not what a person would call it. */
+const GAP_TITLE_OVERRIDE: Record<string, string> = {
+  "Cloud warehouse": "Cloud Data Warehousing",
+  "CI/CD": "CI/CD Pipelines",
+  "Working with data": "Working With Data",
+};
+
+/* Capitalises each word without flattening names that are already
+   uppercase — plain title-casing turns "CI/CD" into "Ci/cd". */
+const asTitle = (skill: string) =>
+  GAP_TITLE_OVERRIDE[skill] ?? skill.replace(/\b[a-z]/g, c => c.toUpperCase());
+
+function labelFor(skill: string, family: RoleFamily): { kind: string; title: string } {
+  const technical = TECHNICAL_FAMILIES.includes(family) && TECHNICAL_MARKER.test(skill);
+  return { kind: technical ? "Missing Technical Skill" : "Missing Skill", title: asTitle(skill) };
+}
 
 /**
  * The distance between the role they hold and the role they want.
@@ -675,7 +717,8 @@ export function deriveTargetGaps(profile: CareerProfile, ctx: GapContext = {}): 
 
     return {
       skill,
-      headline: `${skill} — nothing on your record shows it`,
+      ...labelFor(skill, family),
+      headline: `Nothing on your record shows it.`,
       why,
       ifIgnored,
       action: asked.length
@@ -694,6 +737,8 @@ export function deriveTargetGaps(profile: CareerProfile, ctx: GapContext = {}): 
     return {
       id: `gap-${i}`,
       skill: gap.skill,
+      kind: gap.kind,
+      title: gap.title,
       headline: gap.headline,
       why: gap.why,
       /* Nobody we matched them to is asking for it, so we have less
