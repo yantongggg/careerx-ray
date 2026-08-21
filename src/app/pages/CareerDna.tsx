@@ -396,26 +396,31 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
                   <span className="text-xs font-semibold text-muted-foreground">{targetRole || "Target role"} · typical profile</span>
                 </div>
               </div>
-              <div className="mx-auto max-w-[560px]" style={{ width: "100%", height: 360 }}>
-                <ResponsiveContainer width="100%" height={360}>
-                  <RadarChart data={conflictRadarData}>
-                    <PolarGrid stroke="#E2E8F0" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: "#64748B" }} />
-                    <RadarShape dataKey="evidence" stroke="#2563EB" fill="#2563EB" fillOpacity={0.12} strokeWidth={2.5} isAnimationActive={false} name="Evidence" />
-                    <RadarShape dataKey="aspiration" stroke="#8A7038" fill="#8A7038" fillOpacity={0.10} strokeWidth={2.5} strokeDasharray="6 3" isAnimationActive={false} name="Target role" />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mx-auto mt-2 grid max-w-[560px] grid-cols-2 gap-3">
-                <div className="border border-blue-100 bg-blue-50/50 rounded-lg p-3 text-center">
-                  <img src={primary.image} alt={primary.animal} className="w-10 h-10 rounded-lg object-cover shadow-sm mx-auto mb-1.5" />
-                  <p className="text-xs font-bold text-foreground">{primary.type}</p>
-                  <p className="text-xs text-blue-600 font-semibold">How you work now</p>
+              {/* Beaver left, eagle right, chart between them — the two
+                  cards read as the ends of the journey the chart draws,
+                  and they fill the width the radar was leaving empty. */}
+              <div className="flex flex-col items-center gap-5 lg:flex-row lg:justify-center lg:gap-8">
+                <div className="w-full max-w-[220px] rounded-xl border border-blue-100 bg-blue-50/50 p-5 text-center lg:flex-shrink-0">
+                  <img src={primary.image} alt={primary.animal} className="mx-auto mb-3 h-16 w-16 rounded-xl object-cover shadow-sm" />
+                  <p className="text-base font-bold text-foreground leading-snug">{primary.type}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-blue-600">How you work now</p>
                 </div>
-                <div className="border border-amber-100 bg-amber-50/50 rounded-lg p-3 text-center">
-                  <img src={aspirationPrimary.image} alt={aspirationPrimary.animal} className="w-10 h-10 rounded-lg object-cover shadow-sm mx-auto mb-1.5" />
-                  <p className="text-xs font-bold text-foreground">{aspirationPrimary.type}</p>
-                  <p className="text-xs text-amber-700 font-semibold">Who you're becoming</p>
+
+                <div className="w-full max-w-[520px] lg:flex-1" style={{ height: 380 }}>
+                  <ResponsiveContainer width="100%" height={380}>
+                    <RadarChart data={conflictRadarData}>
+                      <PolarGrid stroke="#E2E8F0" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 13, fill: "#64748B" }} />
+                      <RadarShape dataKey="evidence" stroke="#2563EB" fill="#2563EB" fillOpacity={0.12} strokeWidth={2.5} isAnimationActive={false} name="Evidence" />
+                      <RadarShape dataKey="aspiration" stroke="#8A7038" fill="#8A7038" fillOpacity={0.10} strokeWidth={2.5} strokeDasharray="6 3" isAnimationActive={false} name="Target role" />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="w-full max-w-[220px] rounded-xl border border-amber-100 bg-amber-50/50 p-5 text-center lg:flex-shrink-0">
+                  <img src={aspirationPrimary.image} alt={aspirationPrimary.animal} className="mx-auto mb-3 h-16 w-16 rounded-xl object-cover shadow-sm" />
+                  <p className="text-base font-bold text-foreground leading-snug">{aspirationPrimary.type}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-amber-700">Who you&apos;re becoming</p>
                 </div>
               </div>
             </div>
