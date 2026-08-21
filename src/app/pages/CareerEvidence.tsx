@@ -7,6 +7,10 @@ import {
 } from "lucide-react";
 import { useCareerProfile } from "../state/careerProfile";
 import { corpusFor } from "../lib/careerCorpus";
+import {
+  fetchGithubSignal, repoEvidence, signalCaveat, yearsActive,
+  type GithubSignal,
+} from "../lib/githubSignal";
 import type { CareerProfile, TrustLevel } from "../lib/profileTypes";
 
 
@@ -289,11 +293,137 @@ function Timeline({ entries }: { entries: Entry[] }) {
   );
 }
 
-export function CareerEvidence({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const { profile } = useCareerProfile();
-  const entries = entriesFrom(profile);
+/* ────────────────────────────────────────────────────────────────
+   The one connector that verifies itself.
 
-  const verified = entries.filter(e => e.verified === "verified").length;
+   Everything else on this page is the user's word for it. A public
+   repository is not: the commits, the languages and the dates are on
+   record, and whoever reads the profile can open the same URL.
+
+   It reports visible public activity and says so. Someone whose work
+   lives in private repositories at an employer looks quiet here and is
+   not, and a number without that caveat becomes a verdict nobody can
+   defend.
+   ──────────────────────────────────────────────────────────────── */
+function GithubConnector({ onImported }: { onImported: (signal: GithubSignal) => void }) {
+  const [input, setInput] = useState("");
+  const [state, setState] = useState<"idle" | "loading" | "done">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [signal, setSignal] = useState<GithubSignal | null>(null);
+
+  const connect = async () => {
+    if (!input.trim() || state === "loading") return;
+    setState("loading");
+    setError(null);
+
+    const result = await fetchGithubSignal(input);
+    if (result.status === "ok") {
+      setSignal(result.signal);
+      setState("done");
+      onImported(result.signal);
+    } else {
+      setError(result.reason);
+      setState("idle");
+    }
+  };
+
+  if (state === "done" && signal) {
+    return (
+      <div className="mb-6 rounded-xl border border-border bg-white p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <Github size={16} className="text-foreground" />
+              <a
+                href={signal.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-base font-semibold text-foreground hover:underline"
+              >
+                {signal.handle}
+              </a>
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                Corroborated
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {signal.publicRepos} public {signal.publicRepos === 1 ? "repo" : "repos"} ·{" "}
+              {signal.followers} {signal.followers === 1 ? "follower" : "followers"} ·{" "}
+              {yearsActive(signal)} {yearsActive(signal) === 1 ? "year" : "years"} on GitHub
+            </p>
+          </div>
+          {signal.languages.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {signal.languages.slice(0, 4).map(l => (
+                <span key={l.name} className="rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                  {l.name} <span className="text-muted-foreground tabular-nums">{l.count}</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{signalCaveat(signal)}</p>
+
+        {signal.topRepos.length > 0 && (
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {signal.topRepos.map(r => (
+              <a
+                key={r.name}
+                href={r.url}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-border px-3.5 py-2.5 transition hover:border-primary/40 hover:bg-accent"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-semibold text-foreground">{r.name}</span>
+                  {r.language && <span className="flex-shrink-0 text-xs text-muted-foreground">{r.language}</span>}
+                </div>
+                {r.description && (
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{r.description}</p>
+                )}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 rounded-xl border border-border bg-white p-5">
+      <div className="flex items-center gap-2">
+        <Github size={16} className="text-foreground" />
+        <p className="text-base font-semibold text-foreground">Connect GitHub</p>
+      </div>
+      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+        Public repositories only, read from GitHub&apos;s own API. Anyone reading your
+        profile can open the same links, which is what makes this stronger than a claim.
+      </p>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") void connect(); }}
+          placeholder="github.com/yourname"
+          className="flex-1 rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+        />
+        <button
+          onClick={() => void connect()}
+          disabled={state === "loading" || !input.trim()}
+          className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {state === "loading" ? "Reading…" : "Connect"}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+export function CareerEvidence({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { profile, addEvidence } = useCareerProfile();
+  const entries = entriesFrom(profile);
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -317,6 +447,13 @@ export function CareerEvidence({ onNavigate }: { onNavigate?: (page: string) => 
             </button>
           </div>
         </div>
+
+        <GithubConnector
+          onImported={signal => {
+            repoEvidence(signal).forEach(addEvidence);
+            demoToast(`Imported ${signal.topRepos.length} public repositories from GitHub ✓`);
+          }}
+        />
 
         {entries.length ? <Timeline entries={entries} /> : <NoEvidenceYet />}
 
