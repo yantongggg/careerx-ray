@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mono — CareerX-Ray Plan 30·90·120</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F0EFEB;--ink:#1C1C1A;--muted:#8F8E88;--faint:#C6C5BF;--grid:#DEDDD6;--tint:#E6E5E0}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);font-family:'Inter',system-ui,sans-serif;color:var(--ink);
+    padding:40px;-webkit-font-smoothing:antialiased;display:flex;justify-content:center}
+  .card{background:var(--bg);border-radius:24px;padding:28px 28px 22px;width:min(1240px,100%)}
+  h2{font-weight:700;font-size:19px;letter-spacing:-.02em;margin-bottom:4px}
+  .sub{font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:16px}
+  strong{font-weight:700;color:var(--ink)}
+  .src{font-size:9.5px;color:var(--faint);margin-top:16px;letter-spacing:.08em;font-weight:500}
+
+  #ch{width:100%;height:auto;display:block;cursor:pointer;margin-bottom:6px}
+  svg text{font-family:'Inter',system-ui,sans-serif;user-select:none}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:10px}
+  .c{padding-top:12px;border-top:2px solid var(--ink)}
+  .c.b{border-color:#6A6963}
+  .c.d{border-color:#B0AFA9}
+  .c .id{font-size:8.5px;letter-spacing:.14em;font-weight:800;color:var(--muted);margin-bottom:4px}
+  .c h3{font-size:16.5px;font-weight:700;letter-spacing:-.025em;margin-bottom:5px}
+  .c .goal{font-size:11.5px;line-height:1.5;color:var(--muted);margin-bottom:11px}
+
+  .c ul{list-style:none;margin-bottom:12px}
+  .c li{font-size:11.5px;line-height:1.5;padding-left:12px;position:relative;margin-bottom:5px;font-weight:500}
+  .c li::before{content:"";position:absolute;left:0;top:7px;width:4px;height:4px;
+    background:#6A6963;transform:rotate(45deg)}
+
+  .nums{display:grid;gap:9px;padding:10px 0;
+    border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);margin-bottom:10px}
+  .ng > i{display:block;font-style:normal;font-size:7.5px;letter-spacing:.14em;
+    font-weight:800;color:var(--faint);margin-bottom:4px}
+  .ng.collect > i{color:#1C1C1A}
+  .row{display:flex;gap:15px;flex-wrap:wrap}
+  .row div b{display:block;font-size:7.5px;letter-spacing:.1em;font-weight:700;
+    color:var(--muted);margin-bottom:1px}
+  .row div s{display:block;text-decoration:none;font-size:17px;font-weight:800;
+    letter-spacing:-.035em;line-height:1.1;font-variant-numeric:tabular-nums}
+
+  .rb{padding:10px 12px;border-radius:10px;background:var(--tint)}
+  .rb b{display:block;font-size:7.5px;letter-spacing:.14em;font-weight:800;margin-bottom:4px}
+  .rb p{font-size:11px;line-height:1.5;color:#3F3E3A}
+
+  .foot{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;margin-top:18px;
+    padding-top:12px;border-top:1px solid var(--grid)}
+  .foot b{display:block;font-size:8.5px;letter-spacing:.13em;font-weight:700;
+    color:var(--muted);margin-bottom:7px}
+  .foot ul{list-style:none;display:flex;flex-wrap:wrap;gap:7px}
+  .foot li{font-size:10.5px;font-weight:600;color:var(--muted);
+    border:1px solid var(--grid);border-radius:8px;padding:5px 9px}
+  .foot p{font-size:10.5px;line-height:1.55;color:#3F3E3A}
+
+  @media (max-width:900px){.cols,.foot{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){#ch{cursor:default}}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>What comes next is not more AI agents — it is making this one chain verifiable</h2>
+  <div class="sub">
+    30 days → 90 days → 120 days · axis linear in real days · <strong>brightness = certainty</strong>(darker = nearer and more certain) ·
+    two sets of numbers per phase: <strong>COLLECT = how much to gather</strong>，<strong>GATE = what has to be true</strong>. Fail the gate and the next phase does not start
+  </div>
+
+  <svg id="ch" viewBox="0 0 1200 146" preserveAspectRatio="xMidYMid meet" role="img"
+       aria-label="30 / 90 / 120 day plan"></svg>
+
+  <div class="cols">
+    <!-- ── 30 ── -->
+    <article class="c">
+      <div class="id">DAY 0–30 · GATE 1</div>
+      <h3>Validate the engines</h3>
+      <p class="goal">No new features. Only evidence. What comes out is a test suite that can be run again.</p>
+      <ul>
+        <li>150 hand-labelled résumés (100 for tuning / <strong>50 held out, never used for tuning</strong>）<br /><span style="color:#8F8E88">Sources: consented Talentbank samples plus campus recruitment, consent recorded per résumé</span></li>
+        <li>Malaysia source registry: every source with its licence, its age and its sample size</li>
+        <li>Eval harness plus a model and prompt registry, so any past score can be replayed</li>
+      </ul>
+      <div class="nums">
+        <div class="ng collect"><i>COLLECT · how much</i><div class="row">
+          <div><b>labelled résumés</b><s>150</s></div>
+          <div><b>labelled claims</b><s>~2,200</s></div>
+          <div><b>official sources</b><s>6</s></div>
+        </div></div>
+        <div class="ng"><i>GATE · quality bar</i><div class="row">
+          <div><b>CITATION</b><s>≥99%</s></div>
+          <div><b>FIELD F1</b><s>≥.85</s></div>
+          <div><b>PRECISION</b><s>≥.90</s></div>
+        </div></div>
+      </div>
+      <div class="rb"><b>ROLLBACK</b><p>citation &lt; 99% sends us back to extraction. <strong>Not one score is published in this phase</strong>。</p></div>
+    </article>
+
+    <!-- ── 90 ── -->
+    <article class="c b">
+      <div class="id">DAY 31–90 · GATE 2</div>
+      <h3>Partner beta</h3>
+      <p class="goal">Real employers, and the loop turns for the first time. Scope locked to 3 role families.</p>
+      <ul>
+        <li>Talentbank employer feed plus 5 employers signed for the trial<br /><span style="color:#8F8E88">Job descriptions and outcomes both from approved feeds — nothing scraped</span></li>
+        <li>Reason codes finalised (8–12) plus certificate verification</li>
+        <li>Queue autoscaling and a dead-letter queue: a failure resumes from the last good stage</li>
+      </ul>
+      <div class="nums">
+        <div class="ng collect"><i>COLLECT · how much</i><div class="row">
+          <div><b>signed employers</b><s>≥5</s></div>
+          <div><b>real job descriptions</b><s>≥200</s></div>
+          <div><b>candidates</b><s>≥300</s></div>
+          <div><b>OUTCOME</b><s>≥150</s></div>
+        </div></div>
+        <div class="ng"><i>GATE · quality bar</i><div class="row">
+          <div><b>employers who return</b><s>3/5</s></div>
+          <div><b>certificate parsing</b><s>≥90%</s></div>
+          <div><b>salary band coverage</b><s>≥80%</s></div>
+        </div></div>
+      </div>
+      <div class="rb"><b>ROLLBACK</b><p>Under 50 outcomes and no aggregate is published — the beta extends instead. <strong>The cohort threshold is never lowered to manufacture signal.</strong></p></div>
+    </article>
+
+    <!-- ── 120 ── -->
+    <article class="c d">
+      <div class="id">DAY 91–120 · GATE 3</div>
+      <h3>Calibrate &amp; harden</h3>
+      <p class="goal">The first time real outcomes are used to look back at the scores, and the system is made to hold.</p>
+      <ul>
+        <li>Use the outcomes collected for a <strong>first calibration reading</strong> (a reading, not a conclusion)</li>
+        <li>Drift monitoring and a de-identified warehouse (zero PII columns)</li>
+        <li>HA / DR: a real recovery rehearsal in ap-southeast-5, not a documented one</li>
+      </ul>
+      <div class="nums">
+        <div class="ng collect"><i>COLLECT · how much</i><div class="row">
+          <div><b>people with a follow-up result</b><s>≥150</s></div>
+          <div><b>cumulative outcomes</b><s>≥250</s></div>
+        </div></div>
+        <div class="ng"><i>GATE · quality bar</i><div class="row">
+          <div><b>calibration error</b><s>≤10pp</s></div>
+          <div><b>DR rehearsals</b><s>≥1</s></div>
+          <div><b>PII columns</b><s>0</s></div>
+        </div></div>
+      </div>
+      <div class="rb"><b>ROLLBACK</b><p>Error &gt; 15pp pulls the numeric scores entirely. What stays is a qualitative range and the evidence list behind it.</p></div>
+    </article>
+  </div>
+
+  <div class="foot">
+    <div>
+      <b>What these four months deliberately exclude · asked about any of these, this is the answer</b>
+      <ul>
+        <li>✕ Add more AI agents</li>
+        <li>✕ Cover every occupation in Malaysia</li>
+        <li>✕ Scrape LinkedIn / JobStreet</li>
+        <li>✕ Split into microservices</li>
+        <li>✕ Claim Career DNA is validated</li>
+        <li>✕ Lower a threshold to get signal</li>
+      </ul>
+    </div>
+    <div>
+      <b>Two things stated plainly</b>
+      <p>① The target numbers are <strong>proposed baselines</strong>. They need the team to confirm them before work starts and to commit them to the repository. They are not industry standards.<br />
+      ② Day 120 produces <strong>three months of calibration readings</strong>, not a calibrated system. Doing it properly needs 6–12 months of outcomes. That is the round after this one.</p>
+    </div>
+  </div>
+
+  <div class="src">PLAN · 30 / 90 / 120 DAYS · GATED · CAREERX-RAY MALAYSIA VALIDATION · TIME AXIS LINEAR IN DAYS · TARGETS ARE PROPOSED BASELINES</div>
+</div>
+
+<script>
+var INK='#1C1C1A',MUT='#8F8E88',FNT='#C6C5BF',GRD='#DEDDD6',NS='http://www.w3.org/2000/svg';
+var LAD=['#1C1C1A','#6A6963','#B0AFA9'];
+var el=function(p,t,a){var n=document.createElementNS(NS,t);for(var k in a)n.setAttribute(k,a[k]);p.appendChild(n);return n;};
+var txt=function(p,a,s){var n=el(p,'text',a);n.textContent=s;return n;};
+var tip=function(n,s){var t=document.createElementNS(NS,'title');t.textContent=s;n.appendChild(t);};
+
+var X0=90,X1=1110,DAYS=120,BY=44,BH=42;
+var x=function(d){return X0+(d/DAYS)*(X1-X0);};
+var SEG=[
+ [0,30,'VALIDATE THE ENGINES','150 labelled résumés · source registry · eval harness · replayable registry'],
+ [30,90,'PARTNER BETA','5 employers · ≥150 real outcomes · 3 role families · autoscaling + DLQ'],
+ [90,120,'CALIBRATE & HARDEN','first calibration reading · drift monitoring · HA/DR rehearsal']
+];
+var svg=document.getElementById('ch');
+
+function build(){
+  svg.innerHTML='';
+  var g=el(svg,'g',{});
+  // axis
+  el(g,'path',{d:'M'+X0+' 28L'+X1+' 28',stroke:GRD,'stroke-width':1});
+  [[0,'TODAY','end',X0-4],[30,'DAY 30','middle',null],[90,'DAY 90','middle',null],
+   [120,'DAY 120','end',X1]].forEach(function(t){
+    var px=t[3]!==null?t[3]:x(t[0]);
+    el(g,'path',{d:'M'+x(t[0])+' 23L'+x(t[0])+' 33',stroke:MUT,'stroke-width':1});
+    txt(g,{x:px,y:14,'font-size':9.5,'font-weight':800,fill:INK,
+      'letter-spacing':'.13em','text-anchor':t[2]},t[1]);
+  });
+  // bars
+  SEG.forEach(function(s,i){
+    var a=x(s[0])+(i?5:0), b=x(s[1]);
+    var gg=el(g,'g',{class:'seg',style:'--i:'+i});
+    el(gg,'rect',{x:a,y:BY,width:b-a,height:BH,rx:BH/2,fill:LAD[i]});
+    txt(gg,{x:a+18,y:BY+BH/2+4,'font-size':11,'font-weight':800,
+      fill:i===2?INK:'#F0EFEB','letter-spacing':'.09em'},s[2]);
+    tip(gg,s[2]+'\n'+s[3]);
+  });
+  // gates
+  [30,90,120].forEach(function(d,i){
+    var gx=x(d);
+    el(g,'path',{d:'M'+gx+' 34L'+gx+' 100',stroke:INK,'stroke-width':1,
+      'stroke-dasharray':'3 4',opacity:.5});
+    el(g,'rect',{x:gx-5,y:101,width:10,height:10,fill:INK,transform:'rotate(45 '+gx+' 106)'});
+    txt(g,{x:gx,y:130,'font-size':9,'font-weight':800,fill:INK,
+      'letter-spacing':'.14em','text-anchor':d===120?'end':'middle'},'GATE '+(i+1));
+  });
+}
+
+var st=document.createElement('style');
+st.textContent='.seg{transform-box:fill-box;transform-origin:left center;'+
+  'animation:grow .7s cubic-bezier(.16,.84,.34,1) both;animation-delay:calc(var(--i)*110ms)}'+
+  '@keyframes grow{from{transform:scaleX(.02);opacity:.25}to{transform:none;opacity:1}}'+
+  '@media (prefers-reduced-motion:reduce){.seg{animation:none}}';
+document.head.appendChild(st);
+
+var io=new IntersectionObserver(function(e){if(e[0].isIntersecting){build();io.disconnect();}},
+  {threshold:.2});
+io.observe(svg);
+svg.addEventListener('click',build);
+</script>
+</body>
+</html>

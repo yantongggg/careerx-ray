@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mono — CareerX-Ray Runtime Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F0EFEB;--dark:#1C1C1A;--paper:#F0EFEB;--muted:#8F8E88;--faint:#55554F;--grid:#2E2D29}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);font-family:'Inter',system-ui,sans-serif;padding:40px 40px 56px;
+    -webkit-font-smoothing:antialiased;display:flex;justify-content:center}
+  .card{background:var(--dark);color:var(--paper);border-radius:24px;padding:34px 34px 24px;
+    width:min(1240px,100%)}
+  h2{font-weight:700;font-size:19px;letter-spacing:-.02em;margin-bottom:4px}
+  .sub{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:16px}
+  .src{font-size:9.5px;color:var(--faint);margin-top:12px;letter-spacing:.08em;font-weight:500}
+
+  .meter{display:flex;gap:34px;align-items:baseline;flex-wrap:wrap;
+    border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);
+    padding:11px 2px;margin-bottom:8px}
+  .m b{display:block;font-size:8.5px;letter-spacing:.13em;font-weight:700;color:var(--faint);margin-bottom:3px}
+  .m s{display:block;text-decoration:none;font-size:17px;font-weight:800;letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums}
+  .m s em{font-style:normal;font-size:10px;font-weight:600;color:var(--muted);margin-left:2px}
+  .m.wide{flex:1;min-width:180px}
+  .m.wide s{font-size:12px;font-weight:600;color:#C9C7BD}
+  .ctl{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .ctl button{font:700 8.5px/1 'Inter',sans-serif;letter-spacing:.12em;color:var(--muted);
+    background:transparent;border:1px solid var(--grid);border-radius:7px;padding:7px 10px;cursor:pointer}
+  .ctl button:hover{color:var(--paper);border-color:#4A4944}
+  .ctl button[aria-pressed="true"]{color:var(--dark);background:var(--paper);border-color:var(--paper)}
+
+  #ch{width:100%;height:auto;display:block;cursor:pointer}
+  svg text{font-family:'Inter',system-ui,sans-serif;user-select:none}
+
+  #log{height:104px;overflow:hidden;border-top:1px solid var(--grid);margin-top:8px;padding-top:9px;
+    font-size:10.5px;line-height:1.72;color:var(--muted);font-variant-numeric:tabular-nums}
+  #log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #log .t{color:var(--faint);display:inline-block;width:52px}
+  #log .s{color:var(--paper);font-weight:700;display:inline-block;width:104px}
+  #log .ok{color:#6A6963;display:inline-block;width:30px}
+  #log .ms{color:#C9C7BD;font-weight:600}
+  #log .warn{color:#C9C7BD}
+
+  .lgd{display:flex;gap:20px;flex-wrap:wrap;margin-top:9px;font-size:9px;color:var(--faint);
+    letter-spacing:.06em;font-weight:600}
+  .lgd i{font-style:normal;color:#8F8E88}
+
+  @media (prefers-reduced-motion:reduce){#ch{cursor:default}}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>Five seconds of one career scan — a model touches it in two places only</h2>
+  <div class="sub">
+    evidence → score → explanation → outcome · 7 stages · 5 deterministic engines in parallel · brightness = state (bright = running · grey = done · dark = not started) · dashed = model call, all redacted through the Model Gateway · hover any node for detail · click the canvas to replay
+  </div>
+
+  <div class="meter">
+    <div class="m"><b>ELAPSED</b><s id="mT">0<em>ms</em></s></div>
+    <div class="m"><b>STAGE</b><s id="mS">0<em>/ 7</em></s></div>
+    <div class="m"><b>ENGINES DONE</b><s id="mE">0<em>/ 5</em></s></div>
+    <div class="m"><b>MODEL CALLS</b><s id="mM">0<em>/ 2</em></s></div>
+    <div class="m wide"><b>CURRENT</b><s id="mC">idle</s></div>
+    <div class="ctl">
+      <button id="bLoop" type="button" aria-pressed="true">LOOP</button>
+      <button id="bReplay" type="button">REPLAY</button>
+    </div>
+  </div>
+
+  <svg id="ch" viewBox="0 96 1200 566" preserveAspectRatio="xMidYMid meet" role="img"
+       aria-label="CareerX-Ray runtime architecture simulation"></svg>
+
+  <div id="log"></div>
+
+  <div class="lgd">
+    <span><i>▭</i> STAGE · IDEMPOTENT + RETRYABLE</span>
+    <span><i>▬</i> DETERMINISTIC ENGINE · NO LLM</span>
+    <span><i>▤</i> VERSIONED STORE</span>
+    <span><i>┄</i> MODEL CALL · REDACTED</span>
+    <span><i>│</i> REASON-CODE FIREWALL</span>
+  </div>
+
+  <div class="src">SYSTEM ARCHITECTURE · RUNTIME SIMULATION · CAREERX-RAY MVP · PROTOTYPE ONLY — ILLUSTRATIVE TIMINGS, NOT MEASURED BENCHMARKS</div>
+</div>
+
+<script>
+/* ══ mono tokens (inlined subset) ══════════════════════════════ */
+var P='#F0EFEB', NS='http://www.w3.org/2000/svg';
+var DK={ink:'#F0EFEB',muted:'#8F8E88',faint:'#55554F',grid:'#2E2D29',soft:'#252420'};
+var LAD=['#F0EFEB','#DCDAD2','#C9C7BD','#B3B0A4','#8F8E88','#6A6963','#4A4944'];
+var el=function(p,t,a){var n=document.createElementNS(NS,t);for(var k in a)n.setAttribute(k,a[k]);p.appendChild(n);return n;};
+var txt=function(p,a,s){var n=el(p,'text',a);n.textContent=s;return n;};
+var tip=function(n,s){var t=document.createElementNS(NS,'title');t.textContent=s;n.appendChild(t);};
+var rnd=function(i,k){return Math.abs(((i*73856093)^(k*19349663))%1000)/1000;};
+
+/* ── icon set · stroke-only, inherits state colour from parent <g> ── */
+function ico(par,name,cx,cy,s){
+  var g=el(par,'g',{fill:'none','stroke-width':1.15,'stroke-linecap':'round',
+    'stroke-linejoin':'round',stroke:'#4A4944'});
+  var X=function(v){return +(cx+(v-.5)*s).toFixed(2);},
+      Y=function(v){return +(cy+(v-.5)*s).toFixed(2);};
+  var P=function(d){el(g,'path',{d:d});};
+  var ln=function(a){var d='M'+X(a[0])+' '+Y(a[1]);
+    for(var i=2;i<a.length;i+=2)d+='L'+X(a[i])+' '+Y(a[i+1]); P(d);};
+  var rc=function(a,b,w,h,r){el(g,'rect',{x:X(a),y:Y(b),width:+(w*s).toFixed(2),
+    height:+(h*s).toFixed(2),rx:+((r||0)*s).toFixed(2)});};
+  var ci=function(a,b,r){el(g,'circle',{cx:X(a),cy:Y(b),r:+(r*s).toFixed(2)});};
+  var dt=function(a,b){P('M'+X(a)+' '+Y(b)+'L'+X(a)+' '+Y(b));};
+  var q=function(a,b,c,d,e,f){P('M'+X(a)+' '+Y(b)+'Q'+X(c)+' '+Y(d)+' '+X(e)+' '+Y(f));};
+
+  switch(name){
+    case 'upload':                                   // 01 INTAKE
+      ln([.5,.74,.5,.14]); ln([.28,.36,.5,.14,.72,.36]);
+      ln([.12,.7,.12,.9,.88,.9,.88,.7]); break;
+    case 'doc':                                      // 02 EXTRACT
+      rc(.2,.1,.6,.8,.08); ln([.34,.33,.66,.33]); ln([.34,.5,.66,.5]);
+      ln([.34,.67,.56,.67]); break;
+    case 'seal':                                     // 03 VERIFY
+      ci(.5,.5,.38); ln([.32,.52,.44,.65,.7,.35]); break;
+    case 'map':                                      // 04 NORMALIZE
+      ln([.12,.32,.66,.32]); ln([.54,.2,.66,.32,.54,.44]);
+      ln([.88,.68,.34,.68]); ln([.46,.56,.34,.68,.46,.8]); break;
+    case 'freeze':                                   // 05 SNAPSHOT
+      ln([.16,.32,.16,.16,.32,.16]); ln([.68,.16,.84,.16,.84,.32]);
+      ln([.84,.68,.84,.84,.68,.84]); ln([.32,.84,.16,.84,.16,.68]);
+      dt(.5,.5); break;
+    case 'fan':                                      // 06 ORCHESTRATE
+      dt(.14,.5); ln([.2,.5,.44,.5]); ln([.44,.5,.82,.16]);
+      ln([.44,.5,.84,.5]); ln([.44,.5,.82,.84]); break;
+    case 'bubble':                                   // 07 EXPLAIN
+      rc(.1,.14,.8,.56,.14); ln([.3,.7,.3,.92,.5,.7]);
+      ln([.28,.34,.72,.34]); ln([.28,.52,.58,.52]); break;
+
+    case 'range':  ln([.12,.5,.88,.5]); ln([.12,.34,.12,.66]);
+                   ln([.88,.34,.88,.66]); dt(.58,.5); break;   // SALARY
+    case 'trend':  ln([.1,.28,.36,.54,.56,.4,.9,.76]);
+                   ln([.66,.76,.9,.76,.9,.54]); break;          // DEMAND
+    case 'gap':    rc(.06,.3,.3,.4,.06); rc(.64,.3,.3,.4,.06);
+                   ln([.42,.5,.58,.5]); break;                  // SKILL GAP
+    case 'tasks':  dt(.28,.28); dt(.72,.28); dt(.28,.72);
+                   ci(.72,.72,.17); break;                      // AI EXPOSURE
+    case 'stairs': ln([.1,.86,.36,.86,.36,.57,.64,.57,.64,.28,.9,.28]);
+                   break;                                       // PROMOTION
+
+    case 'lock':   rc(.2,.44,.6,.46,.09);
+                   q(.33,.44,.33,.14,.5,.14); q(.67,.14,.67,.14,.67,.44);
+                   P('M'+X(.5)+' '+Y(.14)+'Q'+X(.67)+' '+Y(.14)+' '+X(.67)+' '+Y(.44));
+                   dt(.5,.66); break;                           // PII VAULT
+    case 'pages':  rc(.28,.08,.56,.6,.06); rc(.12,.32,.56,.6,.06); break;
+    case 'tree':   ln([.5,.16,.5,.42]); ln([.2,.42,.8,.42]);
+                   ln([.2,.42,.2,.66]); ln([.8,.42,.8,.66]);
+                   dt(.5,.12); dt(.2,.76); dt(.8,.76); break;   // TAXONOMY
+    case 'clock':  ci(.5,.5,.38); ln([.5,.26,.5,.52,.7,.62]); break;
+    case 'db':     el(g,'ellipse',{cx:X(.5),cy:Y(.22),rx:+(.32*s).toFixed(2),
+                     ry:+(.13*s).toFixed(2)});
+                   ln([.18,.22,.18,.78]); ln([.82,.22,.82,.78]);
+                   q(.18,.5,.5,.7,.82,.5); q(.18,.78,.5,.98,.82,.78); break;
+
+    case 'flag':   ln([.26,.92,.26,.1]);
+                   P('M'+X(.26)+' '+Y(.14)+'L'+X(.82)+' '+Y(.29)+'L'+X(.26)+' '+Y(.46)+'Z');
+                   break;                                       // OUTCOME EVENT
+    case 'tag':    P('M'+X(.12)+' '+Y(.48)+'L'+X(.48)+' '+Y(.12)+'L'+X(.9)+' '+Y(.12)
+                     +'L'+X(.9)+' '+Y(.54)+'L'+X(.54)+' '+Y(.9)+'Z');
+                   dt(.73,.29); break;                          // REASON CODE
+    case 'agg':    dt(.12,.2); dt(.12,.5); dt(.12,.8);
+                   ln([.26,.5,.48,.5]); rc(.56,.32,.34,.36,.07); break;
+    case 'funnel': P('M'+X(.1)+' '+Y(.16)+'L'+X(.9)+' '+Y(.16)+'L'+X(.58)+' '+Y(.52)
+                     +'L'+X(.58)+' '+Y(.9)+'L'+X(.42)+' '+Y(.8)+'L'+X(.42)+' '+Y(.52)+'Z');
+                   break;                                       // MODEL GATEWAY
+  }
+  return g;
+}
+
+
+/* ══ the system ════════════════════════════════════════════════ */
+var CY=300, NW=112, NH=54;
+
+var STAGES=[
+ {id:'01 · INTAKE',    ic:'upload', k:'INTAKE',     cx:78,  h:'Secure Upload',   n:'consent · signed URL · MIME · malware · hash',
+  t:0,    d:240,  log:'sha256=9f2a41c8 · 1.2 MB · native pdf', store:0},
+ {id:'02 · EXTRACT',   ic:'doc',    k:'EXTRACT',    cx:218, h:'Evidence Parser', n:'OCR · layout · semantic units · claim JSON',
+  t:240,  d:1850, log:'18 claims · 6 low-confidence · bbox retained', store:1, model:1},
+ {id:'03 · VERIFY',    ic:'seal',   k:'VERIFY',     cx:358, h:'Trust Engine',    n:'issuer / registry · cross-source · confidence',
+  t:2090, d:620,  log:'AWS cert issuer-confirmed · leadership self-claimed', store:1},
+ {id:'04 · NORMALIZE', ic:'map',    k:'NORMALIZE',  cx:498, h:'Taxonomy Mapper', n:'title → MASCO · skills → canonical ID',
+  t:2710, d:310,  log:'MASCO 2511 · 14 skills mapped · taxonomy v2020.3', store:2},
+ {id:'05 · SNAPSHOT',  ic:'freeze', k:'SNAPSHOT',   cx:638, h:'Feature Builder', n:'freeze evidence · market · rubric · versions',
+  t:3020, d:90,   log:'snapshot frozen · market=2026-07 · replayable', store:3},
+ {id:'06 · ORCHESTRATE', ic:'fan', k:'ORCHESTRATE',cx:778, h:'Scoring Fan-out', n:'workflow engine · idempotent · retryable',
+  t:3110, d:60,   log:'fan-out → 5 deterministic engines'}
+];
+
+var ENGINES=[
+ {k:'SALARY',      ic:'range',  n:'P25 · P50 · P75',       t:3170, d:140, log:'RM 8.4k–11.2k · n=612 · DOSM anchored'},
+ {k:'DEMAND',      ic:'trend',  n:'freq · growth',         t:3170, d:210, log:'−7% postings 12m · Selangor · MyCOL flag'},
+ {k:'SKILL GAP',   ic:'gap',    n:'required · proven',     t:3170, d:480, log:'3 gaps · production cloud evidence missing'},
+ {k:'AI EXPOSURE', ic:'tasks',  n:'task-level',            t:3170, d:350, log:'task exposure 0.61 — NOT job-loss probability'},
+ {k:'PROMOTION',   ic:'stairs', n:'competency',            t:3170, d:260, log:'unknown · insufficient evidence · no low score'}
+];
+var EX={id:'07 · EXPLAIN', ic:'bubble', k:'EXPLAIN', cx:1110, h:'Policy + LLM', n:'structured JSON · citations · uncertainty',
+  t:3650, d:1420, log:'schema ok · 11/11 citations resolved · 0 free numbers', store:4, model:2};
+
+var STORES=[
+ {k:'PII VAULT',      ic:'lock',  n:'restricted · encrypted',  cx:80,   w:142},
+ {k:'EVIDENCE STORE', ic:'pages', n:'artifact · claim · bbox', cx:288,  w:174},
+ {k:'TAXONOMY',       ic:'tree',  n:'MASCO · versioned',       cx:498,  w:160},
+ {k:'MARKET SNAPSHOT',ic:'clock', n:'licensed · dated',        cx:708,  w:176},
+ {k:'SCORE RESULTS',  ic:'db',    n:'append-only · replayable',cx:1000, w:200}
+];
+var SY=460, SH=42;
+
+var LOOP=[
+ {k:'OUTCOME EVENT',  ic:'flag', n:'employer records result', cx:1020, w:192, t:5500, d:300,
+  log:'employer outcome recorded · raw panel notes stay private'},
+ {k:'REASON CODE',    ic:'tag',  n:'approved · job-related',  cx:720,  w:210, t:5900, d:300,
+  log:'1 approved reason code passes the firewall'},
+ {k:'ANON AGGREGATE', ic:'agg',  n:'cohort threshold ≥ n',    cx:420,  w:192, t:6300, d:300,
+  log:'de-identified · threshold met · market signal updated'}
+];
+var LY=615, LH=44;
+
+var GW={cx:640, cy:132, w:300, h:48};
+var TOTAL=EX.t+EX.d, END=6900, HOLD=1900;
+
+/* ══ build ═════════════════════════════════════════════════════ */
+var svg=document.getElementById('ch');
+var gLink=el(svg,'g',{}), gNode=el(svg,'g',{}), gFly=el(svg,'g',{});
+
+function nodeBox(g,x,y,w,h,r){return el(g,'rect',{x:x,y:y,width:w,height:h,rx:r||10,
+  fill:'none',stroke:DK.grid,'stroke-width':1});}
+
+/* — column band captions — */
+[[78,'INGEST'],[358,'VERIFY + MAP'],[778,'SCORE'],[1110,'EXPLAIN']].forEach(function(c){
+  txt(svg,{x:c[0],y:222,'font-size':8.5,'font-weight':800,fill:DK.faint,
+    'letter-spacing':'.16em','text-anchor':'middle'},c[1]);
+});
+
+/* — model gateway — */
+var gw=el(gNode,'g',{});
+var gwR=el(gw,'rect',{x:GW.cx-GW.w/2,y:GW.cy-GW.h/2,width:GW.w,height:GW.h,rx:12,
+  fill:'none',stroke:DK.grid,'stroke-width':1,'stroke-dasharray':'5 4'});
+var gwT=txt(gw,{x:GW.cx,y:GW.cy-6,'font-size':10.5,'font-weight':800,fill:'#4A4944',
+  'letter-spacing':'.1em','text-anchor':'middle'},'MODEL GATEWAY');
+var gwS=txt(gw,{x:GW.cx,y:GW.cy+11,'font-size':8,'font-weight':600,fill:'#3A3934',
+  'letter-spacing':'.04em','text-anchor':'middle'},'redact PII → schema-constrained → validate output');
+var gwI=ico(gw,'funnel',GW.cx-130,GW.cy,15);
+tip(gw,'The only model exit. Every LLM call passes PII redaction → schema constraint → output validation → versioned write.\nNo tools, no network, and it cannot alter an engine's score.');
+
+/* — stage nodes — */
+function drawStage(s){
+  var g=el(gNode,'g',{}), x=s.cx-NW/2, y=CY-NH/2;
+  s.box=nodeBox(g,x,y,NW,NH,11);
+  s.fill=el(g,'rect',{x:x,y:y,width:NW,height:NH,rx:11,fill:P,opacity:0});
+  s.lab=txt(g,{x:s.cx,y:y+17,'font-size':8,'font-weight':800,fill:'#4A4944',
+    'letter-spacing':'.12em','text-anchor':'middle'},s.id);
+  s.ttl=txt(g,{x:s.cx,y:y+33,'font-size':11.5,'font-weight':700,fill:'#4A4944',
+    'letter-spacing':'-.01em','text-anchor':'middle'},s.h);
+  s.ms =txt(g,{x:s.cx,y:y+46,'font-size':8,'font-weight':600,fill:'#3A3934',
+    'text-anchor':'middle'},'—');
+  s.bar=el(g,'rect',{x:x+1,y:y+NH-2.5,width:0,height:2,rx:1,fill:P,opacity:.9});
+  s.icn=ico(g,s.ic,s.cx,y-13,14);
+  tip(g,s.h+' — '+s.n);
+  return s;
+}
+STAGES.forEach(drawStage); drawStage(EX);
+var ALL=STAGES.concat([EX]);
+
+/* — spine links — */
+function link(g,d,dash){
+  var base=el(g,'path',{d:d,fill:'none',stroke:DK.grid,'stroke-width':dash?1:1.1,
+    'stroke-linecap':'round','stroke-dasharray':dash||'none'});
+  var hot=el(g,'path',{d:d,fill:'none',stroke:P,'stroke-width':dash?1:1.4,
+    'stroke-linecap':'round','stroke-dasharray':dash||'none',opacity:0});
+  return {base:base,hot:hot,node:hot};
+}
+var spine=[];
+for(var i=0;i<STAGES.length-1;i++){
+  var a=STAGES[i].cx+NW/2+3, b=STAGES[i+1].cx-NW/2-3;
+  spine.push(link(gLink,'M'+a+' '+CY+'L'+b+' '+CY));
+  txt(gLink,{x:(a+b)/2,y:CY-5,'font-size':9,'font-weight':800,fill:'#3A3934',
+    'text-anchor':'middle'},'›');
+}
+
+/* — engines — */
+var EW=124, EH=26, ECX=928, EY=[205,252,299,346,393];
+ENGINES.forEach(function(e,i){
+  var g=el(gNode,'g',{}), x=ECX-EW/2, y=EY[i]-EH/2;
+  e.box=nodeBox(g,x,y,EW,EH,13);
+  e.fill=el(g,'rect',{x:x,y:y,width:EW,height:EH,rx:13,fill:P,opacity:0});
+  e.lab=txt(g,{x:ECX,y:y+11.5,'font-size':8.5,'font-weight':800,fill:'#4A4944',
+    'letter-spacing':'.08em','text-anchor':'middle'},e.k);
+  e.sub=txt(g,{x:ECX,y:y+21,'font-size':7,'font-weight':600,fill:'#3A3934',
+    'text-anchor':'middle'},e.n);
+  e.bar=el(g,'rect',{x:x+1,y:y+EH-2,width:0,height:1.6,rx:1,fill:P,opacity:.9});
+  e.icn=ico(g,e.ic,x+11,y+13,10);
+  e.ms=null;
+
+  tip(g,e.k+' — '+e.n+'\nDeterministic computation. No LLM involved.');
+  // fan in / out
+  var ax=STAGES[5].cx+NW/2+3, bx=ECX-EW/2-3, cx1=ECX+EW/2+3, dx=EX.cx-NW/2-3;
+  e.fin =link(gLink,'M'+ax+' '+CY+'C'+((ax+bx)/2)+' '+CY+' '+((ax+bx)/2)+' '+EY[i]+' '+bx+' '+EY[i]);
+  e.fout=link(gLink,'M'+cx1+' '+EY[i]+'C'+((cx1+dx)/2)+' '+EY[i]+' '+((cx1+dx)/2)+' '+CY+' '+dx+' '+CY);
+});
+txt(svg,{x:ECX,y:424,'font-size':8.5,'font-weight':800,fill:DK.faint,
+  'letter-spacing':'.16em','text-anchor':'middle'},'PARALLEL · NO LLM');
+
+/* — model gateway links — */
+var mlEx=link(gLink,'M218 '+(CY-NH/2-3)+'C218 190 480 160 '+(GW.cx-60)+' '+(GW.cy+GW.h/2+3),'4 4');
+var mlXp=link(gLink,'M1110 '+(CY-NH/2-3)+'C1110 180 820 150 '+(GW.cx+60)+' '+(GW.cy+GW.h/2+3),'4 4');
+
+/* — stores — */
+STORES.forEach(function(s,i){
+  var g=el(gNode,'g',{}), x=s.cx-s.w/2, y=SY-SH/2;
+  s.box=nodeBox(g,x,y,s.w,SH,8);
+  s.box.setAttribute('stroke-dasharray','2 3');
+  s.fill=el(g,'rect',{x:x,y:y,width:s.w,height:SH,rx:8,fill:P,opacity:0});
+  s.lab=txt(g,{x:s.cx,y:y+18,'font-size':9,'font-weight':800,fill:'#4A4944',
+    'letter-spacing':'.09em','text-anchor':'middle'},s.k);
+  s.sub=txt(g,{x:s.cx,y:y+31,'font-size':7.5,'font-weight':600,fill:'#3A3934',
+    'text-anchor':'middle'},s.n);
+  s.icn=ico(g,s.ic,x+17,y+21,13);
+  tip(g,s.k+' — '+s.n);
+});
+// stage → store hairlines
+var SLINK=[[0,0],[1,1],[2,1],[3,2],[4,3]];
+SLINK.forEach(function(p){
+  var st=STAGES[p[0]], sr=STORES[p[1]];
+  link(gLink,'M'+st.cx+' '+(CY+NH/2+3)+'C'+st.cx+' '+(SY-70)+' '+sr.cx+' '+(SY-70)+' '+sr.cx+' '+(SY-SH/2-3),'2 4');
+});
+var exStore=link(gLink,'M'+EX.cx+' '+(CY+NH/2+3)+'C'+EX.cx+' '+(SY-70)+' '+STORES[4].cx+' '+(SY-70)+' '+STORES[4].cx+' '+(SY-SH/2-3),'2 4');
+
+/* — outcome loop — */
+LOOP.forEach(function(l,i){
+  var g=el(gNode,'g',{}), x=l.cx-l.w/2, y=LY-LH/2;
+  l.box=nodeBox(g,x,y,l.w,LH,11);
+  l.fill=el(g,'rect',{x:x,y:y,width:l.w,height:LH,rx:11,fill:P,opacity:0});
+  l.lab=txt(g,{x:l.cx,y:y+19,'font-size':9,'font-weight':800,fill:'#4A4944',
+    'letter-spacing':'.09em','text-anchor':'middle'},l.k);
+  l.sub=txt(g,{x:l.cx,y:y+32,'font-size':7.5,'font-weight':600,fill:'#3A3934',
+    'text-anchor':'middle'},l.n);
+  l.icn=ico(g,l.ic,x+19,y+22,13);
+  tip(g,l.k+' — '+l.n);
+});
+// firewall mark between OUTCOME EVENT and REASON CODE
+var fwX=(LOOP[0].cx-LOOP[0].w/2 + LOOP[1].cx+LOOP[1].w/2)/2;
+var fwA=el(gNode,'path',{d:'M'+fwX+' '+(LY-26)+'L'+fwX+' '+(LY+26),stroke:'#4A4944','stroke-width':1.4});
+var fwB=el(gNode,'path',{d:'M'+(fwX+4)+' '+(LY-26)+'L'+(fwX+4)+' '+(LY+26),stroke:'#4A4944','stroke-width':1.4});
+txt(gNode,{x:fwX+2,y:LY-33,'font-size':7,'font-weight':800,fill:'#3A3934',
+  'letter-spacing':'.1em','text-anchor':'middle'},'FIREWALL');
+
+var lk0=link(gLink,'M1176 '+(CY+10)+'C1190 400 1190 520 1176 '+LY+'L'+(LOOP[0].cx+LOOP[0].w/2+3)+' '+LY);
+var lk1=link(gLink,'M'+(LOOP[0].cx-LOOP[0].w/2-3)+' '+LY+'L'+(LOOP[1].cx+LOOP[1].w/2+3)+' '+LY);
+var lk2=link(gLink,'M'+(LOOP[1].cx-LOOP[1].w/2-3)+' '+LY+'L'+(LOOP[2].cx+LOOP[2].w/2+3)+' '+LY);
+var lk3=link(gLink,'M'+(LOOP[2].cx)+' '+(LY-LH/2-3)+'C'+LOOP[2].cx+' 540 '+STORES[3].cx+' 560 '+STORES[3].cx+' '+(SY+SH/2+3));
+txt(gLink,{x:552,y:512,'font-size':7.5,'font-weight':700,fill:'#3A3934',
+  'letter-spacing':'.08em','text-anchor':'middle'},'↑ FEEDS NEXT SNAPSHOT');
+txt(gLink,{x:1162,y:LY-47,'font-size':7.5,'font-weight':700,fill:'#3A3934',
+  'letter-spacing':'.06em','text-anchor':'end'},'+ days · async');
+
+/* — flying packet — */
+var pkt=el(gFly,'circle',{r:3.4,fill:P,opacity:0});
+var pktGlow=el(gFly,'circle',{r:7,fill:P,opacity:0});
+
+/* ══ state machine ═════════════════════════════════════════════ */
+var mT=document.getElementById('mT'), mS=document.getElementById('mS'),
+    mE=document.getElementById('mE'), mM=document.getElementById('mM'),
+    mC=document.getElementById('mC'), logBox=document.getElementById('log');
+var bLoop=document.getElementById('bLoop'), bReplay=document.getElementById('bReplay');
+var looping=true, t0=null, raf=null, emitted={};
+var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+function fmtT(ms){var s=Math.floor(ms/1000), m=Math.floor(ms%1000);
+  return ('0'+s).slice(-2)+'.'+('00'+m).slice(-3);}
+
+function emit(key,stage,line,ms,warn){
+  if(emitted[key])return; emitted[key]=1;
+  var d=document.createElement('div');
+  d.innerHTML='<span class="t">'+fmtT(ms)+'</span>'+
+    '<span class="s">'+stage+'</span>'+
+    '<span class="ok">ok</span>'+
+    '<span class="'+(warn?'warn':'')+'">'+line+'</span>';
+  logBox.appendChild(d);
+  while(logBox.children.length>6) logBox.removeChild(logBox.firstChild);
+}
+
+function setNode(o,st,p){
+  // st: 0 pending · 1 running · 2 done
+  var strokes=[DK.grid,P,'#4A4944'], labs=['#4A4944',P,'#8F8E88'],
+      subs=['#3A3934','#C9C7BD','#6A6963'];
+  o.box.setAttribute('stroke',strokes[st]);
+  o.box.setAttribute('stroke-width',st===1?1.5:1);
+  o.fill.setAttribute('opacity',st===1?0.07:(st===2?0.025:0));
+  if(o.lab)o.lab.setAttribute('fill',labs[st]);
+  if(o.ttl)o.ttl.setAttribute('fill',labs[st]);
+  if(o.sub)o.sub.setAttribute('fill',subs[st]);
+  if(o.icn)o.icn.setAttribute('stroke',st===1?P:(st===2?'#8F8E88':'#4A4944'));
+  if(o.bar){var f=Math.max(0,Math.min(1,p||0));
+            o.bar.setAttribute('width',(st===2?1:f)*(o.bw||0));
+            o.bar.setAttribute('opacity',st===0?0:.9);}
+}
+
+ALL.forEach(function(s){s.bw=NW-2;});
+ENGINES.forEach(function(e){e.bw=EW-2;});
+
+function pathPoint(pth,f){var L=pth.getTotalLength();return pth.getPointAtLength(L*Math.max(0,Math.min(1,f)));}
+
+function setLink(lk,f){
+  if(!lk)return;
+  var p=lk.hot, L=p.getTotalLength();
+  p.setAttribute('stroke-dasharray',L+' '+L);
+  p.setAttribute('stroke-dashoffset',L*(1-Math.max(0,Math.min(1,f))));
+  p.setAttribute('opacity',f>0?0.85:0);
+}
+
+function frame(now){
+  if(t0===null)t0=now;
+  var T=now-t0;
+  if(T>END+HOLD){
+    if(looping){reset();t0=now;T=0;}else{T=END+HOLD;}
+  }
+
+  var stagesDone=0, enginesDone=0, calls=0, current='idle';
+
+  // stages
+  ALL.forEach(function(s,i){
+    var p=(T-s.t)/s.d, st=p>=1?2:(p>0?1:0);
+    setNode(s,st,p);
+    if(st===2){stagesDone++;
+      s.ms.textContent=s.d+'ms'; s.ms.setAttribute('fill','#6A6963');
+      emit('s'+i,s.k,s.log,s.t+s.d,/NOT|self-claimed|low-confidence/.test(s.log));
+    }else if(st===1){
+      current=s.k+' · '+s.h;
+      s.ms.textContent=Math.round(p*s.d)+'ms'; s.ms.setAttribute('fill',P);
+    }else{s.ms.textContent='—'; s.ms.setAttribute('fill','#3A3934');}
+  });
+
+  // spine links + packet
+  var flying=false;
+  for(var i=0;i<spine.length;i++){
+    var end=STAGES[i].t+STAGES[i].d, f=(T-end)/200;
+    setLink(spine[i],f);
+    if(f>0&&f<1){
+      var pt=pathPoint(spine[i].hot,f);
+      pkt.setAttribute('cx',pt.x);pkt.setAttribute('cy',pt.y);pkt.setAttribute('opacity',1);
+      pktGlow.setAttribute('cx',pt.x);pktGlow.setAttribute('cy',pt.y);pktGlow.setAttribute('opacity',.16);
+      flying=true;
+    }
+  }
+  if(!flying){pkt.setAttribute('opacity',0);pktGlow.setAttribute('opacity',0);}
+
+  // engines
+  ENGINES.forEach(function(e,i){
+    var p=(T-e.t)/e.d, st=p>=1?2:(p>0?1:0);
+    setNode(e,st,p);
+    setLink(e.fin,(T-(STAGES[5].t+STAGES[5].d))/160);
+    setLink(e.fout,(T-(e.t+e.d))/160);
+    if(st===2){enginesDone++;
+      e.sub.textContent=e.n+' · '+e.d+'ms';
+      emit('e'+i,e.k,e.log,e.t+e.d,/NOT|unknown|missing/.test(e.log));
+    }else if(st===1){e.sub.textContent=e.n+' · '+Math.round(p*e.d)+'ms';}
+    else{e.sub.textContent=e.n;}
+  });
+
+  // model gateway
+  var inEx=T>STAGES[1].t&&T<STAGES[1].t+STAGES[1].d,
+      inXp=T>EX.t&&T<EX.t+EX.d;
+  var live=inEx||inXp;
+  gwR.setAttribute('stroke',live?P:DK.grid);
+  gwR.setAttribute('stroke-width',live?1.5:1);
+  gwT.setAttribute('fill',live?P:'#4A4944');
+  gwS.setAttribute('fill',live?'#C9C7BD':'#3A3934');
+  gwI.setAttribute('stroke',live?P:'#4A4944');
+  setLink(mlEx,inEx?1:(T>STAGES[1].t+STAGES[1].d?0.001:0));
+  setLink(mlXp,inXp?1:0);
+  if(T>=STAGES[1].t+STAGES[1].d)calls++;
+  if(T>=EX.t+EX.d)calls++;
+  if(live)emit(inEx?'gw1':'gw2','MODEL GATEWAY',
+    'PII redacted · schema-constrained · no tools · no web',T,false);
+
+  // stores
+  STORES.forEach(function(s,i){
+    var w=false;
+    ALL.forEach(function(st){if(st.store===i&&T>st.t+st.d*0.5)w=true;});
+    setNode({box:s.box,fill:s.fill,lab:s.lab,sub:s.sub,icn:s.icn},w?2:0,0);
+    if(w){s.box.setAttribute('stroke','#6A6963');}
+  });
+  setLink(exStore,T>EX.t+EX.d?1:0);
+
+  // outcome loop
+  var loopNow='';
+  setLink(lk0,(T-(EX.t+EX.d))/400);
+  LOOP.forEach(function(l,i){
+    var p=(T-l.t)/l.d, st=p>=1?2:(p>0?1:0);
+    setNode(l,st,p);
+    if(st===2)emit('l'+i,l.k,l.log,l.t+l.d,false);
+    if(st===1)loopNow=l.k;
+  });
+  setLink(lk1,(T-(LOOP[0].t+LOOP[0].d))/200);
+  setLink(lk2,(T-(LOOP[1].t+LOOP[1].d))/200);
+  setLink(lk3,(T-(LOOP[2].t+LOOP[2].d))/300);
+  if(T>LOOP[2].t+LOOP[2].d+300)STORES[3].box.setAttribute('stroke',P);
+
+  // meters
+  var shown=Math.min(T,TOTAL);
+  mT.innerHTML=Math.round(shown)+'<em>ms</em>';
+  mS.innerHTML=stagesDone+'<em>/ 7</em>';
+  mE.innerHTML=enginesDone+'<em>/ 5</em>';
+  mM.innerHTML=calls+'<em>/ 2</em>';
+  if(current==='idle'){
+    if(loopNow)current='OUTCOME LOOP · '+loopNow;
+    else if(T>LOOP[2].t+LOOP[2].d)current='loop closed · anonymous market signal updated';
+    else if(T>TOTAL)current='scan complete · awaiting employer outcome';
+  }
+  mC.textContent=current;
+
+  raf=requestAnimationFrame(frame);
+}
+
+function reset(){
+  emitted={}; logBox.innerHTML='';
+  STORES.forEach(function(s){s.box.setAttribute('stroke',DK.grid);});
+}
+function start(){
+  if(raf)cancelAnimationFrame(raf);
+  reset(); t0=null;
+  if(reduce){t0=performance.now()-END; }
+  raf=requestAnimationFrame(frame);
+}
+
+bReplay.addEventListener('click',start);
+bLoop.addEventListener('click',function(){
+  looping=!looping; bLoop.setAttribute('aria-pressed',String(looping));
+});
+svg.addEventListener('click',start);
+
+var io=new IntersectionObserver(function(es){
+  if(es[0].isIntersecting){start();io.disconnect();}
+},{threshold:.25});
+io.observe(svg);
+</script>
+</body>
+</html>

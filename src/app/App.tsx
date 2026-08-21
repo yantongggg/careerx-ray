@@ -442,7 +442,8 @@ function AppRouter() {
                 onNavigate={navigate}
                 title="Runtime architecture"
                 lede="One career scan, second by second: seven stages, five deterministic engines in parallel, and the only two places a model is allowed to touch it. Hover any node for detail; click the canvas to replay."
-                src="/docs/architecture-runtime.html"
+                src="/docs/architecture-runtime.en.html"
+                srcZh="/docs/architecture-runtime.html"
                 height={1500}
               />
             )}
@@ -452,7 +453,8 @@ function AppRouter() {
                 onNavigate={navigate}
                 title="Next plan · 30 / 90 / 120 days"
                 lede="What comes next is not more AI agents. Three gated phases: what has to be collected, what has to be true before the next one starts, and what happens when it is not."
-                src="/docs/next-plan.html"
+                src="/docs/next-plan.en.html"
+                srcZh="/docs/next-plan.html"
                 height={2100}
               />
             )}
