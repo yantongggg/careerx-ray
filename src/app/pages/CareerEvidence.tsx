@@ -107,8 +107,15 @@ function entriesFrom(profile: CareerProfile): Entry[] {
   const r = profile.resume;
 
   /* Connected sources first — these carry the strongest trust and are
-     what the user consciously linked. */
-  profile.evidence.forEach(e => {
+     what the user consciously linked.
+
+     The résumé itself is not one of them. It went in as an evidence
+     item like any other, so the timeline opened with a card titled
+     "Jordan_Kim_Resume_2026.pdf", subtitled with the same filename, and
+     carrying every skill in the document as a chip. A CV is where
+     evidence is read from, not a thing someone did. What is inside it
+     is unpacked below, each entry citing the file it came from. */
+  profile.evidence.filter(e => e.kind !== "resume").forEach(e => {
     const type = KIND_TO_TYPE[e.kind] ?? "work";
     items.push({
       id: e.id,
@@ -148,7 +155,12 @@ function entriesFrom(profile: CareerProfile): Entry[] {
         id: `cv-emp-${i}`,
         type: "work",
         emoji: TYPE_EMOJI.work,
-        title: i === 0 && r.currentTitle ? r.currentTitle : profile.currentRole || "Role not stated",
+        /* Only the most recent employer can be paired with the current
+           title. Falling back to it for earlier ones printed "Data
+           Analyst · Grab" for a job that was an internship — a résumé
+           lists employers and titles without saying which goes with
+           which, so anything past the first is left unnamed. */
+        title: i === 0 && r.currentTitle ? r.currentTitle : "Previous role",
         org: employer,
         date: i === 0 ? "Most recent" : "Earlier",
         skills: r.skills.slice(0, 4),
