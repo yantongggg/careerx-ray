@@ -24,9 +24,8 @@ import { BlindSpots } from "./pages/BlindSpots";
 import { CareerPrescription } from "./pages/CareerPrescription";
 import { CareerEvidence } from "./pages/CareerEvidence";
 import { UserProfile } from "./pages/UserProfile";
-import { ArchitectureDiagram } from "./pages/ArchitectureDiagram";
 import { ValidationBlueprint } from "./pages/ValidationBlueprint";
-import { NextPlan } from "./pages/NextPlan";
+import { EmbeddedDoc } from "./pages/EmbeddedDoc";
 import { Sidebar } from "./layout/Sidebar";
 import { CareerChat } from "./layout/CareerChat";
 import { ApplicationPrep } from "./pages/ApplicationPrep";
@@ -438,9 +437,25 @@ function AppRouter() {
             {page === "prescription"    && <CareerPrescription onNavigate={navigate} />}
             {page === "evidence"        && <CareerEvidence onNavigate={navigate} />}
             {page === "profile"         && <UserProfile onNavigate={navigate} />}
-            {page === "architecture"    && <ArchitectureDiagram onNavigate={navigate} />}
+            {page === "architecture"    && (
+              <EmbeddedDoc
+                onNavigate={navigate}
+                title="Runtime architecture"
+                lede="One career scan, second by second: seven stages, five deterministic engines in parallel, and the only two places a model is allowed to touch it. Hover any node for detail; click the canvas to replay."
+                src="/docs/architecture-runtime.html"
+                height={1500}
+              />
+            )}
             {page === "blueprint"       && <ValidationBlueprint onNavigate={navigate} />}
-            {page === "nextplan"        && <NextPlan onNavigate={navigate} />}
+            {page === "nextplan"        && (
+              <EmbeddedDoc
+                onNavigate={navigate}
+                title="Next plan · 30 / 90 / 120 days"
+                lede="What comes next is not more AI agents. Three gated phases: what has to be collected, what has to be true before the next one starts, and what happens when it is not."
+                src="/docs/next-plan.html"
+                height={2100}
+              />
+            )}
             {page === "employer"        && <EmployerDashboard />}
             {page === "emp-matching"    && <SmartTalentMatching />}
             {page === "emp-sla"         && <ReplySlaMonitor />}

@@ -212,33 +212,6 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                 <EmptySection text="Nothing here yet. Add a project or portfolio under Career Evidence and it shows up on your profile." />
               )}
             </div>
-            {/* Skills — moved out of the narrow column. It was the
-                tallest block on the page sitting in the third that had
-                least room, while the two-thirds column ran out of
-                content and left the page half empty below the fold. */}
-            <div className="bg-white rounded-xl border border-border shadow-sm p-6">
-              <h2 className="font-semibold text-foreground mb-4">Skills</h2>
-              {skills.length === 0 ? (
-                <EmptySection text="Skills appear here once a resume is read or evidence is added." />
-              ) : (
-                <div className="grid gap-x-8 gap-y-3.5 sm:grid-cols-2">
-                  {skills.map((sk) => (
-                    <div key={sk.name} title={sk.why}>
-                      <div className="flex justify-between mb-1.5">
-                        <span className="text-sm font-medium text-foreground">{sk.name}</span>
-                        <span className="text-sm text-muted-foreground tabular-nums">{sk.level}%</span>
-                      </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${sk.level}%`, opacity: sk.level < 50 ? 0.5 : 1 }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Right column */}
@@ -269,7 +242,42 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                 </button>
               </div>
             </div>
+          </div>
+        </div>
 
+        {/* Full width from here. The three-column split ran the right
+            side one block deep while the left carried four, so the page
+            kept going long after the left had run out — which is why
+            "Under the hood" sat a screen below everything else. */}
+            {/* Skills — moved out of the narrow column. It was the
+                tallest block on the page sitting in the third that had
+                least room, while the two-thirds column ran out of
+                content and left the page half empty below the fold. */}
+            <div className="bg-white rounded-xl border border-border shadow-sm p-6">
+              <h2 className="font-semibold text-foreground mb-4">Skills</h2>
+              {skills.length === 0 ? (
+                <EmptySection text="Skills appear here once a resume is read or evidence is added." />
+              ) : (
+                <div className="grid gap-x-8 gap-y-3.5 sm:grid-cols-2">
+                  {skills.map((sk) => (
+                    <div key={sk.name} title={sk.why}>
+                      <div className="flex justify-between mb-1.5">
+                        <span className="text-sm font-medium text-foreground">{sk.name}</span>
+                        <span className="text-sm text-muted-foreground tabular-nums">{sk.level}%</span>
+                      </div>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${sk.level}%`, opacity: sk.level < 50 ? 0.5 : 1 }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+        <div className="grid gap-6 lg:grid-cols-2 mt-6">
             {/* Certifications */}
             <div className="bg-white rounded-xl border border-border shadow-sm p-6">
               <h2 className="font-semibold text-foreground flex items-center gap-2 mb-4">
@@ -288,7 +296,6 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                 )}
               </div>
             </div>
-
             {/* Achievements */}
             <div className="bg-white rounded-xl border border-border shadow-sm p-6">
               <h2 className="font-semibold text-foreground flex items-center gap-2 mb-4">
@@ -306,7 +313,6 @@ export function UserProfile({ onNavigate }: { onNavigate?: (page: string) => voi
                 ))}
               </div>
             </div>
-          </div>
         </div>
 
         {/* Kept off the journey on purpose. These answer "how would you
