@@ -5,8 +5,8 @@ interface LandingPageProps {
   onNavigate: (page: string) => void;
 }
 
-/* The three ways into the product. Everything past the landing page
-   asks for an account, so App.tsx routes these through auth itself. */
+/* The three ways into the product. None of them asks for an account —
+   signing in is what you do once you have a result worth keeping. */
 const DOORS = [
   { label: "Candidate", desc: "Your risks, and the way out.", target: "onboarding" },
   { label: "Employer", desc: "Your pipeline, with readiness attached.", target: "emp-pipeline" },
@@ -258,7 +258,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           </p>
 
           <button
-            onClick={() => onNavigate("register")}
+            /* Was "register" — the button says scan, so it starts the
+               scan. An account can come after there is a result. */
+            onClick={() => onNavigate("onboarding")}
             className="group mt-7 inline-flex items-center gap-2.5 bg-foreground text-background pl-7 pr-6 py-3.5 rounded-full font-medium hover:opacity-90 transition-opacity"
           >
             Start your scan

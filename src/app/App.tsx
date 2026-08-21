@@ -199,7 +199,6 @@ function AppRouter() {
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
   const [authed, setAuthed]     = useState(false);
   const [user, setUser]         = useState<{ name: string; email: string } | null>(null);
-  const [pendingTarget, setPendingTarget] = useState<string | null>(null);
   const [page, setPage]         = useState<Page>("command");
   const [role, setRole]         = useState<Role>("candidate");
   const [history, setHistory]   = useState<Page[]>([]);
@@ -218,13 +217,13 @@ function AppRouter() {
     if (target === "landing")     { setAppState("landing");     return; }
     if (target === "login")       { setAuthMode("login");    setAppState("auth"); return; }
     if (target === "register")    { setAuthMode("register"); setAppState("auth"); return; }
-    // Everything past the landing page requires an account first.
-    if (!authed) {
-      setPendingTarget(target);
-      setAuthMode("register");
-      setAppState("auth");
-      return;
-    }
+    /* Signing in is optional. This used to send every route past the
+       landing page to the auth page first, so "Start your scan" and the
+       Candidate door both opened a registration form — asking for an
+       account before the product has shown anyone anything.
+
+       The account is worth having once there is a scan worth keeping,
+       which is what the header's Sign in and Get started are for. */
     if (target === "role-select") { setAppState("role-select"); return; }
     if (target === "onboarding")  { setAppState("onboarding");  return; }
     if ((allPages as string[]).includes(target)) {
@@ -292,19 +291,15 @@ function AppRouter() {
             setAuthed(true);
             setUser({ name: u.name, email: u.email });
             setAccountName(u.name);
-            const scanned = u.isNew ? false : hasScanned;
-            if (u.isNew) resetProfile();
-            const target = pendingTarget;
-            setPendingTarget(null);
-            if (target && target !== "role-select") {
-              // Re-run routing now that we're authed
-              if (target === "onboarding") { setAppState("onboarding"); return; }
-              if ((allPages as string[]).includes(target)) {
-                const nextPage = target as Page;
-                if (pageRole[nextPage] === "candidate" && !scanned) { setAppState("onboarding"); return; }
-                setPage(nextPage); setRole(pageRole[nextPage]); setAppState("app"); return;
-              }
-            }
+            /* A new account used to clear the profile unconditionally, so
+               that nobody inherits the previous user's scan. Now that the
+               scan runs before the account exists, that would throw away
+               the very thing someone is registering to keep. */
+            const keepScan = hasScanned;
+            if (u.isNew && !keepScan) resetProfile();
+            /* Registering mid-journey should hand you back your own
+               results, not restart you at the door. */
+            if (keepScan) { setPage("command"); setRole("candidate"); setAppState("app"); return; }
             setAppState("role-select");
           }}
         />
@@ -328,7 +323,10 @@ function AppRouter() {
   if (appState === "onboarding") {
     return (
       <Onboarding
-        onBack={() => setAppState(hasScanned ? "app" : "role-select")}
+        /* A guest reaches the scan straight from the landing page and
+           has never seen role-select, so Back has to return them where
+           they actually came from. */
+        onBack={() => setAppState(hasScanned ? "app" : authed ? "role-select" : "landing")}
         onComplete={next => {
           setProfile(next);
           setRole("candidate");
@@ -402,13 +400,26 @@ function AppRouter() {
             >
               {displayName.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
             </button>
-            <button
-              onClick={signOut}
-              title="Sign out"
-              className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <LogOut size={13} />
-            </button>
+            {/* Nothing to sign out of when the scan was run as a guest.
+                That is the moment the account is worth something, so the
+                slot offers to keep the result instead. */}
+            {authed ? (
+              <button
+                onClick={signOut}
+                title="Sign out"
+                className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <LogOut size={13} />
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("register")}
+                title="Create an account to keep this scan"
+                className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Save this scan
+              </button>
+            )}
           </div>
         </header>
 
