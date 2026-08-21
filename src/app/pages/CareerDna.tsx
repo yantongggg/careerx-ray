@@ -230,7 +230,7 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
               <ResponsiveContainer width="100%" height={280}>
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="#E2E8F0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: "#64748B" }} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 13, fill: "#64748B" }} />
                   <RadarShape dataKey="A" stroke="#2563EB" fill="#2563EB" fillOpacity={0.16} strokeWidth={2.5} isAnimationActive={false} />
                 </RadarChart>
               </ResponsiveContainer>
@@ -380,8 +380,12 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-[1fr_1fr] gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border">
-            <div className="p-5">
+          {/* Was a left/right split: the chart squeezed into half the
+              width while six gaps stacked into a tall scroll beside it.
+              The chart is the thing being read, so it gets the full
+              width, and the gaps sit underneath in two balanced columns. */}
+          <div>
+            <div className="p-6 border-b border-border">
               <div className="flex items-center justify-center gap-6 mb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ background: "#2563EB" }} />
@@ -392,8 +396,8 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
                   <span className="text-xs font-semibold text-muted-foreground">{targetRole || "Target role"} · typical profile</span>
                 </div>
               </div>
-              <div style={{ width: "100%", height: 300 }}>
-                <ResponsiveContainer width="100%" height={300}>
+              <div className="mx-auto max-w-[560px]" style={{ width: "100%", height: 360 }}>
+                <ResponsiveContainer width="100%" height={360}>
                   <RadarChart data={conflictRadarData}>
                     <PolarGrid stroke="#E2E8F0" />
                     <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: "#64748B" }} />
@@ -402,7 +406,7 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="grid grid-cols-2 gap-3 mt-2">
+              <div className="mx-auto mt-2 grid max-w-[560px] grid-cols-2 gap-3">
                 <div className="border border-blue-100 bg-blue-50/50 rounded-lg p-3 text-center">
                   <img src={primary.image} alt={primary.animal} className="w-10 h-10 rounded-lg object-cover shadow-sm mx-auto mb-1.5" />
                   <p className="text-xs font-bold text-foreground">{primary.type}</p>
@@ -416,11 +420,13 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
               </div>
             </div>
 
-            <div className="p-5">
-              <p className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-3">
+            <div className="p-6">
+              <p className="text-sm font-semibold text-red-500 uppercase tracking-wider mb-4">
                 {conflicts.length} gap{conflicts.length !== 1 ? "s" : ""} worth acting on
               </p>
-              <div className="space-y-3">
+              {/* Widest gap first, filling left column then right, so the
+                  two columns stay even at any count. */}
+              <div className="grid gap-3 lg:grid-cols-2">
                 {conflicts.map(c => {
                   const direction = c.gap > 0 ? "rising" : "falling";
                   const insight = conflictInsights[c.dimension]?.[direction] || "";

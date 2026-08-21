@@ -175,17 +175,6 @@ function entriesFrom(profile: CareerProfile): Entry[] {
 }
 
 
-/** What this person's role family should be adding next. */
-function suggestionsFrom(profile: CareerProfile) {
-  return corpusFor(profile).evidenceSamples.map((sample, i) => ({
-    id: `s${i + 1}`,
-    title: sample.title,
-    source: sample.issuer,
-    sourceIcon: sample.kind === "certificate" ? Award : sample.kind === "project" ? Github : Globe,
-    kind: sample.kind === "experience" ? ("record" as const) : sample.kind,
-    desc: sample.detail,
-  }));
-}
 
 /* A freshly-scanned account has an empty record, and that is the honest
    state to show — not eight achievements belonging to someone else. */
@@ -284,63 +273,9 @@ function Timeline({ entries }: { entries: Entry[] }) {
   );
 }
 
-/** What is worth adding next for this role, opened on request. */
-function Suggestions({ onClose }: { onClose: () => void }) {
-  const { profile, addEvidence } = useCareerProfile();
-  const suggestions = suggestionsFrom(profile);
-  const [added, setAdded] = useState<Record<string, boolean>>({});
-
-  return (
-    <div className="bg-white border border-border rounded-xl p-5 mb-6">
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div>
-          <p className="text-base font-semibold text-foreground">What would move your score most</p>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Ranked for {profile.targetRole || "your target role"}.
-          </p>
-        </div>
-        <button onClick={onClose} aria-label="Close suggestions" className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-          <X size={15} />
-        </button>
-      </div>
-      <div className="space-y-2.5">
-        {suggestions.map((d, i) => (
-          <div key={d.id} className="flex items-start gap-3 rounded-xl border border-border p-4">
-            <d.sourceIcon size={15} className="text-muted-foreground flex-shrink-0 mt-0.5" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-semibold text-foreground">{d.title}</p>
-                {i === 0 && <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Highest impact</span>}
-              </div>
-              <p className="text-sm text-muted-foreground leading-snug mt-0.5">{d.desc}</p>
-            </div>
-            {added[d.id] ? (
-              <span className="text-sm text-emerald-600 font-medium flex items-center gap-1 flex-shrink-0"><CheckCircle size={13} /> Added</span>
-            ) : (
-              <button
-                onClick={() => {
-                  /* Added on the user's word, so it enters the record
-                     self-declared. Trust is earned by verification. */
-                  addEvidence({ kind: d.kind, label: d.title, source: d.source, trust: "self-declared", skills: [] });
-                  setAdded(p => ({ ...p, [d.id]: true }));
-                  demoToast(`Added "${d.title}" as self-declared — verify it to raise its weight`);
-                }}
-                className="flex-shrink-0 text-sm bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-1"
-              >
-                <Plus size={13} /> Add
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function CareerEvidence({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const { profile } = useCareerProfile();
   const entries = entriesFrom(profile);
-  const [suggesting, setSuggesting] = useState(false);
 
   const verified = entries.filter(e => e.verified === "verified").length;
 
@@ -353,17 +288,11 @@ export function CareerEvidence({ onNavigate }: { onNavigate?: (page: string) => 
             <h1 className="text-3xl font-bold text-foreground tracking-tight">Career Evidence</h1>
             <p className="text-base text-muted-foreground mt-2 max-w-xl leading-relaxed">
               {entries.length
-                ? <>Read from your résumé and the sources you connected. {verified} of {entries.length} verified.</>
-                : <>Everything you upload or connect lands here automatically.</>}
+                ? <>Pulled from the sources you connected. Add anything else with the button.</>
+                : <>Connect a source or upload a file and it lands here automatically.</>}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => setSuggesting(v => !v)}
-              className="flex items-center gap-2 border border-border bg-white text-foreground text-sm px-3.5 py-2 rounded-lg hover:bg-muted transition-colors font-medium"
-            >
-              <Sparkles size={14} /> AI suggest
-            </button>
             <button
               onClick={() => demoToast("Connect a source or upload a file and it appears on your timeline")}
               className="flex items-center gap-2 bg-primary text-white text-sm px-3.5 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -372,8 +301,6 @@ export function CareerEvidence({ onNavigate }: { onNavigate?: (page: string) => 
             </button>
           </div>
         </div>
-
-        {suggesting && <Suggestions onClose={() => setSuggesting(false)} />}
 
         {entries.length ? <Timeline entries={entries} /> : <NoEvidenceYet />}
 

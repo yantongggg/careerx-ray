@@ -89,10 +89,55 @@ const DOOR_LINK: EvidenceDoor = {
    have one — that is the credential gap the scan reports. A LinkedIn
    import that quietly closes the risk it is meant to expose would be
    telling the user what they want to hear. */
+/* ────────────────────────────────────────────────────────────────
+   The demo persona's record.
+
+   DEMO_PRESET fixed the roles, the salary and the calibration but left
+   the profile with no résumé, so every page downstream that reads
+   profile.resume returned nothing: Skill Match showed 0% fit against
+   four requirements, Application Prep said "Email: Not on file", the
+   evidence timeline was empty, and the portfolio had a name and nothing
+   else. One record fixes all of them at once.
+
+   This stands in for the LinkedIn connector. The URL on the evidence
+   step is decorative — nothing is fetched from it, and no page here
+   scrapes LinkedIn. When the connector is built it returns this shape,
+   which is why the shape is what the rest of the product consumes.
+   ──────────────────────────────────────────────────────────────── */
+
+const DEMO_LINKEDIN_URL = "https://www.linkedin.com/in/jordanhkimm/";
+
+const DEMO_RESUME: ParsedResume = {
+  fileName: "LinkedIn profile · jordanhkimm",
+  fileSize: 0,
+  method: "rule-based",
+  name: "Jordan Kim",
+  email: "jordan.kim@gmail.com",
+  phone: "+60 12-345 6789",
+  yearsExperience: 4,
+  currentTitle: "Data Analyst",
+  employers: ["Maybank", "Grab"],
+  skills: [
+    "SQL", "Python", "Tableau", "Power BI", "Excel",
+    "Statistical modelling", "Stakeholder communication", "Dashboarding",
+  ],
+  education: ["BSc Computer Science · Universiti Malaya"],
+  certifications: [],
+  rawText: "",
+};
+
+/* What the connector returns as evidence, each carrying the skills it
+   backs. Corroborated because the profile is public and anyone can open
+   it — not verified, because nobody has confirmed the claims on it.
+
+   No cloud certificate here: Jordan does not have one, and that is the
+   credential gap the scan reports. An import that quietly closed the
+   risk it exists to expose would be telling the user what they want to
+   hear. */
 const LINKEDIN_IMPORT: { kind: EvidenceKind; label: string; skills: string[] }[] = [
-  { kind: "record", label: "Data Analyst · Maybank", skills: ["SQL", "Python", "Dashboarding"] },
-  { kind: "record", label: "Analytics Intern · Grab", skills: ["SQL", "Reporting"] },
-  { kind: "certificate", label: "BSc Computer Science · University of Malaya", skills: [] },
+  { kind: "record", label: "Data Analyst · Maybank · 2023–Present", skills: ["SQL", "Python", "Dashboarding", "Stakeholder communication"] },
+  { kind: "record", label: "Analytics Intern · Grab · 2022–2023", skills: ["SQL", "Reporting", "Tableau"] },
+  { kind: "certificate", label: "BSc Computer Science · Universiti Malaya · 2019–2023", skills: [] },
 ];
 
 const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
@@ -273,13 +318,25 @@ type Step = "upload" | "connect" | "profile" | "calibration" | "scan" | "done";
 export function Onboarding({ onComplete, onBack }: OnboardingProps) {
   const [step, setStep] = useState<Step>("upload");
   const [userType, setUserType] = useState("");
-  const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
+  const [parsedResume, setParsedResume] = useState<ParsedResume | null>(DEMO_RESUME);
   const [resumeState, setResumeState] = useState<"idle" | "reading" | "done" | "error">("idle");
   const [resumeError, setResumeError] = useState<string | null>(null);
   const [resumeNote, setResumeNote] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [evidence, setEvidence] = useState<EvidenceItem[]>([]);
-  const [linkDraft, setLinkDraft] = useState("");
+  /* Seeded from the LinkedIn import so the record is populated before
+     the first page renders. Adding by hand still works on top. */
+  const [evidence, setEvidence] = useState<EvidenceItem[]>(
+    LINKEDIN_IMPORT.map((item, i) => ({
+      id: `linkedin-${i + 1}`,
+      kind: item.kind,
+      label: item.label,
+      source: DEMO_LINKEDIN_URL,
+      trust: "corroborated" as const,
+      skills: item.skills,
+      addedAt: "From LinkedIn",
+    })),
+  );
+  const [linkDraft, setLinkDraft] = useState(DEMO_LINKEDIN_URL);
   const [openDoor, setOpenDoor] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState(DEMO_PRESET.currentRole);
   const [customCurrentRole, setCustomCurrentRole] = useState("");
