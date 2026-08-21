@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
+import { dedupeLabels, satisfies } from "../lib/skillMatch";
 
 const TAU = Math.PI * 2;
 
@@ -128,32 +129,22 @@ export function PositionSkillGraph({ position, companyLabel, companyColors, comp
   /* Fit is higher when the candidate's own resume names the skill —
      the posting says it matters, the resume says they have it. */
   const owned = new Set(candidateSkills.map(sk => sk.toLowerCase()));
-  const held = (label: string) => {
-    const words = label.toLowerCase().split(/[^a-z0-9+#]+/).filter(w => w.length > 3);
-    return [...owned].some(o => words.some(w => o.includes(w) || w.includes(o)));
-  };
+
+  /* A posting's strengths list is the match layer's own statement of
+     what this candidate brings to this posting. Re-testing it against
+     the résumé wording and demoting it on a phrasing mismatch is how
+     "Analytical depth" became a skill to learn for a data analyst. */
+  const claimed = new Set(strengths);
+  const held = (label: string) => claimed.has(label) || satisfies(label, candidateSkills);
 
   /* The orbit is what the posting actually asks for. Strengths and gaps
      are only the two ends of that list, so building from them alone put
      everything else — SQL, Python — outside the ring. */
   const asked = [...new Set([...requirements, ...strengths])];
 
-  /* The corpus phrases the same thing several ways — a requirement says
-     "Mentoring experience", the posting's gap list says "Mentoring",
-     its strengths say "Formal people management". Three bodies in one
-     orbit for one idea reads as noise, so near-duplicates collapse. */
-  const significant = (label: string) =>
-    label.toLowerCase().split(/[^a-z0-9+#]+/).filter(w => w.length > 4);
-  const dedupe = (labels: string[]) => {
-    const kept: string[] = [];
-    for (const label of labels) {
-      const words = significant(label);
-      if (!kept.some(k => significant(k).some(w => words.includes(w)))) kept.push(label);
-    }
-    return kept;
-  };
+  const matchedLabels = dedupeLabels(asked.filter(held)).slice(0, 5);
 
-  const matchedSkills: SkillEntry[] = dedupe(asked.filter(held)).slice(0, 5).map(label => {
+  const matchedSkills: SkillEntry[] = matchedLabels.map(label => {
     const meta = skillMetaFor(label);
     const evidenced = owned.has(label.toLowerCase());
     return {
@@ -167,8 +158,11 @@ export function PositionSkillGraph({ position, companyLabel, companyColors, comp
   });
 
   /* Anything the posting asks for that they cannot evidence, plus the
-     blockers the posting names outright. */
-  const gapSkills: GapEntry[] = dedupe([...gaps, ...asked.filter(sk => !held(sk))])
+     blockers the posting names outright — measured against what already
+     matched, so the same idea cannot appear as a strength on one side of
+     the orbit and a gap on the other. "Roadmap thinking" green next to
+     "Roadmap ownership" red is one requirement drawn twice. */
+  const gapSkills: GapEntry[] = dedupeLabels([...gaps, ...asked.filter(sk => !held(sk))], matchedLabels)
     .slice(0, 4)
     .map((label, i) => {
     const meta = gapMetaFor(label);

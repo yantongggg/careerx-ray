@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useCareerProfile } from "../state/careerProfile";
 import { NextStep } from "../state/stages";
-import { corpusFor, requirementCoverage } from "../lib/careerCorpus";
+import { advancementFor, corpusFor, requirementCoverage } from "../lib/careerCorpus";
 import { marketMedian, seniorityBand } from "../lib/careerRisk";
 import type { RoleFamily } from "../lib/roleFamily";
 import type { CareerProfile } from "../lib/profileTypes";
@@ -14,13 +14,22 @@ import type { CareerProfile } from "../lib/profileTypes";
 /* ── The weighting model ──
    One place for the weights. The label, the bar width and the
    arithmetic all read from here, so the number on screen is always the
-   number that was actually computed. */
+   number that was actually computed.
+
+   Five of these judge the offer on its own terms. The sixth asks the
+   only question the rest of the product has been asking since the scan:
+   does this get you closer to the role you named?
+
+   Without it the dashboard scored the job someone is most ready for
+   above the job they are trying to reach — recommending a sideways move
+   and never mentioning the target. */
 const FACTORS = [
-  { key: "dna",   label: "Career DNA alignment", weight: 0.30, desc: "Does the role suit how you work — and can you evidence what it asks for?" },
-  { key: "growth", label: "Skill growth",        weight: 0.25, desc: "Will the role build scarce skills for the next 24 months?" },
-  { key: "pay",    label: "Compensation",        weight: 0.20, desc: "Salary, benefits, runway, and fair-pay benchmark." },
-  { key: "trust",  label: "Employer trust",      weight: 0.15, desc: "Response speed, transparency, graduate ratings, acceptance data." },
-  { key: "life",   label: "Life fit",            weight: 0.10, desc: "Location, commute, stability, flexibility, personal preference." },
+  { key: "dna",    label: "Career DNA alignment", weight: 0.24, desc: "Does the role suit how you work — and can you evidence what it asks for?" },
+  { key: "target", label: "Moves you toward your target", weight: 0.22, desc: "How much closer this puts you to the role you said you want." },
+  { key: "growth", label: "Skill growth",        weight: 0.20, desc: "Will the role build scarce skills for the next 24 months?" },
+  { key: "pay",    label: "Compensation",        weight: 0.16, desc: "Salary, benefits, runway, and fair-pay benchmark." },
+  { key: "trust",  label: "Employer trust",      weight: 0.11, desc: "Response speed, transparency, graduate ratings, acceptance data." },
+  { key: "life",   label: "Life fit",            weight: 0.07, desc: "Location, commute, stability, flexibility, personal preference." },
 ] as const;
 
 type FactorKey = typeof FACTORS[number]["key"];
@@ -30,9 +39,9 @@ type FactorKey = typeof FACTORS[number]["key"];
 
    Three were authored here — Maybank, Grab and Shopee, all analytics
    roles — so a software engineer compared three data jobs they had not
-   applied for. Four of the five sub-scores are now derived from the
-   posting itself; the DNA one is computed per user, which is why the
-   same three offers rank differently for two candidates.
+   applied for. Every sub-score but one is now derived from the posting
+   itself; the DNA one is computed per user, which is why the same
+   offers rank differently for two candidates.
    ──────────────────────────────────────────────────────────────── */
 
 interface OfferView {
@@ -76,6 +85,10 @@ function buildOffers(profile: CareerProfile, appliedIds: string[]): OfferView[] 
       salary: `RM ${(mid / 1000).toFixed(1)}k/mo`,
       monthly: mid,
       sub: {
+        /* Target: the same reading the job list ranks by, so an offer
+           cannot be recommended here for a move the Prescription page
+           calls a detour. */
+        target: Math.round(38 + advancementFor(profile, job) * 58),
         /* Growth: how much room the band leaves above the entry point,
            plus how much of the role is not yet automatable. */
         growth: Math.max(45, Math.min(96, Math.round(
@@ -258,7 +271,7 @@ export function OfferDecisionDashboard({ onNavigate, appliedJobs = {} }: { onNav
               <Sparkles size={17} className="text-primary" />
               <h2 className="font-semibold text-foreground">How {selected.company} scores {selected.total}</h2>
             </div>
-            <p className="text-xs text-muted-foreground mb-4">Your score on each factor, times its weight. The five contributions add up to the total.</p>
+            <p className="text-xs text-muted-foreground mb-4">Your score on each factor, times its weight. Every contribution adds up to the total.</p>
             <div className="space-y-3">
               {FACTORS.map(f => {
                 const score = selected.sub[f.key];

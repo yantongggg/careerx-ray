@@ -25,6 +25,7 @@
 import type { CareerProfile } from "./profileTypes";
 import { detectRoleFamily, FAMILY_LABEL, type RoleFamily } from "./roleFamily";
 import { automationBase, keyCredential, marketMedian, seniorityBand, type SeniorityBand } from "./careerRisk";
+import { satisfies } from "./skillMatch";
 
 /* ── Shapes ──────────────────────────────────────────────────── */
 
@@ -431,7 +432,7 @@ const DATA: FamilyContent = {
       type: "Full-time",
       salaryLow: 8500, salaryHigh: 12000,
       description: "The most senior analyst on the risk team, setting how the function measures credit exposure and mentoring two juniors. The usual last step before managing.",
-      requirements: ["4+ years in analytics", "Statistical modelling", "Mentoring experience", "Regulated-industry exposure preferred"],
+      requirements: ["4+ years in analytics", "Statistical modelling", "Mentoring experience", "Banking or insurance domain exposure"],
       strengths: ["Analytical depth", "Mentoring"],
       gaps: ["Formal people management", "Regulatory reporting"],
       companyColors: pal("maybank").colors, companyGlow: pal("maybank").glow,
@@ -943,27 +944,28 @@ export function buildSalaryLandscape(profile: CareerProfile, futures: CorpusFutu
 
 /* ── Fit scoring ─────────────────────────────────────────────── */
 
+/** Everything this person can point to, as plain strings. */
+export function evidencedSkills(profile: CareerProfile): string[] {
+  return [
+    ...(profile.resume?.skills ?? []),
+    ...profile.evidence.flatMap(e => e.skills ?? []),
+    ...profile.evidence.map(e => e.label),
+  ].filter((x): x is string => typeof x === "string" && x.length > 0);
+}
+
 /**
  * How much of what this posting asks for the person can actually show.
  *
- * The same measure the skill graph draws, so the percentage on a job
- * card and the orbit on the Application Prep page cannot disagree.
+ * Word matching is shared with the skill graph, so the percentage on a
+ * job card and the orbit on the Application Prep page read the same
+ * résumé the same way.
  */
 export function requirementCoverage(profile: CareerProfile, job: CorpusJob): number {
   const asked = [...new Set([...job.requirements, ...job.strengths])];
   if (!asked.length) return 1;
 
-  const held = [
-    ...(profile.resume?.skills ?? []),
-    ...profile.evidence.flatMap(e => e.skills ?? []),
-    ...profile.evidence.map(e => e.label),
-  ].filter((x): x is string => typeof x === "string" && x.length > 0)
-   .map(x => x.toLowerCase());
-
-  const met = asked.filter(req => {
-    const words = req.toLowerCase().split(/[^a-z0-9+#]+/).filter(w => w.length > 3);
-    return held.some(h => words.some(w => h.includes(w) || w.includes(h)));
-  });
+  const held = evidencedSkills(profile);
+  const met = asked.filter(req => satisfies(req, held));
   return met.length / asked.length;
 }
 
