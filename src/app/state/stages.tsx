@@ -21,7 +21,7 @@ export interface StageTool {
      and Interview Coach only mean anything once a job is picked, and
      you pick one on the Jobs page — a card here just lands people on
      "choose a job first". They stay in PAGE_ORDER so the forward and
-     back chain through Apply still runs jobs → prep → coach → offers. */
+     back chain through Apply still runs jobs → prep → coach. */
   viaJob?: boolean;
 }
 
@@ -90,12 +90,16 @@ export const JOURNEY: JourneyStage[] = [
     id: "stage-apply", num: "05", label: "Apply",
     color: "#0D9488", tint: "rgba(13,148,136,0.07)", icon: Briefcase,
     question: "Where can I get hired today?",
-    desc: "Find the job, tailor for it, rehearse it, and choose between what comes back.",
+    desc: "Find the job, tailor your application to it, and rehearse the interview it will actually run.",
     tools: [
       { page: "jobs",       label: "Jobs + Applications", desc: "Matched roles ranked by your real readiness, not keyword overlap.", icon: Briefcase },
       { page: "apply-prep", label: "Application Prep",    desc: "Resume and cover letter tailored to the job you picked.", icon: FileText, viaJob: true },
       { page: "coach",      label: "Interview Coach",     desc: "Rehearse that job's interview, built from its actual requirements.", icon: Video, viaJob: true },
-      { page: "offers",     label: "Offer Decision AI",   desc: "Once offers land, compare them on long-term fit, not starting salary.", icon: Scale },
+      /* Offer Decision AI is hidden. Removing it here takes it out of the
+         journey rail, the stage hub and the forward/back chain in one
+         move, because PAGE_ORDER is derived from this list. The route and
+         the page itself are untouched, so it comes back by restoring
+         this line. */
     ],
   },
 ];
