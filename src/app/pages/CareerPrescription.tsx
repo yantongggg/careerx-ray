@@ -350,55 +350,10 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
           </div>
         </div>
 
-        {/* ── The one credential that opens the most doors ──
-             This was "Prescribed Certifications": three rows, of which
-             two were not certifications at all, with hand-written
-             "salary impact" labels and every item already stated in the
-             plan above with better reasoning. One gate now, counted
-             against the postings the user can go and read on the next
-             page — which is the part the plan does not tell them. */}
-        <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Award size={16} className="text-muted-foreground" />
-            <h3 className="text-lg font-semibold text-foreground">What most of your matched jobs ask for</h3>
-          </div>
-
-          <p className="text-xl font-semibold text-foreground leading-snug max-w-2xl">
-            {credential.credential}
-          </p>
-
-          {credential.requiredBy.length ? (
-            <>
-              <p className="text-base text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-                <strong className="text-foreground tabular-nums">
-                  {credential.requiredBy.length} of your {credential.total}
-                </strong>{" "}
-                matched postings screen on it. That is not our opinion — it is
-                written into the requirements you can go and read.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {credential.requiredBy.map(job => (
-                  <span key={job} className="text-sm text-foreground bg-muted border border-border px-3 py-1.5 rounded-lg">
-                    {job}
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="text-base text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-              None of your matched postings name it outright, which means it is
-              worth having but is not what is stopping you. The plan above is the
-              better use of your next month.
-            </p>
-          )}
-
-          <button
-            onClick={() => onNavigate?.("jobs")}
-            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-          >
-            See the postings <ArrowRight size={14} />
-          </button>
-        </div>
+        {/* The credential panel — "What most of your matched jobs ask
+            for" — is hidden. `credential` is still derived above and
+            still feeds the 30-day and 90-day tasks, so the plan keeps
+            naming the gate even though the panel does not. */}
 
         {/* ── Recommended Roles ── */}
         <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
