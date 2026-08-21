@@ -180,7 +180,22 @@ export function OfferDecisionDashboard({ onNavigate, appliedJobs = {} }: { onNav
 
   if (!scored.length) return <NoOffersYet onNavigate={onNavigate} />;
 
-  const best = scored.reduce((a, b) => (b.total > a.total ? b : a));
+  /* Two offers can land on the same total, and picking with `b > a`
+     resolves that by array order — the winner would be whichever the
+     job list happened to rank first, which is not a reason. Ties break
+     on the factor this product exists to weigh: the one that moves you
+     further toward the role you named, then on pay. */
+  const rank = [...scored].sort((a, b) =>
+    b.total - a.total || b.sub.target - a.sub.target || b.monthly - a.monthly,
+  );
+  const best = rank[0];
+  const runnerUp = rank[1];
+  /* Inside a couple of points is a close call, and saying so is more
+     use than a confident single answer the numbers do not support. */
+  const tooCloseToCall = runnerUp !== undefined && best.total - runnerUp.total <= 2;
+  const payWeightPct = Math.round(FACTORS.find(f => f.key === "pay")!.weight * 100);
+  const targetRole = profile.targetRole || "the role you named";
+
   const [selectedCompany, setSelectedCompany] = useState(best.company);
   const selected = scored.find(o => o.company === selectedCompany) ?? best;
 
@@ -203,9 +218,11 @@ export function OfferDecisionDashboard({ onNavigate, appliedJobs = {} }: { onNav
               <p className="text-2xl font-bold mt-1">{best.company}</p>
               <p className="text-sm text-emerald-300 mt-1">Highest weighted fit · {best.total}%</p>
               <p className="text-xs text-slate-300 mt-3 leading-relaxed">
-                {best.monthly < Math.max(...scored.map(o => o.monthly))
-                  ? `Not the biggest salary in the set — it wins on the other 80% of the weighting.`
-                  : `Leads on both pay and long-term fit.`}
+                {tooCloseToCall
+                  ? `${runnerUp.company} scores ${runnerUp.total}% — close enough that this is your call, not the model's. ${best.company} edges it on moving you toward ${targetRole}.`
+                  : best.monthly < Math.max(...scored.map(o => o.monthly))
+                    ? `Not the biggest salary in the set — it wins on the other ${100 - payWeightPct}% of the weighting.`
+                    : `Leads on both pay and long-term fit.`}
               </p>
             </div>
           </div>

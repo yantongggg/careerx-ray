@@ -120,6 +120,7 @@ const pageLabels: Record<Page, string> = {
    once. Ids come from the data-family corpus. */
 const DEMO_APPLICATIONS: Record<string, string> = {
   "da-airasia-dsm": new Date(Date.now() - 11 * 864e5).toISOString(),
+  "da-shopee-mgr": new Date(Date.now() - 7 * 864e5).toISOString(),
   "da-cimb-snr": new Date(Date.now() - 4 * 864e5).toISOString(),
 };
 
