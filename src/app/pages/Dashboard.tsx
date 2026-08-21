@@ -17,13 +17,14 @@ const RISK_ACTION: Record<string, { label: string; page: string }> = {
 
 // ─── Score explanation modals ───────────────────────────────────────────────
 
-type MetricKey = "health" | "ai" | "salary" | "promotion";
+type MetricKey = "health" | "ai" | "salary" | "promotion" | "proof";
 
 const METRIC_TITLE: Record<MetricKey, string> = {
   health: "Career Health Score",
   ai: "AI Exposure",
   salary: "Position vs Market",
   promotion: "Promotion Readiness",
+  proof: "Proof & Credentials",
 };
 
 /* The modal shows the derivation, not a second hand-written copy of the
@@ -84,9 +85,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
      to be three separate hardcoded copies — the headline said 4 open
      risks while the footer of the same page said 5. */
   const metricCards = [
-    { key: "health"    as MetricKey, label: "Career Health",   value: String(scorecard.careerHealth), unit: "/100",
-      summary: "Computed from your scan — same answers, same score.",
-      color: scorecard.careerHealth >= 80 ? "text-emerald-600" : "text-amber-500", bg: scorecard.careerHealth >= 80 ? "bg-emerald-50" : "bg-amber-50", icon: Shield },
+    /* Career Health moved into the black panel above, which was
+       already stating it in prose. This slot asks the question the row
+       was missing: can this record clear a screen at all? */
+    { key: "proof"     as MetricKey, label: "Proof & Credentials", value: scorecard.proof.label, unit: scorecard.proof.unit,
+      summary: scorecard.proof.ok
+        ? "Your record clears the gate and the depth minimum."
+        : `${scorecard.proof.proofCount} sources on file, ${scorecard.proof.gateCount} of them a role gate.`,
+      color: scorecard.proof.ok ? "text-emerald-600" : "text-amber-500", bg: scorecard.proof.ok ? "bg-emerald-50" : "bg-amber-50", icon: Shield },
     { key: "ai"        as MetricKey, label: "AI Exposure",     value: scorecard.aiExposure.label, unit: "",
       summary: "Computed from your scan — same answers, same score.",
       color: scorecard.aiExposure.percent >= 55 ? "text-red-500" : "text-amber-500", bg: scorecard.aiExposure.percent >= 55 ? "bg-red-50" : "bg-amber-50", icon: Brain },
@@ -121,7 +127,19 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const openCount = attentionRows.filter(r => r.risk).length;
 
   const firstName = displayName === "Your name" ? "" : displayName.split(" ")[0];
-  const activeMetric = modal ? metricCards.find(m => m.key === modal) : undefined;
+
+  /* Career Health has no card in the row any more, so looking the modal
+     up in the row alone would leave the header's own "Why this?"
+     opening nothing. */
+  const healthMetric = {
+    value: `${scorecard.careerHealth}/100`,
+    summary: "Computed from your scan — same answers, same score.",
+  };
+  const activeMetric = modal === "health"
+    ? healthMetric
+    : modal
+      ? metricCards.find(m => m.key === modal)
+      : undefined;
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -132,7 +150,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
         {/* ── MRI Header ── */}
         <div className="bg-slate-950 text-white rounded-2xl p-6">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center">
@@ -146,14 +164,37 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               <h1 className="text-3xl font-bold text-white leading-tight">
                 {firstName ? `${firstName}, your` : "Your"} career has {risks.length} open risk{risks.length === 1 ? "" : "s"}.
               </h1>
+              {/* Keyed off the risks as well as the score. Reading only
+                  the score, a healthy number printed beside four open
+                  risks told the reader they were fine and listed four
+                  reasons they were not. */}
               <p className="text-slate-300 text-base mt-2.5 max-w-2xl leading-relaxed">
-                Your Career Health Score is <strong className="text-white">{scorecard.careerHealth}/100</strong>
-                {scorecard.careerHealth < 80
-                  ? " — below the threshold that typically leads to smooth promotion and market salary."
-                  : " — comfortably in the range that supports promotion and market pay."}{" "}
+                {risks.length === 0
+                  ? "Nothing crossed a threshold, which is rarer than it sounds."
+                  : scorecard.careerHealth < 80
+                    ? "That is below the threshold that typically leads to smooth promotion and market salary."
+                    : "The score is holding up — these are what will pull it down if nothing changes."}{" "}
                 Here&apos;s what we found, why it matters, and what to do about it.
               </p>
             </div>
+
+            {/* The score used to appear twice on this page — in the
+                sentence above and again as the first of the four cards
+                below. It reads once, here, and the cards below are four
+                different questions rather than three plus a repeat. */}
+            <button
+              onClick={() => setModal("health")}
+              className="flex-shrink-0 rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-left transition hover:bg-white/10"
+              title="Why this score?"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Career Health</p>
+              <p className="mt-1 text-5xl font-bold tabular-nums leading-none text-white">
+                {scorecard.careerHealth}<span className="text-xl font-normal text-slate-400">/100</span>
+              </p>
+              <span className="mt-2.5 inline-flex items-center gap-1 text-sm font-semibold text-slate-300 hover:text-white">
+                Why this? <ArrowRight size={12} />
+              </span>
+            </button>
           </div>
         </div>
 

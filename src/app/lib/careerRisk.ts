@@ -74,8 +74,10 @@ export interface Scorecard {
   aiExposure: { label: string; percent: number };
   vsMarket: { label: string; percent: number; conclusive: boolean };
   promotionReady: number;
+  /** Whether the record can clear a screen, and what is short if not. */
+  proof: { label: string; unit: string; gateCount: number; proofCount: number; ok: boolean };
   /** Per-metric plain-English derivation, for the "Why this?" panels. */
-  explain: Record<"health" | "ai" | "salary" | "promotion", string[]>;
+  explain: Record<"health" | "ai" | "salary" | "promotion" | "proof", string[]>;
 }
 
 export type RiskCheckStatus = "open" | "clear" | "not-measured" | "not-applicable";
@@ -434,8 +436,10 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
            with sixteen evidence items was told "1 evidence item
            missing" when what is missing is one specific credential, not
            quantity. Name the thing instead of counting it. */
+        /* KEY_CREDENTIAL entries start with their own article, so
+           prefixing them reads as "No a cloud certification on file". */
         shortfall: missingGate
-          ? `No ${KEY_CREDENTIAL[readiness.family]} on file`
+          ? `Missing ${KEY_CREDENTIAL[readiness.family]}`
           : `${readiness.additionsNeeded} more proof source${readiness.additionsNeeded === 1 ? "" : "s"} needed`,
       },
       calculation: [
@@ -770,6 +774,7 @@ export function deriveScorecard(profile: CareerProfile): Scorecard {
   const salaryRisk = risks.find(r => r.id === "salary");
   const salaryBenchmark = getSalaryBenchmark(profile);
   const salaryPct = salaryBenchmark.percent;
+  const readiness = getReadinessBenchmark(profile);
 
   // Career health: start at 100, subtract a weighted penalty per open risk.
   const penalty: Record<Severity, number> = { critical: 14, high: 9, medium: 5, low: 2 };
@@ -805,6 +810,18 @@ export function deriveScorecard(profile: CareerProfile): Scorecard {
       conclusive: salaryBenchmark.conclusive,
     },
     promotionReady,
+    /* Career Health was on the dashboard twice — as the headline of the
+       black panel and again as the first of the four cards. This took
+       its place: the record's depth is not the same question as whether
+       it clears a gate, and the gate is what actually stops an
+       application. */
+    proof: {
+      label: readiness.additionsNeeded > 0 ? String(readiness.additionsNeeded) : "Solid",
+      unit: readiness.additionsNeeded > 0 ? (readiness.additionsNeeded === 1 ? " gap" : " gaps") : "",
+      gateCount: readiness.gateCount,
+      proofCount: readiness.proofCount,
+      ok: readiness.additionsNeeded === 0,
+    },
     explain: {
       health: [
         `Started at 100 and subtracted a weighted penalty for each of your ${risks.length} open risk${risks.length === 1 ? "" : "s"}.`,
@@ -824,6 +841,13 @@ export function deriveScorecard(profile: CareerProfile): Scorecard {
           : !salaryBenchmark.conclusive
             ? ["The open-ended salary range crosses the benchmark, so an exact salary-position conclusion cannot be calculated."]
           : [`Your stated range sits within 5% of, or above, the market median for ${family} roles at your level.`],
+      proof: [
+        `Counted ${readiness.proofCount} evidence source${readiness.proofCount === 1 ? "" : "s"} on file, and ${readiness.gateCount} of them count as a role gate for ${readiness.family}.`,
+        `The gate for this family is ${KEY_CREDENTIAL[readiness.family]}; minimum useful depth is ${RISK_POLICY.proofMinimum} sources.`,
+        readiness.additionsNeeded > 0
+          ? `Short by ${readiness.additionsNeeded}. Depth is not the constraint here — the gate is, and one item can close it.`
+          : `Both the gate and the depth minimum are met, so nothing here is blocking an application.`,
+      ],
       promotion: [
         `Averaged your Leadership ${Math.round(dim(profile, "Leadership"))}, Strategic ${Math.round(dim(profile, "Strategic"))} and Communication ${Math.round(dim(profile, "Communication"))} scores, weighted at 0.8.`,
         `Added +${evidenceBonus * 1.5} for evidence on file.`,

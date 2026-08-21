@@ -181,10 +181,8 @@ const LINKEDIN_IMPORT: { kind: EvidenceKind; label: string; skills: string[] }[]
 const GITHUB_IMPORT: { label: string; language: string; active: boolean }[] = [
   { label: "fraud-dashboard — segmentation and alerting for the fraud ops team", language: "Python", active: true },
   { label: "maybank-kpi-pipeline — scheduled reporting, replaced a manual weekly job", language: "SQL", active: true },
-  { label: "churn-explorer — cohort analysis with a decision attached", language: "Python", active: true },
+  { label: "churn-explorer — cohort analysis with a decision attached", language: "Python", active: false },
   { label: "dbt-starter — a transformation layer worth reusing", language: "SQL", active: false },
-  { label: "ab-test-toolkit — sample sizing and readouts the business can follow", language: "Python", active: false },
-  { label: "sql-style-guide — the conventions the analytics team writes to", language: "SQL", active: false },
 ];
 
 const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
