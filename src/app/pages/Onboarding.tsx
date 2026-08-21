@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { BrandMark } from "../layout/BrandMark";
 import {
-  Upload, Linkedin, ChevronRight, ChevronLeft,
+  Upload, Linkedin, Github, ChevronRight, ChevronLeft,
   BarChart3, Check, Loader2, Briefcase, Target, DollarSign,
   Sparkles, FileText, Globe, Zap, Brain, GraduationCap,
   Trophy, FolderOpen, AlertCircle, ShieldCheck, X,
@@ -73,10 +73,16 @@ const DOOR_RESUME: EvidenceDoor = {
   input: "pdf", kind: "resume", trust: "self-declared",
 };
 const DOOR_LINK: EvidenceDoor = {
-  id: "links", name: "LinkedIn, GitHub or personal site", icon: Linkedin,
+  id: "links", name: "LinkedIn or personal site", icon: Linkedin,
   brand: "bg-[#0077B5]", hover: "hover:bg-[#006097]",
   desc: "Paste the URL. Anyone can open it and check, so it counts for more than a claim.",
   input: "link", kind: "link", trust: "corroborated",
+};
+const DOOR_GITHUB: EvidenceDoor = {
+  id: "github", name: "GitHub", icon: Github,
+  brand: "bg-[#24292F]", hover: "hover:bg-[#3a4048]",
+  desc: "Your public repositories, read from GitHub's own API. Commits are public record.",
+  input: "link", kind: "project", trust: "corroborated",
 };
 
 /* What a LinkedIn connector returns. Stands in for the integration so
@@ -106,6 +112,7 @@ const DOOR_LINK: EvidenceDoor = {
    ──────────────────────────────────────────────────────────────── */
 
 const DEMO_LINKEDIN_URL = "https://www.linkedin.com/in/jordanhkimm/";
+const DEMO_GITHUB_URL = "https://github.com/jordanhkimm";
 
 const DEMO_RESUME: ParsedResume = {
   fileName: "LinkedIn profile · jordanhkimm",
@@ -146,6 +153,20 @@ const LINKEDIN_IMPORT: { kind: EvidenceKind; label: string; skills: string[] }[]
   { kind: "record", label: "Runner-up · Maybank Data Hackathon 2024", skills: ["Experiment design", "Python"] },
 ];
 
+/* What the GitHub connector returns for the demo persona. The live
+   connector on the Career Evidence page reads the real public API for a
+   real handle; this stands in for it here, because the persona is not a
+   real account. Same shape either way.
+
+   "Active" means pushed to in the last 90 days — the same window the
+   live connector uses. */
+const GITHUB_IMPORT: { label: string; language: string; active: boolean }[] = [
+  { label: "fraud-dashboard — segmentation and alerting for the fraud ops team", language: "Python", active: true },
+  { label: "maybank-kpi-pipeline — scheduled reporting, replaced a manual weekly job", language: "SQL", active: true },
+  { label: "churn-explorer — cohort analysis with a decision attached", language: "Python", active: false },
+  { label: "dbt-starter — a transformation layer worth reusing", language: "SQL", active: false },
+];
+
 const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
   data: [
     { id: "project", name: "A piece of analysis you built", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
@@ -153,7 +174,7 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
     { id: "certificate", name: "A data or cloud certificate", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
       desc: "AWS, Google Cloud, Azure, Coursera — or a university transcript.", input: "pdf", kind: "certificate", trust: "self-declared",
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
-    DOOR_LINK, DOOR_RESUME,
+    DOOR_LINK, DOOR_GITHUB, DOOR_RESUME,
   ],
   software: [
     { id: "project", name: "Something you shipped", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
@@ -161,7 +182,7 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
     { id: "certificate", name: "A technical certificate", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
       desc: "Cloud, security, or a completed course. Diplomas and TVET count.", input: "pdf", kind: "certificate", trust: "self-declared",
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
-    DOOR_LINK, DOOR_RESUME,
+    DOOR_LINK, DOOR_GITHUB, DOOR_RESUME,
   ],
   design: [
     { id: "portfolio", name: "A case study from your portfolio", icon: FolderOpen, brand: "bg-[#115E50]", hover: "hover:bg-[#0d4a3f]",
@@ -187,7 +208,7 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
     { id: "certificate", name: "A qualification", icon: Trophy, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
       desc: "A degree, a diploma, or a product or agile certification.", input: "pdf", kind: "certificate", trust: "self-declared",
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
-    DOOR_LINK, DOOR_RESUME,
+    DOOR_LINK, DOOR_GITHUB, DOOR_RESUME,
   ],
   business: [
     { id: "certificate", name: "Your licence or registration", icon: ShieldCheck, brand: "bg-[#8A7038]", hover: "hover:bg-[#75602f]",
@@ -217,7 +238,7 @@ const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {
       verifyHint: "Add the issuer's verification link and this becomes Verified." },
     { id: "reference", name: "A letter from an employer", icon: GraduationCap, brand: "bg-[#4F46E5]", hover: "hover:bg-[#4338ca]",
       desc: "A reference or confirmation of employment.", input: "pdf", kind: "reference", trust: "corroborated" },
-    DOOR_LINK, DOOR_RESUME,
+    DOOR_LINK, DOOR_GITHUB, DOOR_RESUME,
   ],
 };
 
@@ -329,20 +350,12 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
   const [resumeError, setResumeError] = useState<string | null>(null);
   const [resumeNote, setResumeNote] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  /* Seeded from the LinkedIn import so the record is populated before
-     the first page renders. Adding by hand still works on top. */
-  const [evidence, setEvidence] = useState<EvidenceItem[]>(
-    LINKEDIN_IMPORT.map((item, i) => ({
-      id: `linkedin-${i + 1}`,
-      kind: item.kind,
-      label: item.label,
-      source: DEMO_LINKEDIN_URL,
-      trust: "corroborated" as const,
-      skills: item.skills,
-      addedAt: "From LinkedIn",
-    })),
-  );
-  const [linkDraft, setLinkDraft] = useState(DEMO_LINKEDIN_URL);
+  /* Empty until a source is connected. The LinkedIn entries used to
+     be seeded at load, which meant the record claimed a connection the
+     user had never made — and it stayed there even if they skipped the
+     step entirely. */
+  const [evidence, setEvidence] = useState<EvidenceItem[]>([]);
+  const [linkDraft, setLinkDraft] = useState("");
   const [openDoor, setOpenDoor] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState(DEMO_PRESET.currentRole);
   const [customCurrentRole, setCustomCurrentRole] = useState("");
@@ -533,6 +546,17 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
         addEvidenceItem({ ...door, kind: item.kind, trust: "corroborated" }, item.label, url, item.skills),
       );
       demoToast(`Imported ${LINKEDIN_IMPORT.length} entries from LinkedIn ✓`);
+    } else if (/github\.com/i.test(host)) {
+      GITHUB_IMPORT.forEach(repo =>
+        addEvidenceItem(
+          { ...door, kind: "project", trust: "corroborated" },
+          repo.active ? `${repo.label} · active` : repo.label,
+          url,
+          [repo.language],
+        ),
+      );
+      const active = GITHUB_IMPORT.filter(r => r.active).length;
+      demoToast(`Imported ${GITHUB_IMPORT.length} public repositories · ${active} active in the last 90 days ✓`);
     } else {
       addEvidenceItem(door, host, url);
     }
@@ -805,7 +829,13 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                           </label>
                         ) : (
                           <button
-                            onClick={() => setOpenDoor(isOpen ? null : door.id)}
+                            onClick={() => {
+                              const next = isOpen ? null : door.id;
+                              setOpenDoor(next);
+                              if (next === "github") setLinkDraft(DEMO_GITHUB_URL);
+                              else if (next === "links") setLinkDraft(DEMO_LINKEDIN_URL);
+                              else setLinkDraft("");
+                            }}
                             className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors flex-shrink-0 ${added ? "bg-white text-emerald-700 border border-emerald-200" : `${door.brand} ${door.hover} text-white`}`}
                           >
                             {isOpen ? "Cancel" : added ? "Add another" : "Add link"}
@@ -819,7 +849,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                             value={linkDraft}
                             onChange={e => setLinkDraft(e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") handleDoorLink(door); }}
-                            placeholder="https://linkedin.com/in/yourname"
+                            placeholder={door.id === "github" ? "https://github.com/yourname" : "https://linkedin.com/in/yourname"}
                             className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                           <button
