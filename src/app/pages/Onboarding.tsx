@@ -160,9 +160,15 @@ const LINKEDIN_IMPORT: { kind: EvidenceKind; label: string; skills: string[] }[]
   { kind: "certificate", label: "BSc Computer Science · Universiti Malaya · 2019–2023", skills: [] },
   /* Some leadership, but not the formal kind a manager posting asks
      for. Leading a project is not the same as managing people, and the
-     gap list should keep saying so. */
-  { kind: "project", label: "Led the fraud dashboard rebuild · 3 analysts", skills: ["Mentoring", "Stakeholder communication", "Data modelling"] },
+     gap list should keep saying so — none of these entries name people
+     management, headcount or a budget, because Jordan has none of
+     those and they are the three gaps the scan reports. */
+  { kind: "project", label: "Led the fraud dashboard rebuild · 3 analysts, 8 weeks", skills: ["Mentoring", "Stakeholder communication", "Data modelling"] },
+  { kind: "project", label: "Led the churn model rollout · 2 squads, shipped to production", skills: ["Machine learning", "Model evaluation", "Experiment design"] },
+  { kind: "project", label: "Rebuilt the weekly exec reporting pack · cut turnaround from 2 days to 20 minutes", skills: ["Dashboarding", "SQL", "Stakeholder communication"] },
+  { kind: "record", label: "Ran analytics onboarding for 4 new joiners · 2024–2025", skills: ["Mentoring", "Product analytics"] },
   { kind: "record", label: "Runner-up · Maybank Data Hackathon 2024", skills: ["Experiment design", "Python", "Machine learning", "Model evaluation"] },
+  { kind: "record", label: "Speaker · Malaysia Data Community meetup 2025", skills: ["Stakeholder communication", "Analytical problem solving"] },
 ];
 
 /* What the GitHub connector returns for the demo persona. The live
@@ -175,8 +181,10 @@ const LINKEDIN_IMPORT: { kind: EvidenceKind; label: string; skills: string[] }[]
 const GITHUB_IMPORT: { label: string; language: string; active: boolean }[] = [
   { label: "fraud-dashboard — segmentation and alerting for the fraud ops team", language: "Python", active: true },
   { label: "maybank-kpi-pipeline — scheduled reporting, replaced a manual weekly job", language: "SQL", active: true },
-  { label: "churn-explorer — cohort analysis with a decision attached", language: "Python", active: false },
+  { label: "churn-explorer — cohort analysis with a decision attached", language: "Python", active: true },
   { label: "dbt-starter — a transformation layer worth reusing", language: "SQL", active: false },
+  { label: "ab-test-toolkit — sample sizing and readouts the business can follow", language: "Python", active: false },
+  { label: "sql-style-guide — the conventions the analytics team writes to", language: "SQL", active: false },
 ];
 
 const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {

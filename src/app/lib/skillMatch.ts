@@ -69,6 +69,18 @@ export function distinguishing(label: string): string[] {
 }
 
 /**
+ * Whether a line of a job posting is talking about this skill.
+ *
+ * Generic words are excluded, or "Data modelling" would match "Data
+ * quality testing" on the word they share and the gap card would cite a
+ * posting that never asked for it.
+ */
+export function mentions(skill: string, text: string): boolean {
+  const lowered = text.toLowerCase();
+  return distinguishing(skill).some(w => pairs(w, lowered));
+}
+
+/**
  * Collapse labels that name the same requirement in different words.
  *
  * A posting says "Mentoring experience" in its requirements and

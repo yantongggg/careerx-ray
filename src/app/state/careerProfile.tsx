@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState, ReactNode } from "react";
 import { EMPTY_PROFILE, type CareerProfile, type EvidenceItem, type ParsedResume } from "../lib/profileTypes";
+import { gapContextFor } from "../lib/careerCorpus";
 import { deriveBlindSpots, deriveRiskCategoryChecks, deriveRisks, deriveScorecard, deriveTargetGaps, getSalaryBenchmark, type BlindSpot, type Risk, type RiskCategoryCheck, type SalaryBenchmark, type Scorecard, type TargetGap } from "../lib/careerRisk";
 
 /* ────────────────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ export function CareerProfileProvider({ children }: { children: ReactNode }) {
     riskChecks: deriveRiskCategoryChecks(profile),
     blindSpots: deriveBlindSpots(profile),
     salaryBenchmark: getSalaryBenchmark(profile),
-    targetGaps: deriveTargetGaps(profile),
+    targetGaps: deriveTargetGaps(profile, gapContextFor(profile)),
     scorecard: deriveScorecard(profile),
     setProfile: setProfileState,
     addEvidence,

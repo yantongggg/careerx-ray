@@ -461,11 +461,11 @@ function AppRouter() {
               <EmbeddedDoc
                 onNavigate={navigate}
                 title="Next plan · 30 / 90 / 120 days"
-                lede="What comes next is not more AI agents. Three gated phases: what has to be collected, what has to be true before the next one starts, and what happens when it is not."
+                lede="Three gates. Each phase has one thing that has to be true before the next one starts — and a stated answer for when it is not."
                 src="/docs/next-plan.en.html"
                 srcZh="/docs/next-plan.html"
                 maxWidth={1720}
-                height={1900}
+                height={1320}
               />
             )}
             {page === "employer"        && <EmployerDashboard />}

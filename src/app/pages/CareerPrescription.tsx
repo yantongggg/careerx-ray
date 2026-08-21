@@ -10,7 +10,7 @@ import { useCareerProfile } from "../state/careerProfile";
 import { NextStep } from "../state/stages";
 import { corpusFor, credentialDemand, type Corpus } from "../lib/careerCorpus";
 import type { CareerProfile } from "../lib/profileTypes";
-import type { Risk, Scorecard } from "../lib/careerRisk";
+import type { Risk, Scorecard, TargetGap } from "../lib/careerRisk";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ interface TreatmentPhase {
    same fifteen.
    ──────────────────────────────────────────────────────────────── */
 
-function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[], gate: string): Record<Phase, TreatmentPhase> {
+function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[], gate: string, topGap?: TargetGap): Record<Phase, TreatmentPhase> {
   const target = profile.targetRole || "your target role";
   const cert = gate;
   const skill1 = corpus.targetSkills[0] ?? "the core skill of the role";
@@ -86,19 +86,29 @@ function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[], g
   return {
     "30day": {
       label: "30-Day Sprint",
-      goal: `Stop the bleeding. Fix what is costing you money or opportunities right now.`,
+      goal: `Start the thing with the longest lead time, and fix what costs you nothing to fix.`,
       scoreGain: 4,
       color: "#3B82F6", bg: "bg-blue-50", border: "border-blue-200",
+      /* The sprint used to open with "Open a pay conversation with your
+         manager" whenever a salary risk was open. For someone whose
+         stated goal is a different role, that is the wrong first move
+         and the hardest one socially — the leverage in a move comes
+         from the offer, not from asking where you already are.
+
+         It opens instead on the gap the previous page just named as the
+         single biggest blocker, so the two pages read as one thought. */
       tasks: [
-        salaryRisk
-          ? { id: "t1", label: "Open a pay conversation with your manager", rationale: `${salaryRisk.comparison.shortfall} Every month you wait compounds the deficit and costs you leverage.`, effort: "1 hr", impact: "Critical", category: "Salary" }
-          : { id: "t1", label: "Write down what you want from the next 12 months", rationale: "Your pay is not the current problem, so direction is. A target you have not written down is a wish.", effort: "1 hr", impact: "High", category: "Direction" },
+        topGap
+          ? { id: "t1", label: topGap.action, rationale: `${topGap.ifIgnored} This one takes ${topGap.timeToClose}, so month one is simply starting it.`, effort: "1 hr", impact: "Critical", category: "Biggest gap" }
+          : { id: "t1", label: "Write down what you want from the next 12 months", rationale: "Nothing is blocking you that we can name, so direction is the work. A target you have not written down is a wish.", effort: "1 hr", impact: "High", category: "Direction" },
         { id: "t2", label: `Start on: ${cert}`, rationale: `This is what ${target} postings screen on hardest. Putting a date on it is what makes it real.`, effort: "1 hr", impact: "Critical", category: "Certification" },
         { id: "t3", label: `Rewrite your résumé headline around ${target}`, rationale: "Your current headline describes what you have done. It should describe what you are moving toward — screeners read it in four seconds.", effort: "2 hrs", impact: "High", category: "Visibility" },
         hasEvidence
           ? { id: "t4", label: "Get one self-declared item verified", rationale: "A verified claim counts in full; a self-declared one barely counts at all. Verification is the cheapest score you will get.", effort: "2 hrs", impact: "High", category: "Evidence" }
           : { id: "t4", label: "Add your first piece of evidence", rationale: "Your record is empty, which means every recommendation here rests on your word alone. One verified item changes that.", effort: "2 hrs", impact: "Critical", category: "Evidence" },
-        { id: "t5", label: "Reconnect with five people who have seen you work", rationale: "Most roles at this level are filled through people who can vouch for you. Reach decays quietly if you never use it.", effort: "2 hrs", impact: "Medium", category: "Network" },
+        salaryRisk
+          ? { id: "t5", label: "Decide your number before anyone asks you for it", rationale: `${salaryRisk.comparison.shortfall} Whoever says a figure first sets the anchor, and right now you would anchor on a salary that is already behind the market.`, effort: "1 hr", impact: "High", category: "Salary" }
+          : { id: "t5", label: "Reconnect with five people who have seen you work", rationale: "Most roles at this level are filled through people who can vouch for you. Reach decays quietly if you never use it.", effort: "2 hrs", impact: "Medium", category: "Network" },
       ],
     },
     "90day": {
@@ -180,14 +190,14 @@ const severityColors: Record<string, string> = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const { profile, risks, scorecard } = useCareerProfile();
+  const { profile, risks, scorecard, targetGaps } = useCareerProfile();
   const corpus = corpusFor(profile);
   const diagnosis = buildDiagnosis(risks, scorecard);
   const scoreProjection = diagnosis.projection;
   const credential = credentialDemand(corpus, profile.targetRole);
   const recommendedRoles = buildRecommendedRoles(corpus);
   const expectedOutcome = buildExpectedOutcome(corpus, diagnosis.projected);
-  const treatment = buildTreatment(profile, corpus, risks, credential.credential);
+  const treatment = buildTreatment(profile, corpus, risks, credential.credential, targetGaps[0]);
 
   const [activePhase, setActivePhase] = useState<Phase>("30day");
   const [checked, setChecked] = useState<Record<string, boolean>>({});

@@ -351,6 +351,17 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
   const moves = marketMoves[family];
   const trendData = buildTrendData(moves.series);
 
+  /* Averaged from the same lists the two columns below are drawn from,
+     so the sentence at the top and the boxes under it cannot disagree. */
+  const avgChange = (rows: { change: string }[]) => {
+    const nums = rows.map(r => parseInt(r.change, 10)).filter(n => !Number.isNaN(n));
+    if (!nums.length) return "flat";
+    const mean = Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
+    return `${mean > 0 ? "+" : ""}${mean}%`;
+  };
+  const avgDeclining = avgChange(moves.declining);
+  const avgGrowing = avgChange(moves.growing);
+
   /* Blind spots are about the role you WANT. The risks on your current
      role live on the dashboard — this page would just restate them
      otherwise, which is exactly what it used to do. */
@@ -360,13 +371,13 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
     icon: severityIcon[gap.severity],
     headline: gap.headline,
     humanContext: gap.why,
-    whyItMatters: gap.sharedBy + ".",
-    ifIgnored: `Applications for ${targetRole} keep reaching the same filter, and nothing in your record changes the outcome.`,
+    whyItMatters: gap.why,
+    ifIgnored: gap.ifIgnored,
     /* Only worth showing when it says something the headline did not.
        The rule set often makes the gap and the action the same sentence. */
     recommendedAction: gap.action.trim() === gap.headline.trim() ? null : gap.action,
     timeToFix: gap.timeToClose,
-    evidence: `Derived from the ${currentRole} → ${targetRole} transition rules and the evidence on your profile.`,
+    evidence: gap.basis,
   }));
 
   const urgentCount = spots.filter(sp => sp.severity === "critical" || sp.severity === "high").length;
@@ -505,12 +516,11 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                 {isOpen && (
                   <div className="border-t border-border">
 
-                    {/* Context */}
-                    <div className="px-6 py-5">
-                      <p className="text-base text-foreground leading-relaxed">{spot.humanContext}</p>
-                    </div>
-
-                    <div className="border-t border-border grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border">
+                    {/* The standalone context paragraph used to sit here
+                        showing the same sentence as "Why this matters"
+                        directly beneath it. Three panels, three
+                        different things. */}
+                    <div className="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border">
 
                       {/* Why it matters */}
                       <div className="px-6 py-5">
@@ -568,20 +578,28 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
             </div>
             <span className="text-xs font-semibold text-[#8A7038] bg-[#8A7038]/10 px-2.5 py-1 rounded-full">{market.familyLabel}</span>
           </div>
-          {/* Opened on a fact about automation, which is true and about
-              nobody. The reader wants to know what it means for the job
-              they hold, so that is the first sentence now. */}
-          <p className="text-base text-foreground mb-5 max-w-2xl leading-relaxed">
-            <strong>{currentRole} is not disappearing — the routine half of it is.</strong>{" "}
-            {market.trends[0]?.headline} The roles on the left are losing postings; the ones
-            on the right are gaining them, and your skills already reach that side.
+          {/* The section asked a yes/no question and then showed three
+              charts without ever answering it. The answer is "both ends
+              at once", which is genuinely the confusing part — so it is
+              stated first, with the numbers the charts below are drawn
+              from rather than a separate claim. */}
+          <p className="text-base text-foreground mb-2 max-w-2xl leading-relaxed">
+            <strong>Both — and that is the whole problem.</strong>
+          </p>
+          <p className="text-base text-muted-foreground mb-5 max-w-2xl leading-relaxed">
+            The junior and report-writing end of this field is losing postings
+            (<strong className="text-red-600">{avgDeclining}</strong> over 12 months).
+            The end that decides things is gaining them
+            (<strong className="text-[#115E50]">{avgGrowing}</strong>).
+            {" "}<strong className="text-foreground">{currentRole} sits between the two</strong> — which is
+            why nothing feels wrong yet, and why waiting is the one thing that does not work.
           </p>
 
           <div className="mb-6">
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">Where the work is going</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">The two ends, in postings</p>
             <div className="grid md:grid-cols-[1fr_auto_1.1fr_auto_1fr] gap-3 items-stretch">
               <div className="rounded-xl border border-red-200 bg-red-50/40 p-3.5">
-                <p className="text-xs font-bold uppercase tracking-wider text-red-600 mb-3">Shrinking</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-red-600 mb-3">Losing postings</p>
                 <div className="space-y-2">
                   {moves.declining.map(r => (
                     <div key={r.role} className="flex items-center justify-between gap-2 bg-white border border-red-100 rounded-lg px-3 py-2">
@@ -598,11 +616,11 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
                 <span className="mt-2 text-[10px] font-semibold px-2.5 py-1 rounded-full border bg-white" style={{ color: "#1B5CA3", borderColor: "rgba(27,92,163,0.3)" }}>
                   Stable core · routine parts shrinking
                 </span>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Your skills transfer to every role on the right.</p>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Your skills already reach the column on the right.</p>
               </div>
               <div className="hidden md:flex items-center text-muted-foreground/40"><ArrowRight size={16} /></div>
               <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#115E50] mb-3">Hiring</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#115E50] mb-3">Gaining postings</p>
                 <div className="space-y-2">
                   {moves.growing.map(r => (
                     <div key={r.role} className="flex items-center justify-between gap-2 bg-white border border-emerald-100 rounded-lg px-3 py-2">
@@ -617,7 +635,7 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
 
           {/* 3 · Reposition paths */}
           <div className="mb-6">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">Reposition paths — where you can move with the skills you already have</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">Where you could go with the skills you already have</p>
             <div className="space-y-2">
               {moves.paths.map((path, i) => (
                 <button

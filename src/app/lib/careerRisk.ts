@@ -49,12 +49,24 @@ export interface TargetGap {
   id: string;
   skill: string;
   headline: string;
+  /** Why this one matters, in terms of this move specifically. */
   why: string;
   severity: Severity;
-  /** Share of applicants for the target role blocked by the same thing. */
-  sharedBy: string;
+  /** What happens if it stays open. Different for every gap — a shared
+      sentence here is how four cards came to read identically. */
+  ifIgnored: string;
   action: string;
   timeToClose: string;
+  /** What was actually checked to reach this, shown verbatim. */
+  basis: string;
+}
+
+/** What the caller can tell us about the market for this target. */
+export interface GapContext {
+  /** Matched postings that screen on a given skill, by title. */
+  askedBy?: (skill: string) => string[];
+  /** How many postings were matched in total. */
+  postingCount?: number;
 }
 
 export interface Scorecard {
@@ -345,7 +357,10 @@ function getReadinessBenchmark(profile: CareerProfile): ReadinessBenchmark {
     return textMatchesFamily([e.label, e.source, ...e.skills].join(" "));
   }).length;
   const resumeCredentialCount = gateKinds.includes("certificate")
-    ? (profile.resume?.certifications.filter(textMatchesFamily).length ?? 0)
+    /* The optional chain guarded the résumé but not the array on it, so
+       an extraction that returned no certifications key at all took the
+       whole dashboard down rather than counting zero. */
+    ? (profile.resume?.certifications?.filter(textMatchesFamily).length ?? 0)
     : 0;
   const gateCount = uploadedGateCount + resumeCredentialCount;
   const proofCount = profile.evidence.length;
@@ -405,7 +420,9 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
     risks.push({
       id: "readiness",
       category: "Proof & Credentials",
-      headline: `You need ${readiness.additionsNeeded} more evidence item${readiness.additionsNeeded === 1 ? "" : "s"}; ${missing.join(" and ")} must be covered.`,
+      headline: missingGate && !missingProof
+        ? `Your record has depth but no ${KEY_CREDENTIAL[readiness.family]} — that is the item postings gate on.`
+        : `You need ${readiness.additionsNeeded} more evidence item${readiness.additionsNeeded === 1 ? "" : "s"}; ${missing.join(" and ")} must be covered.`,
       severity: missingGate ? "high" : "medium",
       metric: `${gateCount}/${RISK_POLICY.roleGateMinimum} gate · ${proofCount}/${RISK_POLICY.proofMinimum} sources`,
       horizon: "blocks applications today",
@@ -413,7 +430,13 @@ export function deriveRisks(profile: CareerProfile): Risk[] {
       comparison: {
         current: `${gateCount} credential · ${proofCount} proof source${proofCount === 1 ? "" : "s"}`,
         benchmark: `${RISK_POLICY.roleGateMinimum} credential · ${RISK_POLICY.proofMinimum} proof sources`,
-        shortfall: `${readiness.additionsNeeded} evidence item${readiness.additionsNeeded === 1 ? "" : "s"} missing`,
+        /* Counting was misleading once a profile had depth: someone
+           with sixteen evidence items was told "1 evidence item
+           missing" when what is missing is one specific credential, not
+           quantity. Name the thing instead of counting it. */
+        shortfall: missingGate
+          ? `No ${KEY_CREDENTIAL[readiness.family]} on file`
+          : `${readiness.additionsNeeded} more proof source${readiness.additionsNeeded === 1 ? "" : "s"} needed`,
       },
       calculation: [
         `Role gate for target ${readiness.family}: ${KEY_CREDENTIAL[readiness.family]}`,
@@ -535,17 +558,36 @@ export function deriveRiskCategoryChecks(profile: CareerProfile): RiskCategoryCh
 /* What the rung asks for beyond the field. A lead role is not a bigger
    version of the job below it, and the gap list should not read as if
    it were. */
-const LEVEL_DEMANDS: Record<string, { skill: string; headline: string; why: string }[]> = {
+interface LevelDemand {
+  skill: string;
+  headline: string;
+  why: string;
+  ifIgnored: string;
+  action: string;
+  time: string;
+}
+
+const LEVEL_DEMANDS: Record<string, LevelDemand[]> = {
   lead: [
     {
       skill: "People leadership",
       headline: "You have not led anyone yet, and every posting at this level asks for it",
       why: "This is the one thing that separates the job you have from the job you want. Nothing else on this list matters if this stays empty.",
+      ifIgnored:
+        "You keep being read as the strongest analyst in the room. That is how people get handed more work — not a team.",
+      action:
+        "Ask for one person to be responsible for: an intern, a new joiner, one junior on one project. Then write down what changed for them, not for you.",
+      time: "6 months",
     },
     {
       skill: "Owning a roadmap",
       headline: "Deciding what the team does not work on, not only what it does",
       why: "Managers are hired on judgement about priorities. Being excellent at the work is what got you considered; choosing the work is the job.",
+      ifIgnored:
+        "Interviews keep testing what you built, and you do well. Then the manager questions arrive — what did you kill, what did you refuse — and there is nothing to answer with.",
+      action:
+        "At the next planning round, put one thing on the not-doing list and put the reason in writing. One documented no is worth more here than ten delivered yeses.",
+      time: "3 months",
     },
   ],
   senior: [
@@ -553,6 +595,11 @@ const LEVEL_DEMANDS: Record<string, { skill: string; headline: string; why: stri
       skill: "Mentoring",
       headline: "Someone else's work getting better because of you",
       why: "Senior is the rung where you stop being measured on your own output alone.",
+      ifIgnored:
+        "You stay the person who does the hard piece personally. That is valuable and it is also why the promotion keeps going to someone else.",
+      action:
+        "Pick one person and one thing they are stuck on. Review their work weekly for a month, and keep a note of what improved.",
+      time: "3 months",
     },
   ],
   entry: [],
@@ -573,8 +620,7 @@ const LEVEL_DEMANDS: Record<string, { skill: string; headline: string; why: stri
  * person cannot evidence, plus what the rung demands on top. Specific,
  * different for every target, and checkable against their own record.
  */
-export function deriveTargetGaps(profile: CareerProfile): TargetGap[] {
-  const current = profile.currentRole || "your current role";
+export function deriveTargetGaps(profile: CareerProfile, ctx: GapContext = {}): TargetGap[] {
   const target = profile.targetRole || "";
   if (!target) return [];
 
@@ -592,38 +638,73 @@ export function deriveTargetGaps(profile: CareerProfile): TargetGap[] {
     ...profile.evidence.flatMap(e => e.skills.map(sk => sk.toLowerCase())),
     ...profile.evidence.map(e => e.label.toLowerCase()),
   ]);
+  const skillsChecked = (profile.resume?.skills ?? []).length;
 
   /* What the rung demands comes first — it is the reason the move is a
      move rather than a promotion that happens on its own. */
   const fromLevel = (LEVEL_DEMANDS[level] ?? []).map(d => ({ ...d, fromLevel: true }));
 
-  const fromSkills = coverage.missing.map(skill => ({
-    skill,
-    headline: `${skill} — nothing on your record shows it`,
-    why: `Postings for ${target} in ${FAMILY_LABEL[family].toLowerCase()} list this among the skills they screen on. Your résumé and evidence do not mention it.`,
-    fromLevel: false,
-  }));
+  /* Skill gaps are written against the postings that actually screen on
+     them, so each card says something checkable and different. The
+     alternative — one sentence with the skill name swapped in — is what
+     made four cards read as one card printed four times. */
+  const familyLabel = FAMILY_LABEL[family].toLowerCase();
+
+  /* A skill the matched postings actually name outranks one that only
+     appears on the standard list for the family. Without this the order
+     was whatever the authored array happened to be in, and a gap nobody
+     is screening on could sit above one three employers ask for. */
+  const cited = (skill: string) => (ctx.askedBy?.(skill) ?? []).length;
+  const missingByDemand = [...coverage.missing].sort((a, b) => cited(b) - cited(a));
+
+  const fromSkills: (LevelDemand & { fromLevel: boolean; cited: number })[] = missingByDemand.map((skill, i) => {
+    const asked = ctx.askedBy?.(skill) ?? [];
+    const total = ctx.postingCount ?? 0;
+
+    const why = asked.length
+      ? `${asked[0]} names it outright. It is a screening line for this move, not a nice-to-have.`
+      : `This is on the standard skill list for ${target} in ${familyLabel}, and it is the kind of thing an interview opens with.`;
+
+    const ifIgnored = asked.length && total
+      ? `${asked.length} of the ${total} ${target} postings we matched you to screen on it${asked.length > 1 ? ` — ${asked.slice(0, 2).join(" and ")} among them` : `: ${asked[0]}`}. A screener reading your profile has nothing to tick.`
+      : `Nothing in your record mentions it, so the first person to ask about it will be an interviewer rather than your own profile.`;
+
+    return {
+      skill,
+      headline: `${skill} — nothing on your record shows it`,
+      why,
+      ifIgnored,
+      action: asked.length
+        ? `Ship one piece of work that uses ${skill.toLowerCase()} and put the link on your profile. ${asked[0]} is the posting it would unlock first.`
+        : `Ship one piece of work that uses ${skill.toLowerCase()} and put the link on your profile.`,
+      time: ["3 months", "2 months", "6 weeks", "4 weeks", "1 month"][i] ?? "1 month",
+      fromLevel: false,
+      cited: asked.length,
+    };
+  });
 
   const all = [...fromLevel, ...fromSkills].slice(0, 5);
 
   return all.map((gap, i) => {
     const covered = evidenced.has(gap.skill.toLowerCase());
-    /* Named earlier means cited more often — the level demand first,
-       then the skills in the order the role screens on them. */
-    const share = [72, 61, 54, 43, 35][i] ?? 30;
     return {
       id: `gap-${i}`,
       skill: gap.skill,
       headline: gap.headline,
       why: gap.why,
-      severity: covered ? "low" : gap.fromLevel ? "high" : i < 2 ? "high" : i < 4 ? "medium" : "low",
-      sharedBy: `${share}% of people moving from ${current} into ${target} are turned down on this`,
+      /* Nobody we matched them to is asking for it, so we have less
+         reason to call it a blocker than the ones that are cited. */
+      severity: covered ? "low" : gap.fromLevel ? "high" : "cited" in gap && !gap.cited ? "low" : "medium",
+      ifIgnored: covered
+        ? `It is on your record but not where anyone reads it, so in practice it counts for nothing.`
+        : gap.ifIgnored,
       action: covered
-        ? `You have something for this already — make it explicit on your profile rather than leaving it implied.`
-        : gap.fromLevel
-          ? `Take one piece of scope that makes this true, then write down what happened.`
-          : `Ship one piece of work that uses ${gap.skill}, and put the link on your profile.`,
-      timeToClose: gap.fromLevel ? "6 months" : ["3 months", "2 months", "6 weeks", "4 weeks"][i] ?? "1 month",
+        ? `You have something for this already — say it plainly on your profile rather than leaving it implied.`
+        : gap.action,
+      timeToClose: covered ? "1 week" : gap.time,
+      basis: gap.fromLevel
+        ? `"${target}" reads as a ${level}-level title, and this is what that rung asks for on top of the field.`
+        : `Checked ${skillsChecked} skills from your résumé and ${profile.evidence.length} evidence ${profile.evidence.length === 1 ? "item" : "items"} against what ${target} postings screen on.`,
     };
   });
 }

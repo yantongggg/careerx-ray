@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mono — CareerX-Ray Plan 30·90·120</title>
+<title>CareerX-Ray — 下一步计划 · 30 / 90 / 120 天</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,61 +13,50 @@
   body{background:var(--bg);font-family:'Inter',system-ui,sans-serif;color:var(--ink);
     padding:40px;-webkit-font-smoothing:antialiased;display:flex;justify-content:center}
   .card{background:var(--bg);border-radius:24px;padding:28px 28px 22px;width:min(1240px,100%)}
-  h2{font-weight:700;font-size:27.5px;letter-spacing:-.02em;margin-bottom:4px}
-  .sub{font-size:16.5px;color:var(--muted);line-height:1.55;margin-bottom:16px}
+  h2{font-weight:700;font-size:34px;letter-spacing:-.025em;margin-bottom:6px}
+  .sub{font-size:18px;color:var(--muted);line-height:1.55;margin-bottom:22px;max-width:70ch}
   strong{font-weight:700;color:var(--ink)}
-  .src{font-size:14px;color:var(--faint);margin-top:16px;letter-spacing:.08em;font-weight:500}
+  .src{font-size:14px;color:var(--faint);margin-top:18px;letter-spacing:.08em;font-weight:500}
 
-  #ch{width:100%;height:auto;display:block;cursor:pointer;margin-bottom:6px}
+  #ch{width:100%;height:auto;display:block;cursor:pointer;margin-bottom:10px}
   svg text{font-family:'Inter',system-ui,sans-serif;user-select:none}
 
-  .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:10px}
-  .c{padding-top:12px;border-top:2px solid var(--ink)}
+  .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:14px}
+  .c{padding-top:14px;border-top:2px solid var(--ink)}
   .c.b{border-color:#6A6963}
   .c.d{border-color:#B0AFA9}
-  .c .id{font-size:12.5px;letter-spacing:.14em;font-weight:800;color:var(--muted);margin-bottom:4px}
-  .c h3{font-size:24px;font-weight:700;letter-spacing:-.025em;margin-bottom:5px}
-  .c .goal{font-size:16.5px;line-height:1.5;color:var(--muted);margin-bottom:11px}
+  .c .id{font-size:12.5px;letter-spacing:.14em;font-weight:800;color:var(--muted);margin-bottom:5px}
+  .c h3{font-size:27px;font-weight:700;letter-spacing:-.025em;margin-bottom:14px}
 
-  .c ul{list-style:none;margin-bottom:12px}
-  .c li{font-size:16.5px;line-height:1.5;padding-left:12px;position:relative;margin-bottom:5px;font-weight:500}
-  .c li::before{content:"";position:absolute;left:0;top:7px;width:4px;height:4px;
+  .c ul{list-style:none;margin-bottom:14px}
+  .c li{font-size:18px;line-height:1.5;padding-left:14px;position:relative;margin-bottom:9px;font-weight:500}
+  .c li::before{content:"";position:absolute;left:0;top:9px;width:4px;height:4px;
     background:#6A6963;transform:rotate(45deg)}
 
-  .nums{display:grid;gap:9px;padding:10px 0;
-    border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);margin-bottom:10px}
-  .ng > i{display:block;font-style:normal;font-size:11px;letter-spacing:.14em;
-    font-weight:800;color:var(--faint);margin-bottom:4px}
-  .ng.collect > i{color:#1C1C1A}
-  .row{display:flex;gap:15px;flex-wrap:wrap}
-  .row div b{display:block;font-size:11px;letter-spacing:.1em;font-weight:700;
-    color:var(--muted);margin-bottom:1px}
-  .row div s{display:block;text-decoration:none;font-size:24.5px;font-weight:800;
-    letter-spacing:-.035em;line-height:1.1;font-variant-numeric:tabular-nums}
+  .gate{padding:11px 0 12px;border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);margin-bottom:12px}
+  .gate i{display:block;font-style:normal;font-size:11px;letter-spacing:.14em;
+    font-weight:800;color:var(--ink);margin-bottom:6px}
+  .gate s{display:block;text-decoration:none;font-size:20px;font-weight:700;
+    letter-spacing:-.02em;line-height:1.35}
 
-  .rb{padding:10px 12px;border-radius:10px;background:var(--tint)}
-  .rb b{display:block;font-size:11px;letter-spacing:.14em;font-weight:800;margin-bottom:4px}
-  .rb p{font-size:16px;line-height:1.5;color:#3F3E3A}
+  .rb{padding:11px 13px;border-radius:10px;background:var(--tint)}
+  .rb b{display:block;font-size:11px;letter-spacing:.14em;font-weight:800;margin-bottom:5px}
+  .rb p{font-size:17px;line-height:1.5;color:#3F3E3A}
 
-  .foot{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;margin-top:18px;
-    padding-top:12px;border-top:1px solid var(--grid)}
-  .foot b{display:block;font-size:12.5px;letter-spacing:.13em;font-weight:700;
-    color:var(--muted);margin-bottom:7px}
-  .foot ul{list-style:none;display:flex;flex-wrap:wrap;gap:7px}
-  .foot li{font-size:15px;font-weight:600;color:var(--muted);
-    border:1px solid var(--grid);border-radius:8px;padding:5px 9px}
-  .foot p{font-size:15px;line-height:1.55;color:#3F3E3A}
+  .close{margin-top:26px;padding-top:18px;border-top:1px solid var(--grid)}
+  .close p{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.3;max-width:24ch}
+  .close span{display:block;font-size:16px;font-weight:500;color:var(--muted);margin-top:8px;max-width:62ch;line-height:1.55}
 
-  @media (max-width:900px){.cols,.foot{grid-template-columns:1fr}}
+  @media (max-width:900px){.cols{grid-template-columns:1fr}}
   @media (prefers-reduced-motion:reduce){#ch{cursor:default}}
 </style>
 </head>
 <body>
 <div class="card">
-  <h2>下一步不是加更多 AI agent —— 是把这一条链变成可验证的</h2>
+  <h2>三道关卡。</h2>
   <div class="sub">
-    30 天 → 90 天 → 120 天 · 时间轴按真实天数等比 · <strong>明度 = 确定性</strong>（越黑 = 越近越确定）·
-    每段两组数字：<strong>COLLECT = 要收多少</strong>，<strong>GATE = 过什么线</strong>，不过线不进下一段
+    接下来要做的不是加更多 AI agent。三个阶段，每一个都有
+    <strong>一件必须成立的事</strong>，不成立，下一阶段就不开始。
   </div>
 
   <svg id="ch" viewBox="0 0 1200 146" preserveAspectRatio="xMidYMid meet" role="img"
@@ -76,104 +65,54 @@
   <div class="cols">
     <!-- ── 30 ── -->
     <article class="c">
-      <div class="id">DAY 0–30 · GATE 1</div>
-      <h3>Validate the engines</h3>
-      <p class="goal">不加功能，只加证据。产出是一套能重复跑的评测。</p>
+      <div class="id">第 30 天 · 关卡 1</div>
+      <h3>先验证引擎</h3>
       <ul>
-        <li>150 份人工标注 resume（100 调优 / <strong>50 holdout 永不参与调优</strong>）<br /><span style="color:#8F8E88">来源：Talentbank 已同意样本 + 校园招募，逐份 consent</span></li>
-        <li>Malaysia source registry：每个来源记许可、时效、样本量</li>
-        <li>Eval harness + model / prompt registry，任一历史分数可 replay</li>
+        <li>收集<strong>至少 300 份简历</strong></li>
+        <li><strong>60%</strong> 标注，用来调参</li>
+        <li><strong>40%</strong> 留起来 —— 全程不参与调参</li>
       </ul>
-      <div class="nums">
-        <div class="ng collect"><i>COLLECT · 要收多少</i><div class="row">
-          <div><b>标注 resume</b><s>150</s></div>
-          <div><b>标注 claim</b><s>~2,200</s></div>
-          <div><b>官方数据源</b><s>6</s></div>
-        </div></div>
-        <div class="ng"><i>GATE · 质量门槛</i><div class="row">
-          <div><b>CITATION</b><s>≥99%</s></div>
-          <div><b>FIELD F1</b><s>≥.85</s></div>
-          <div><b>PRECISION</b><s>≥.90</s></div>
-        </div></div>
-      </div>
-      <div class="rb"><b>ROLLBACK</b><p>citation &lt; 99% → 回去修抽取，<strong>本阶段一个分数都不发布</strong>。</p></div>
+      <div class="gate"><i>关卡 1</i><s>引用准确率 ≥ 99%</s></div>
+      <div class="rb"><b>过不了怎么办</b><p>那是抽取环节的 bug，<strong>不是靠调参绕过去的东西</strong>。回去把它修好。</p></div>
     </article>
 
     <!-- ── 90 ── -->
     <article class="c b">
-      <div class="id">DAY 31–90 · GATE 2</div>
-      <h3>Partner beta</h3>
-      <p class="goal">接真实雇主，回路第一次真的转起来。范围锁死 3 个 role family。</p>
+      <div class="id">第 90 天 · 关卡 2</div>
+      <h3>伙伴内测</h3>
       <ul>
-        <li>Talentbank employer feed + 5 家雇主签约试用<br /><span style="color:#8F8E88">JD 与 outcome 均来自 approved feed，不 scrape</span></li>
-        <li>Reason code 定稿（8–12 个）+ certificate verification</li>
-        <li>Queue autoscaling + DLQ：失败从最后成功 stage 续跑</li>
+        <li>接入 <strong>15 家雇主</strong></li>
+        <li>只做四个岗位族：<strong>数据、AI、网络安全、市场</strong></li>
+        <li>真实结果事件 —— 每一份申请最后到底怎么了</li>
       </ul>
-      <div class="nums">
-        <div class="ng collect"><i>COLLECT · 要收多少</i><div class="row">
-          <div><b>签约雇主</b><s>≥5</s></div>
-          <div><b>真实 JD</b><s>≥200</s></div>
-          <div><b>候选人</b><s>≥300</s></div>
-          <div><b>OUTCOME</b><s>≥150</s></div>
-        </div></div>
-        <div class="ng"><i>GATE · 质量门槛</i><div class="row">
-          <div><b>二次使用</b><s>3/5</s></div>
-          <div><b>CERT 解析</b><s>≥90%</s></div>
-          <div><b>BAND 覆盖</b><s>≥80%</s></div>
-        </div></div>
-      </div>
-      <div class="rb"><b>ROLLBACK</b><p>outcome &lt; 50 → 不发任何 aggregate，延长 beta。<strong>绝不调低 cohort threshold 换 signal。</strong></p></div>
+      <div class="gate"><i>关卡 2</i><s>伙伴和候选人都回访过</s></div>
+      <div class="rb"><b>过不了怎么办</b><p>回访里冒出来的问题，<strong>直接回滚</strong>，不绕着它继续发版。</p></div>
     </article>
 
     <!-- ── 120 ── -->
     <article class="c d">
-      <div class="id">DAY 91–120 · GATE 3</div>
-      <h3>Calibrate &amp; harden</h3>
-      <p class="goal">第一次用真实结果回看分数，同时把系统撑住。</p>
+      <div class="id">第 120 天 · 关卡 3</div>
+      <h3>校准与加固</h3>
       <ul>
-        <li>用已有 outcome 做<strong>第一次 calibration 读数</strong>（不是最终结论）</li>
-        <li>Drift monitoring + 去标识化 warehouse（0 个 PII 列）</li>
-        <li>HA / DR 在 ap-southeast-5 真跑一次恢复演练</li>
+        <li>第一次校准：检查标注、<strong>四个风险阈值</strong>、以及决策方案的 prompt</li>
+        <li><strong>慢慢</strong>加岗位、加伙伴</li>
+        <li>盯稳定性和队列处理</li>
       </ul>
-      <div class="nums">
-        <div class="ng collect"><i>COLLECT · 要收多少</i><div class="row">
-          <div><b>有后续结果的人</b><s>≥150</s></div>
-          <div><b>累计 OUTCOME</b><s>≥250</s></div>
-        </div></div>
-        <div class="ng"><i>GATE · 质量门槛</i><div class="row">
-          <div><b>校准误差</b><s>≤10pp</s></div>
-          <div><b>DR 演练</b><s>≥1</s></div>
-          <div><b>PII 列</b><s>0</s></div>
-        </div></div>
-      </div>
-      <div class="rb"><b>ROLLBACK</b><p>误差 &gt; 15pp → 撤下数值分数，只显示定性区间与证据清单。</p></div>
+      <div class="gate"><i>关卡 3</i><s>压得住</s></div>
+      <div class="rb"><b>过不了怎么办</b><p>压不住就不再扩。<strong>系统还没稳，就不会有新的岗位族进来。</strong></p></div>
     </article>
   </div>
 
-  <div class="foot">
-    <div>
-      <b>这四个月明确不做 · 被问到就是这个答案</b>
-      <ul>
-        <li>✕ 加更多 AI agent</li>
-        <li>✕ 覆盖全马来西亚所有 occupation</li>
-        <li>✕ Scrape LinkedIn / JobStreet</li>
-        <li>✕ 拆 microservices</li>
-        <li>✕ 宣称 Career DNA 已 validated</li>
-        <li>✕ 调低 threshold 换 signal</li>
-      </ul>
-    </div>
-    <div>
-      <b>两点诚实说明</b>
-      <p>① 目标值是<strong>建议基线</strong>，需团队启动前确认并锁进 repo，不是行业标准。<br />
-      ② Day 120 只能拿到<strong>三个月的 calibration 读数</strong>；完整校准需要 6–12 个月 outcome，那是下一轮的事。</p>
-    </div>
+  <div class="close">
+    <p>宁可延期，也不降标准。</p>
+    <span>上面每一个数字都是待团队确认的建议基线，不是行业标准。第 120 天拿到的是校准读数 —— 不是一个校准好的系统。那需要 6–12 个月的真实结果，是这一轮之后的事。</span>
   </div>
 
-  <div class="src">PLAN · 30 / 90 / 120 DAYS · GATED · CAREERX-RAY MALAYSIA VALIDATION · TIME AXIS LINEAR IN DAYS · TARGETS ARE PROPOSED BASELINES</div>
+  <div class="src">计划 · 30 / 90 / 120 天 · 逐关推进 · CAREERX-RAY 马来西亚验证 · 时间轴按真实天数线性</div>
 </div>
 
 <script>
-var INK='#1C1C1A',MUT='#8F8E88',FNT='#C6C5BF',GRD='#DEDDD6',NS='http://www.w3.org/2000/svg';
+var INK='#1C1C1A',MUT='#8F8E88',GRD='#DEDDD6',NS='http://www.w3.org/2000/svg';
 var LAD=['#1C1C1A','#6A6963','#B0AFA9'];
 var el=function(p,t,a){var n=document.createElementNS(NS,t);for(var k in a)n.setAttribute(k,a[k]);p.appendChild(n);return n;};
 var txt=function(p,a,s){var n=el(p,'text',a);n.textContent=s;return n;};
@@ -182,41 +121,38 @@ var tip=function(n,s){var t=document.createElementNS(NS,'title');t.textContent=s
 var X0=90,X1=1110,DAYS=120,BY=44,BH=42;
 var x=function(d){return X0+(d/DAYS)*(X1-X0);};
 var SEG=[
- [0,30,'VALIDATE THE ENGINES','150 份标注 resume · source registry · eval harness · registry 可 replay'],
- [30,90,'PARTNER BETA','5 家雇主 · ≥150 条真实 outcome · 3 个 role family · autoscaling + DLQ'],
- [90,120,'CALIBRATE & HARDEN','第一次 calibration 读数 · drift monitoring · HA/DR 演练']
+ [0,30,'\u5148\u9a8c\u8bc1\u5f15\u64ce','300 \u4efd\u7b80\u5386  60/40 \u5206\u5272  \u5f15\u7528\u51c6\u786e\u7387 99%'],
+ [30,90,'\u4f19\u4f34\u5185\u6d4b','15 \u5bb6\u96c7\u4e3b  \u6570\u636e / AI / \u7f51\u7edc\u5b89\u5168 / \u5e02\u573a  \u771f\u5b9e\u7ed3\u679c'],
+ [90,120,'\u6821\u51c6\u4e0e\u52a0\u56fa','\u6807\u6ce8\u68c0\u67e5  4 \u4e2a\u98ce\u9669\u9608\u503c  \u7a33\u5b9a\u6027\u4e0e\u961f\u5217']
 ];
 var svg=document.getElementById('ch');
 
 function build(){
   svg.innerHTML='';
   var g=el(svg,'g',{});
-  // axis
   el(g,'path',{d:'M'+X0+' 28L'+X1+' 28',stroke:GRD,'stroke-width':1});
-  [[0,'TODAY','end',X0-4],[30,'DAY 30','middle',null],[90,'DAY 90','middle',null],
-   [120,'DAY 120','end',X1]].forEach(function(t){
+  [[0,'\u4eca\u5929','end',X0-4],[30,'\u7b2c 30 \u5929','middle',null],[90,'\u7b2c 90 \u5929','middle',null],
+   [120,'\u7b2c 120 \u5929','end',X1]].forEach(function(t){
     var px=t[3]!==null?t[3]:x(t[0]);
     el(g,'path',{d:'M'+x(t[0])+' 23L'+x(t[0])+' 33',stroke:MUT,'stroke-width':1});
-    txt(g,{x:px,y:14,'font-size':9.5,'font-weight':800,fill:INK,
+    txt(g,{x:px,y:14,'font-size':10.5,'font-weight':800,fill:INK,
       'letter-spacing':'.13em','text-anchor':t[2]},t[1]);
   });
-  // bars
   SEG.forEach(function(s,i){
     var a=x(s[0])+(i?5:0), b=x(s[1]);
     var gg=el(g,'g',{class:'seg',style:'--i:'+i});
     el(gg,'rect',{x:a,y:BY,width:b-a,height:BH,rx:BH/2,fill:LAD[i]});
-    txt(gg,{x:a+18,y:BY+BH/2+4,'font-size':11,'font-weight':800,
+    txt(gg,{x:a+18,y:BY+BH/2+4,'font-size':12,'font-weight':800,
       fill:i===2?INK:'#F0EFEB','letter-spacing':'.09em'},s[2]);
     tip(gg,s[2]+'\n'+s[3]);
   });
-  // gates
   [30,90,120].forEach(function(d,i){
     var gx=x(d);
     el(g,'path',{d:'M'+gx+' 34L'+gx+' 100',stroke:INK,'stroke-width':1,
       'stroke-dasharray':'3 4',opacity:.5});
     el(g,'rect',{x:gx-5,y:101,width:10,height:10,fill:INK,transform:'rotate(45 '+gx+' 106)'});
-    txt(g,{x:gx,y:130,'font-size':9,'font-weight':800,fill:INK,
-      'letter-spacing':'.14em','text-anchor':d===120?'end':'middle'},'GATE '+(i+1));
+    txt(g,{x:gx,y:130,'font-size':10,'font-weight':800,fill:INK,
+      'letter-spacing':'.14em','text-anchor':d===120?'end':'middle'},'\u5173\u5361 '+(i+1));
   });
 }
 

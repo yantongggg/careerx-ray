@@ -24,8 +24,8 @@
 
 import type { CareerProfile } from "./profileTypes";
 import { detectRoleFamily, FAMILY_LABEL, type RoleFamily } from "./roleFamily";
-import { automationBase, keyCredential, marketMedian, seniorityBand, type SeniorityBand } from "./careerRisk";
-import { satisfies } from "./skillMatch";
+import { automationBase, keyCredential, marketMedian, seniorityBand, type GapContext, type SeniorityBand } from "./careerRisk";
+import { mentions, satisfies } from "./skillMatch";
 
 /* ── Shapes ──────────────────────────────────────────────────── */
 
@@ -943,6 +943,28 @@ export function buildSalaryLandscape(profile: CareerProfile, futures: CorpusFutu
 }
 
 /* ── Fit scoring ─────────────────────────────────────────────── */
+
+/**
+ * Which of the matched postings actually screen on a given skill.
+ *
+ * The gap list used to state that "72% of people making this move are
+ * turned down on this" — a number with nothing behind it, printed on
+ * every card with only the digits changed. This is the checkable
+ * version: the postings are on screen two pages away, and anyone can
+ * open them and read the line.
+ */
+export function gapContextFor(profile: CareerProfile): GapContext {
+  const jobs = corpusFor(profile).rankedJobs;
+  return {
+    postingCount: jobs.length,
+    askedBy: skill =>
+      jobs
+        .filter(job =>
+          job.requirements.some(r => mentions(skill, r)) || job.gaps.some(g => mentions(skill, g)),
+        )
+        .map(job => `${job.position} at ${job.company}`),
+  };
+}
 
 /** Everything this person can point to, as plain strings. */
 export function evidencedSkills(profile: CareerProfile): string[] {
