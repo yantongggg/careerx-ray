@@ -135,6 +135,10 @@ function buildTreatment(profile: CareerProfile, corpus: Corpus, risks: Risk[], g
    at one data-analytics career. */
 
 
+/* These are the three futures, in order. They are not ranked by fit and
+   the number is not a fit score — it is how much confidence the model
+   has in that projection. Labelling it fit put "staying put" at the top
+   of a page about moving, which is the opposite of what it says. */
 function buildRecommendedRoles(corpus: Corpus) {
   const fmt = (n: number) => `RM ${(n / 1000).toFixed(1)}k/mo`;
   return corpus.futures.map(f => ({
@@ -346,7 +350,7 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
         <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Award size={16} className="text-muted-foreground" />
-            <h3 className="text-lg font-semibold text-foreground">What opens the most doors</h3>
+            <h3 className="text-lg font-semibold text-foreground">What most of your matched jobs ask for</h3>
           </div>
 
           <p className="text-xl font-semibold text-foreground leading-snug max-w-2xl">
@@ -390,8 +394,8 @@ export function CareerPrescription({ onNavigate }: { onNavigate?: (page: string)
         <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-5">
             <Briefcase size={16} className="text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">Recommended Target Roles</h3>
-            <span className="text-xs text-muted-foreground ml-auto">Ranked by fit · based on your career evidence</span>
+            <h3 className="text-lg font-semibold text-foreground">Where this plan can take you</h3>
+            <span className="text-sm text-muted-foreground ml-auto">Confidence in each projection</span>
           </div>
           <div className="space-y-3">
             {recommendedRoles.map(r => (
