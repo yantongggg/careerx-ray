@@ -118,8 +118,9 @@ const DEMO_RESUME: ParsedResume = {
   currentTitle: "Data Analyst",
   employers: ["Maybank", "Grab"],
   skills: [
-    "SQL", "Python", "Tableau", "Power BI", "Excel",
-    "Statistical modelling", "Stakeholder communication", "Dashboarding",
+    "SQL", "Python", "Tableau", "Power BI", "Excel", "BigQuery",
+    "Statistical modelling", "Experiment design", "Data modelling",
+    "Stakeholder communication", "Dashboarding", "Mentoring",
   ],
   education: ["BSc Computer Science · Universiti Malaya"],
   certifications: [],
@@ -138,6 +139,11 @@ const LINKEDIN_IMPORT: { kind: EvidenceKind; label: string; skills: string[] }[]
   { kind: "record", label: "Data Analyst · Maybank · 2023–Present", skills: ["SQL", "Python", "Dashboarding", "Stakeholder communication"] },
   { kind: "record", label: "Analytics Intern · Grab · 2022–2023", skills: ["SQL", "Reporting", "Tableau"] },
   { kind: "certificate", label: "BSc Computer Science · Universiti Malaya · 2019–2023", skills: [] },
+  /* Some leadership, but not the formal kind a manager posting asks
+     for. Leading a project is not the same as managing people, and the
+     gap list should keep saying so. */
+  { kind: "project", label: "Led the fraud dashboard rebuild · 3 analysts", skills: ["Mentoring", "Stakeholder communication", "Data modelling"] },
+  { kind: "record", label: "Runner-up · Maybank Data Hackathon 2024", skills: ["Experiment design", "Python"] },
 ];
 
 const DOORS_BY_FAMILY: Record<RoleFamily, EvidenceDoor[]> = {

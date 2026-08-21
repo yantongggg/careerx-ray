@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useCareerProfile } from "../state/careerProfile";
 import { NextStep } from "../state/stages";
-import { corpusFor } from "../lib/careerCorpus";
+import { corpusFor, requirementCoverage } from "../lib/careerCorpus";
 import { marketMedian, seniorityBand } from "../lib/careerRisk";
 import type { RoleFamily } from "../lib/roleFamily";
 import type { CareerProfile } from "../lib/profileTypes";
@@ -16,7 +16,7 @@ import type { CareerProfile } from "../lib/profileTypes";
    arithmetic all read from here, so the number on screen is always the
    number that was actually computed. */
 const FACTORS = [
-  { key: "dna",   label: "Career DNA alignment", weight: 0.30, desc: "Does this role fit your work style and strengths?" },
+  { key: "dna",   label: "Career DNA alignment", weight: 0.30, desc: "Does the role suit how you work — and can you evidence what it asks for?" },
   { key: "growth", label: "Skill growth",        weight: 0.25, desc: "Will the role build scarce skills for the next 24 months?" },
   { key: "pay",    label: "Compensation",        weight: 0.20, desc: "Salary, benefits, runway, and fair-pay benchmark." },
   { key: "trust",  label: "Employer trust",      weight: 0.15, desc: "Response speed, transparency, graduate ratings, acceptance data." },
@@ -39,6 +39,7 @@ interface OfferView {
   company: string; role: string; location: string; salary: string; monthly: number;
   sub: Record<Exclude<FactorKey, "dna">, number>;
   dnaWeights: Record<string, number>;
+  coverage: number;
   upside: string; risk: string;
 }
 
@@ -90,6 +91,8 @@ function buildOffers(profile: CareerProfile, appliedIds: string[]): OfferView[] 
         life: /hybrid|remote/i.test(job.location) ? 88 : 74,
       },
       dnaWeights: weights,
+      /* 0–1: how much of what this posting asks for they can show. */
+      coverage: requirementCoverage(profile, job),
       upside: `${job.strengths.slice(0, 2).join(" and ")} are what this role rewards most.`,
       risk: job.gaps.length
         ? `${job.gaps[0]} is what they will probe hardest, and it is your weakest point here.`
@@ -143,7 +146,15 @@ export function OfferDecisionDashboard({ onNavigate, appliedJobs = {} }: { onNav
     );
 
   const scored = offers.map(offer => {
-    const sub: Record<FactorKey, number> = { dna: dnaScoreFor(offer.dnaWeights), ...offer.sub };
+    /* Style fit says the role suits how you work. Coverage says you can
+       actually do it. Both belong in the factor that is supposed to move
+       with the person, or the total flatters a candidate who matches the
+       archetype and none of the requirements. */
+    const styleFit = dnaScoreFor(offer.dnaWeights);
+    const sub: Record<FactorKey, number> = {
+      dna: Math.round(styleFit * 0.55 + offer.coverage * 100 * 0.45),
+      ...offer.sub,
+    };
     const total = Math.round(FACTORS.reduce((sum, f) => sum + sub[f.key] * f.weight, 0));
     const top = Object.entries(offer.dnaWeights).sort(([, a], [, b]) => b - a)[0][0];
     return {

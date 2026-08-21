@@ -943,6 +943,30 @@ export function buildSalaryLandscape(profile: CareerProfile, futures: CorpusFutu
 
 /* ── Fit scoring ─────────────────────────────────────────────── */
 
+/**
+ * How much of what this posting asks for the person can actually show.
+ *
+ * The same measure the skill graph draws, so the percentage on a job
+ * card and the orbit on the Application Prep page cannot disagree.
+ */
+export function requirementCoverage(profile: CareerProfile, job: CorpusJob): number {
+  const asked = [...new Set([...job.requirements, ...job.strengths])];
+  if (!asked.length) return 1;
+
+  const held = [
+    ...(profile.resume?.skills ?? []),
+    ...profile.evidence.flatMap(e => e.skills ?? []),
+    ...profile.evidence.map(e => e.label),
+  ].filter((x): x is string => typeof x === "string" && x.length > 0)
+   .map(x => x.toLowerCase());
+
+  const met = asked.filter(req => {
+    const words = req.toLowerCase().split(/[^a-z0-9+#]+/).filter(w => w.length > 3);
+    return held.some(h => words.some(w => h.includes(w) || w.includes(h)));
+  });
+  return met.length / asked.length;
+}
+
 /** Deterministic 0–100 fit between a profile and one posting. */
 export function fitFor(profile: CareerProfile, job: CorpusJob): number {
   const target = (profile.targetRole || "").toLowerCase();
@@ -972,7 +996,15 @@ export function fitFor(profile: CareerProfile, job: CorpusJob): number {
     else if (pay < job.salaryLow * 0.85) score += 3;
   }
 
-  return Math.max(38, Math.min(97, Math.round(score)));
+  /* Title and evidence count say you look right on paper. What the
+     posting actually asks for says whether you are. Without this a
+     candidate with no people-management experience scored 97% against a
+     manager's job, and the skill graph one page later said one
+     requirement of five. */
+  const coverage = requirementCoverage(profile, job);
+  score = score * (0.55 + coverage * 0.45);
+
+  return Math.max(30, Math.min(96, Math.round(score)));
 }
 
 /**

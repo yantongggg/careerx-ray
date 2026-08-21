@@ -121,9 +121,25 @@ function entriesFrom(profile: CareerProfile): Entry[] {
   });
 
   if (r) {
-    const already = new Set(profile.evidence.map(e => e.label.toLowerCase()));
+    /* A connected source and the résumé describe the same job. Match on
+       the words rather than the exact string — "Data Analyst · Maybank ·
+       2023–Present" and "Maybank" are the same entry written twice. */
+    const seen = profile.evidence.map(e => e.label.toLowerCase());
+    const STOP = new Set(["data", "with", "from", "science", "analyst", "university"]);
+    const alreadyListed = (text: string) => {
+      const key = text.toLowerCase();
+      const words = key.split(/[^a-z]+/).filter(w => w.length > 3 && !STOP.has(w));
+      return seen.some(existing => {
+        if (existing.includes(key)) return true;
+        /* One shared word is not a duplicate — "AWS Certified Data
+           Engineer" and "Data Analyst · Maybank" share "data". Two
+           distinctive words in common is. */
+        const hits = words.filter(w => existing.includes(w)).length;
+        return hits >= 2 || (words.length === 1 && hits === 1);
+      });
+    };
 
-    r.employers.forEach((employer, i) => {
+    r.employers.filter(e => !alreadyListed(e)).forEach((employer, i) => {
       items.push({
         id: `cv-emp-${i}`,
         type: "work",
@@ -138,7 +154,7 @@ function entriesFrom(profile: CareerProfile): Entry[] {
       });
     });
 
-    r.education.forEach((edu, i) => {
+    r.education.filter(e => !alreadyListed(e)).forEach((edu, i) => {
       items.push({
         id: `cv-edu-${i}`,
         type: "cert",
@@ -154,7 +170,7 @@ function entriesFrom(profile: CareerProfile): Entry[] {
     });
 
     r.certifications
-      .filter(c => !already.has(c.toLowerCase()))
+      .filter(c => !alreadyListed(c))
       .forEach((cert, i) => {
         items.push({
           id: `cv-cert-${i}`,

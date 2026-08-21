@@ -564,13 +564,17 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
           <div className="flex items-start justify-between gap-4 mb-1.5 flex-wrap">
             <div className="flex items-center gap-2">
               <Radar size={16} className="text-[#8A7038]" />
-              <h3 className="text-lg font-semibold text-foreground">What the market is doing to your role</h3>
+              <h3 className="text-lg font-semibold text-foreground">Is my role growing or shrinking?</h3>
             </div>
             <span className="text-xs font-semibold text-[#8A7038] bg-[#8A7038]/10 px-2.5 py-1 rounded-full">{market.familyLabel}</span>
           </div>
+          {/* Opened on a fact about automation, which is true and about
+              nobody. The reader wants to know what it means for the job
+              they hold, so that is the first sentence now. */}
           <p className="text-base text-foreground mb-5 max-w-2xl leading-relaxed">
-            {market.trends[0]?.headline} Roles on the left are shrinking. Roles on the right are hiring.
-            You sit in the middle, and your skills reach both.
+            <strong>{currentRole} is not disappearing — the routine half of it is.</strong>{" "}
+            {market.trends[0]?.headline} The roles on the left are losing postings; the ones
+            on the right are gaining them, and your skills already reach that side.
           </p>
 
           <div className="mb-6">

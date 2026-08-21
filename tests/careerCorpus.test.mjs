@@ -102,7 +102,7 @@ assert.ok(server.rankedJobs.every(j => j.salaryHigh < 12000),
 
 const noEvidence = fitFor(dev, devCorpus.rankedJobs[0]);
 const withEvidence = fitFor(
-  { ...dev, evidence: [{ id: "e1", kind: "certificate", title: "AWS", source: "aws", trust: "Verified", addedAt: "now" }] },
+  { ...dev, evidence: [{ id: "e1", kind: "certificate", label: "AWS Certified Data Engineer", source: "aws.amazon.com", trust: "verified", skills: ["Cloud warehouse"], addedAt: "now" }] },
   devCorpus.rankedJobs[0],
 );
 assert.ok(withEvidence > noEvidence, "adding evidence must raise fit");
