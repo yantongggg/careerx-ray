@@ -166,7 +166,12 @@ const ROLE_GATE_TERMS: Record<RoleFamily, string[]> = {
    from here so they cannot disagree about what a role asks for. */
 const TARGET_SKILLS: Record<RoleFamily, string[]> = {
   software:  ["System design", "Automated testing", "CI/CD", "Cloud deployment", "Code review"],
-  data:      ["Data modelling", "Pipeline orchestration", "Cloud warehouse", "Experiment design", "Stakeholder communication"],
+  /* "MLOps" and "Enterprise cloud" rather than "Machine learning" and
+     "Cloud warehouse": this persona has shipped a model and has ML on
+     the résumé, so a gap named "machine learning" would be contradicted
+     by their own timeline. What is missing is the part that keeps a
+     model alive after launch, and any cloud platform evidence at all. */
+  data:      ["Data modelling", "Pipeline orchestration", "MLOps", "Enterprise cloud", "Experiment design"],
   design:    ["Design systems", "User research", "Prototyping", "Accessibility", "Case studies"],
   marketing: ["Paid acquisition", "Analytics", "Copywriting", "Campaign planning", "Marketing automation"],
   product:   ["Discovery", "Roadmapping", "Metrics", "Stakeholder management", "Prioritisation"],
@@ -569,6 +574,7 @@ export function deriveRiskCategoryChecks(profile: CareerProfile): RiskCategoryCh
    it were. */
 interface LevelDemand {
   skill: string;
+  severity?: Severity;
   kind: string;
   title: string;
   headline: string;
@@ -587,9 +593,9 @@ const LEVEL_DEMANDS: Record<string, LevelDemand[]> = {
       headline: "You have not led anyone yet, and every posting at this level asks for it.",
       why: "This is the one thing that separates the job you have from the job you want. Nothing else on this list matters if this stays empty.",
       ifIgnored:
-        "You keep being read as the strongest analyst in the room. That is how people get handed more work — not a team.",
+        "You keep being read as the strongest technical contributor in the room. That is how people get handed more complex models to build — not a team to run.",
       action:
-        "Ask for one person to be responsible for: an intern, a new joiner, one junior on one project. Then write down what changed for them, not for you.",
+        "Ask to be responsible for one person: an intern, a new joiner, or a junior on a single project. Then write down what changed for them, not for you.",
       time: "6 months",
     },
     {
@@ -647,6 +653,53 @@ const GAP_TITLE_OVERRIDE: Record<string, string> = {
 const asTitle = (skill: string) =>
   GAP_TITLE_OVERRIDE[skill] ?? skill.replace(/\b[a-z]/g, c => c.toUpperCase());
 
+/* Some gaps are worth writing by hand. The derived version says a skill
+   is missing and which postings ask for it, which is true and thin —
+   for the two or three that actually decide a move, the card should say
+   what the difference between the two jobs really is. Anything not in
+   here still gets the derived treatment. */
+interface AuthoredGap {
+  kind: string;
+  title: string;
+  headline: string;
+  why: string;
+  ifIgnored: string;
+  action: string;
+  time: string;
+  severity: Severity;
+}
+
+const AUTHORED_GAP: Record<string, AuthoredGap> = {
+  MLOps: {
+    kind: "Missing Technical Skill",
+    title: "Machine Learning & Production (MLOps)",
+    headline:
+      "You have built models and shipped one. Nothing on your record keeps running, retrains, or gets watched after launch.",
+    why:
+      "Data Analysts look at what happened. Data Science Managers own systems that predict what happens next and keep them alive in production — monitored, retrained, and trusted by an app that depends on them. Shipping a model once and running one are different jobs.",
+    ifIgnored:
+      "The technical interview goes fine until they ask what happened to the model after launch. Managers are hired to own systems that stay up, not projects that ended.",
+    action:
+      "Build a small machine-learning project that retrains and runs by itself on a schedule — sales, churn, anything. Put the link in your portfolio.",
+    time: "3–6 months",
+    severity: "high",
+  },
+  "Enterprise cloud": {
+    kind: "Missing Technical Skill",
+    title: "Enterprise Cloud Experience",
+    headline:
+      "Nothing on your record shows you have worked on AWS, Google Cloud or Azure.",
+    why:
+      "An analyst pulls data out of a cloud database. A manager owns the architecture and the bill that comes with it. Employers screen for people who can use these platforms without spending a fortune on compute by accident.",
+    ifIgnored:
+      "Cloud platforms are a keyword filter as much as a skill. Applications can be screened out on the missing term before a person reads the rest.",
+    action:
+      "Take an entry-level cloud certificate — AWS Cloud Practitioner or the Google Cloud equivalent. It is the cheapest item on this list and it closes the credential gate too.",
+    time: "30–60 days",
+    severity: "high",
+  },
+};
+
 function labelFor(skill: string, family: RoleFamily): { kind: string; title: string } {
   const technical = TECHNICAL_FAMILIES.includes(family) && TECHNICAL_MARKER.test(skill);
   return { kind: technical ? "Missing Technical Skill" : "Missing Skill", title: asTitle(skill) };
@@ -703,9 +756,14 @@ export function deriveTargetGaps(profile: CareerProfile, ctx: GapContext = {}): 
   const cited = (skill: string) => (ctx.askedBy?.(skill) ?? []).length;
   const missingByDemand = [...coverage.missing].sort((a, b) => cited(b) - cited(a));
 
-  const fromSkills: (LevelDemand & { fromLevel: boolean; cited: number })[] = missingByDemand.map((skill, i) => {
+  const fromSkills: (LevelDemand & { fromLevel: boolean; cited: number; severity?: Severity })[] = missingByDemand.map((skill, i) => {
     const asked = ctx.askedBy?.(skill) ?? [];
     const total = ctx.postingCount ?? 0;
+
+    /* Written by hand where the difference between the two jobs needs
+       saying properly. Everything else takes the derived version. */
+    const authored = AUTHORED_GAP[skill];
+    if (authored) return { skill, ...authored, fromLevel: false, cited: asked.length };
 
     const why = asked.length
       ? `${asked[0]} names it outright. It is a screening line for this move, not a nice-to-have.`
@@ -743,7 +801,9 @@ export function deriveTargetGaps(profile: CareerProfile, ctx: GapContext = {}): 
       why: gap.why,
       /* Nobody we matched them to is asking for it, so we have less
          reason to call it a blocker than the ones that are cited. */
-      severity: covered ? "low" : gap.fromLevel ? "high" : "cited" in gap && !gap.cited ? "low" : "medium",
+      severity: covered
+        ? "low"
+        : gap.severity ?? (gap.fromLevel ? "high" : "cited" in gap && !gap.cited ? "low" : "medium"),
       ifIgnored: covered
         ? `It is on your record but not where anyone reads it, so in practice it counts for nothing.`
         : gap.ifIgnored,
