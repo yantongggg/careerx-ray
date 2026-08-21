@@ -366,10 +366,19 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
   const urgentCount = spots.filter(sp => sp.severity === "critical" || sp.severity === "high").length;
 
   /* The longest single gap, because they run in parallel — you are not
-     doing them one after another. */
-  const longestFix = [...spots]
-    .sort((a, b) => (parseInt(b.timeToFix) || 0) * (/month/i.test(b.timeToFix) ? 4 : 1)
-                  - (parseInt(a.timeToFix) || 0) * (/month/i.test(a.timeToFix) ? 4 : 1))[0]?.timeToFix;
+     doing them one after another.
+
+     `parseInt` took the first number in the string and a month counted
+     as four, so "30–60 days" weighed 30 against "6 months" at 24 and the
+     page announced that clearing a six-month leadership gap takes
+     30–60 days. Ranges are read at their upper bound, in real days. */
+  const daysOf = (t: string) => {
+    const nums = (t.match(/\d+/g) ?? []).map(Number);
+    if (!nums.length) return 0;
+    const upper = Math.max(...nums);
+    return /month/i.test(t) ? upper * 30 : /week/i.test(t) ? upper * 7 : upper;
+  };
+  const longestFix = [...spots].sort((a, b) => daysOf(b.timeToFix) - daysOf(a.timeToFix))[0]?.timeToFix;
 
   const counts = {
     critical: spots.filter(s => s.severity === "critical").length,
@@ -463,11 +472,16 @@ export function BlindSpots({ onNavigate }: { onNavigate?: (page: string) => void
             looking at the list. What the list does not say is how long
             the whole thing takes, and where the line is between the two
             that block applications today and the rest. */}
+        {/* "The top N are urgent — the rest can wait" was written for a
+            list with a tail. When every gap is urgent there is no rest,
+            and the sentence promised one. */}
         <p className="mb-6 text-base text-muted-foreground leading-relaxed max-w-3xl">
-          Hardest first. {urgentCount > 0
-            ? <>The top {urgentCount === 1 ? "one is" : `${urgentCount} are`} what gets you filtered out today — the rest can wait until {urgentCount === 1 ? "it is" : "they are"} closed.</>
-            : <>None of these are urgent, so work down the list in the order you have time for.</>}
-          {longestFix && <> Clearing everything takes around <strong className="text-foreground">{longestFix}</strong>.</>}
+          Hardest first. {urgentCount === 0
+            ? <>None of these are urgent, so work down the list in the order you have time for.</>
+            : urgentCount === spots.length
+              ? <>All {spots.length} of these get you filtered out today, so there is no easy order — start the slowest one first and run the rest alongside it.</>
+              : <>The top {urgentCount === 1 ? "one is" : `${urgentCount} are`} what gets you filtered out today — the rest can wait until {urgentCount === 1 ? "it is" : "they are"} closed.</>}
+          {longestFix && <> They run in parallel, so clearing everything takes about as long as the slowest: <strong className="text-foreground">{longestFix}</strong>.</>}
         </p>
 
         {/* Gap cards */}

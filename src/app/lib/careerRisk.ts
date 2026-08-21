@@ -575,6 +575,7 @@ export function deriveRiskCategoryChecks(profile: CareerProfile): RiskCategoryCh
 interface LevelDemand {
   skill: string;
   severity?: Severity;
+  basis?: string;
   kind: string;
   title: string;
   headline: string;
@@ -667,6 +668,10 @@ interface AuthoredGap {
   action: string;
   time: string;
   severity: Severity;
+  /** What we actually checked. Without it both authored cards fell back
+      to the same derived sentence, which is how the footer became the
+      new place all the cards looked alike. */
+  basis: string;
 }
 
 const AUTHORED_GAP: Record<string, AuthoredGap> = {
@@ -683,6 +688,8 @@ const AUTHORED_GAP: Record<string, AuthoredGap> = {
       "Build a small machine-learning project that retrains and runs by itself on a schedule — sales, churn, anything. Put the link in your portfolio.",
     time: "3–6 months",
     severity: "high",
+    basis:
+      "Your record shows Machine learning and one model shipped to production. Nothing on it mentions monitoring, retraining, or an ML platform.",
   },
   "Enterprise cloud": {
     kind: "Missing Technical Skill",
@@ -697,6 +704,8 @@ const AUTHORED_GAP: Record<string, AuthoredGap> = {
       "Take an entry-level cloud certificate — AWS Cloud Practitioner or the Google Cloud equivalent. It is the cheapest item on this list and it closes the credential gate too.",
     time: "30–60 days",
     severity: "high",
+    basis:
+      "Checked every skill and evidence item on your profile for AWS, Google Cloud or Azure. None of them appear — the same check that leaves your credential gate open.",
   },
 };
 
@@ -811,9 +820,10 @@ export function deriveTargetGaps(profile: CareerProfile, ctx: GapContext = {}): 
         ? `You have something for this already — say it plainly on your profile rather than leaving it implied.`
         : gap.action,
       timeToClose: covered ? "1 week" : gap.time,
-      basis: gap.fromLevel
-        ? `"${target}" reads as a ${level}-level title, and this is what that rung asks for on top of the field.`
-        : `Checked ${skillsChecked} skills from your résumé and ${profile.evidence.length} evidence ${profile.evidence.length === 1 ? "item" : "items"} against what ${target} postings screen on.`,
+      basis: gap.basis
+        ?? (gap.fromLevel
+          ? `"${target}" reads as a ${level}-level title, and ${gap.skill.toLowerCase()} is what that rung asks for on top of the field. Nothing on your record covers it.`
+          : `Checked ${skillsChecked} skills from your résumé and ${profile.evidence.length} evidence ${profile.evidence.length === 1 ? "item" : "items"} against what ${target} postings screen on.`),
     };
   });
 }
