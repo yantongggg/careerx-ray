@@ -164,18 +164,15 @@ export function Sidebar({ currentPage, currentRole, onNavigate, onAskTapir }: Si
           </button>
         )}
         {[
-          { icon: Bell,     label: "Notifications", badge: "2" },
+          { icon: Bell,     label: "Notifications" },
           { icon: Settings, label: "Settings"                  },
         ].map(item => (
           <button key={item.label}
-            onClick={() => demoToast(item.label === "Notifications" ? "2 notifications: Maybank interview in 2 days \u00b7 1 new live market signal" : "Settings panel coming to the full version")}
+            onClick={() => demoToast(item.label === "Notifications" ? "Nothing new right now" : "Settings panel coming to the full version")}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
           >
             <item.icon size={14} />
             <span className="flex-1 text-left">{item.label}</span>
-            {(item as any).badge && (
-              <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-semibold">{(item as any).badge}</span>
-            )}
           </button>
         ))}
         <button onClick={() => onNavigate("profile")} className="w-full flex items-center gap-3 px-3 py-2.5 mt-1 rounded-lg hover:bg-muted transition-colors text-left">

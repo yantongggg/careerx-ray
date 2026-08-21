@@ -91,12 +91,19 @@ export function PortfolioBuilder({ onNavigate }: { onNavigate?: (page: string) =
   const hasLinkedIn = profile.evidence.some(e => /linkedin\.com/i.test(e.source ?? ""));
   const [linkedinConnected, setLinkedinConnected] = useState(hasLinkedIn);
 
+  const fromLinkedIn = /linkedin/i.test(profile.resume?.fileName ?? "");
+
   const sourceSummary = [
+    /* One card per source, named for whatever actually produced the
+       record. It came from an uploaded file once; now it usually comes
+       from the LinkedIn connector, and calling that a résumé pointed at
+       the wrong place — and listed LinkedIn twice besides. */
     profile.resume && {
-      label: "Résumé", icon: FileText,
+      label: fromLinkedIn ? "LinkedIn profile" : "Résumé",
+      icon: fromLinkedIn ? Linkedin : FileText,
       detail: `${profile.resume.skills.length} skills · ${profile.resume.employers.length} employer${profile.resume.employers.length === 1 ? "" : "s"}`,
     },
-    hasLinkedIn && {
+    hasLinkedIn && !fromLinkedIn && {
       label: "LinkedIn", icon: Linkedin, detail: "Linked as a source",
     },
     githubHandle && { label: "GitHub", icon: Github, detail: `github.com/${githubHandle}` },
