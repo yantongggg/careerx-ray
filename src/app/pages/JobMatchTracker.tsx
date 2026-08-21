@@ -30,6 +30,20 @@ const TIMELINE_STAGES = ["Saved", "Applied", "Screening", "Recruiter Review", "I
    timestamps are their own.
    ──────────────────────────────────────────────────────────────── */
 
+/* Most people freeze at an empty message box with a recruiter on the
+   other end. These are the questions worth asking before an interview —
+   built from the posting so they are about this job, not generic. */
+function hrQuestions(job: { position: string; company: string; gaps: string[]; eta: string }): string[] {
+  return [
+    `What does the interview process for ${job.position} look like?`,
+    job.gaps[0]
+      ? `How important is ${job.gaps[0].toLowerCase()} for this role?`
+      : `What would make someone stand out for this role?`,
+    "Who would I be working with day to day?",
+    "Is there anything in my application you'd want me to expand on?",
+  ];
+}
+
 interface ChatMessage {
   from: "me" | "hr";
   text: string;
@@ -112,16 +126,19 @@ export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatch
   const chatJob = chatJobId ? jobs.find(j => j.id === chatJobId) : null;
   const messages = chatJobId ? (chatMessages[chatJobId] || []) : [];
 
-  const handleSendMessage = () => {
-    if (!chatInput.trim() || !chatJobId) return;
+  const sendMessage = (text: string) => {
+    const body = text.trim();
+    if (!body || !chatJobId) return;
     const now = new Date();
     const timeStr = now.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + ", " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
     setChatMessages(prev => ({
       ...prev,
-      [chatJobId]: [...(prev[chatJobId] || []), { from: "me", text: chatInput.trim(), time: timeStr }],
+      [chatJobId]: [...(prev[chatJobId] || []), { from: "me", text: body, time: timeStr }],
     }));
     setChatInput("");
   };
+
+  const handleSendMessage = () => sendMessage(chatInput);
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -397,8 +414,21 @@ export function JobMatchTracker({ onPrepareApp, onCoach, appliedJobs }: JobMatch
                   <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
                     <MessageCircle size={24} className="text-muted-foreground" />
                   </div>
-                  <p className="font-semibold text-foreground text-sm">No messages yet</p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-[220px]">Start a conversation with {chatJob.hrName} about this role.</p>
+                  <p className="font-semibold text-foreground text-sm">Not sure what to ask?</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-[260px]">
+                    {chatJob.hrName} replies in about {chatJob.hrAvgReply}. Pick one, or write your own.
+                  </p>
+                  <div className="mt-4 w-full space-y-2">
+                    {hrQuestions(chatJob).map(q => (
+                      <button
+                        key={q}
+                        onClick={() => sendMessage(q)}
+                        className="block w-full rounded-xl border border-border bg-white px-3 py-2.5 text-left text-sm text-foreground transition hover:border-primary/40 hover:bg-accent"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
               {messages.map((msg, i) => (

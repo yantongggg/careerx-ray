@@ -115,6 +115,14 @@ const pageLabels: Record<Page, string> = {
   "uni-wallet":     "Learning Wallet",
 };
 
+/* The two applications the demo persona already sent, dated so the
+   pipeline reads as a fortnight of activity rather than everything at
+   once. Ids come from the data-family corpus. */
+const DEMO_APPLICATIONS: Record<string, string> = {
+  "da-airasia-dsm": new Date(Date.now() - 11 * 864e5).toISOString(),
+  "da-cimb-snr": new Date(Date.now() - 4 * 864e5).toISOString(),
+};
+
 const allPages: Page[] = [
   "command", "stage-diagnose", "stage-decide", "stage-prepare", "stage-apply", "stage-prove",
   "dna", "dna-method", "jobs", "apply-prep", "coach", "offers", "portfolio", "architecture", "blueprint", "nextplan", "dashboard", "decisionlab", "blindspots",
