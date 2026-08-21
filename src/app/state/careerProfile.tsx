@@ -49,8 +49,16 @@ export function CareerProfileProvider({ children }: { children: ReactNode }) {
 
   const addEvidence: CareerProfileContextValue["addEvidence"] = item => {
     setProfileState(prev => {
-      // Adding the same source twice is a no-op rather than a duplicate row.
-      if (prev.evidence.some(e => e.kind === item.kind && e.source === item.source)) return prev;
+      /* Adding the same thing twice is a no-op rather than a duplicate
+         row — matched on what it is, not on where it came from.
+
+         Keying this on kind + source meant one connector could only
+         ever contribute one item per kind: a LinkedIn import of nine
+         entries, all sharing the profile URL, landed as three. Six
+         projects, a hackathon result and a conference talk were dropped
+         on the floor with no error. Re-pasting the same URL still
+         no-ops, because the labels match. */
+      if (prev.evidence.some(e => e.label === item.label && e.source === item.source)) return prev;
       return {
         ...prev,
         evidence: [

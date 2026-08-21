@@ -102,6 +102,27 @@ const TRUST_SCORE: Record<TrustLevel, number> = {
  * and everything read out of a document the user wrote themselves is
  * self-declared until an issuer confirms it.
  */
+/**
+ * Where a piece of evidence came from, said in a way a person can read.
+ *
+ * A bare "https://www.linkedin.com/in/jordanhkimm/" under every row is
+ * technically a citation and looks like a paste. The point of this page
+ * is that each item names its source, so the source has to be legible.
+ */
+function citeFrom(source: string): { label: string; href?: string } {
+  const s = (source || "").trim();
+  if (!s || s === "You" || s === "Self-declared") {
+    return { label: "you — nothing attached to check it against" };
+  }
+  if (/^https?:\/\//i.test(s)) {
+    const host = s.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/+$/, "");
+    const name = /linkedin\.com/i.test(s) ? "LinkedIn" : /github\.com/i.test(s) ? "GitHub" : host.split("/")[0];
+    return { label: `${name} · ${host}`, href: s };
+  }
+  /* A filename — the résumé it was read out of. */
+  return { label: s };
+}
+
 function entriesFrom(profile: CareerProfile): Entry[] {
   const items: Entry[] = [];
   const r = profile.resume;
@@ -122,7 +143,10 @@ function entriesFrom(profile: CareerProfile): Entry[] {
       type,
       emoji: TYPE_EMOJI[type],
       title: e.label,
-      org: e.source || "Self-declared",
+      /* The source used to sit here and render as a raw URL under the
+         title. It has its own line now, so this stays empty for
+         connected items and the citation carries it. */
+      org: "",
       date: e.addedAt,
       skills: e.skills,
       evidenceSource: e.source || "You",
@@ -280,19 +304,24 @@ function Timeline({ entries }: { entries: Entry[] }) {
                       <VerifiedBadge status={e.verified} score={e.trustScore} />
                     </div>
                     <p className="font-semibold text-foreground text-base">{e.title}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">{e.org} · {e.date}</p>
+                    {e.org && <p className="text-sm text-muted-foreground mt-0.5">{e.org} · {e.date}</p>}
+                    {/* Always visible. This was behind the chevron, which
+                        meant the one thing that makes a claim checkable
+                        only appeared if you went looking for it. */}
+                    <p className="mt-1.5 flex items-center gap-1.5 text-sm">
+                      <ExternalLink size={11} className="flex-shrink-0 text-muted-foreground" />
+                      <span className="text-muted-foreground">Cited from</span>
+                      <span className="font-medium text-foreground truncate">{citeFrom(e.evidenceSource).label}</span>
+                    </p>
                   </div>
                   <ChevronRight size={15} className={`text-muted-foreground flex-shrink-0 mt-1 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                 </button>
                 {isOpen && (
-                  <div className="border-t border-border px-5 py-4 flex items-start justify-between gap-4">
+                  <div className="border-t border-border px-5 py-4">
                     <div className="flex flex-wrap gap-1.5">
                       {e.skills.length
                         ? e.skills.map(sk => <span key={sk} className="text-xs bg-muted border border-border text-foreground px-2 py-0.5 rounded-md">{sk}</span>)
                         : <span className="text-sm text-muted-foreground">No skills attached to this one yet.</span>}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-                      <ExternalLink size={10} /> {e.evidenceSource}
                     </div>
                   </div>
                 )}
