@@ -204,15 +204,17 @@ function AppRouter() {
   const [role, setRole]         = useState<Role>("candidate");
   const [history, setHistory]   = useState<Page[]>([]);
   const [prepJobId, setPrepJobId] = useState<string | null>(null);
-  /* id → when they applied. Was a Set pre-seeded with two applications
-     the user had never made, which put a freshly-scanned account into an
-     interview loop it had no history for. */
   /* The assistant is reachable from the sidebar and from its own
      floating launcher, so its open state lives here. */
   const [chatOpen, setChatOpen] = useState(false);
   const [chatSeed, setChatSeed] = useState<string | null>(null);
   const askTapir = (question?: string) => { setChatSeed(question ?? null); setChatOpen(true); };
-  const [appliedJobs, setAppliedJobs] = useState<Record<string, string>>({});
+  /* id → when they applied. Seeded with the demo persona's three
+     applications: Offer Decision only exists once something has come
+     back, and a walkthrough cannot wait a fortnight for that.
+
+     Applying on stage still adds a fourth with its own timestamp. */
+  const [appliedJobs, setAppliedJobs] = useState<Record<string, string>>(DEMO_APPLICATIONS);
 
   const navigate = (target: string) => {
     if (target === "landing")     { setAppState("landing");     return; }

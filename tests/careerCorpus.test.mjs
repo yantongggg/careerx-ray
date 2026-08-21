@@ -231,4 +231,22 @@ for (const page of WIRED_PAGES) {
 const graph = stripComments(await readFile("src/app/pages/PositionSkillGraph.tsx", "utf8"));
 assert.ok(!graph.includes("maybank|Data Analyst"), "PositionSkillGraph must not key off fixed postings");
 
+/* Offer Decision only renders once something has been applied to, so the
+   demo persona's applications have to actually reach the state — not
+   just exist as a constant next to it, which is how they were declared
+   and then never used. */
+const app = await readFile("src/app/App.tsx", "utf8");
+const seeded = [...(app.match(/const DEMO_APPLICATIONS[\s\S]*?\};/)?.[0] ?? "")
+  .matchAll(/"([a-z0-9-]+)":/g)].map(m => m[1]);
+assert.ok(seeded.length >= 3, `expected at least 3 seeded applications, found ${seeded.length}`);
+assert.match(
+  app,
+  /useState<Record<string, string>>\(DEMO_APPLICATIONS\)/,
+  "appliedJobs must be initialised from DEMO_APPLICATIONS, or Offer Decision shows its empty state",
+);
+const demoPersona = profile({ currentRole: "Data Analyst", targetRole: "Data Science Manager", experience: "3-5 years" });
+for (const id of seeded) {
+  assert.ok(jobById(demoPersona, id), `seeded application "${id}" is not a posting in the corpus`);
+}
+
 console.log("page-wiring assertions passed");
