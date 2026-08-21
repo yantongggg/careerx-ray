@@ -394,6 +394,98 @@ export async function askChat(ctx: ChatContext, turns: ChatTurn[]): Promise<Chat
 }
 
 /** Openers offered before the user types anything. */
+/**
+ * Where to go next, after an answer.
+ *
+ * A chat that answers once and then shows an empty box asks the user to
+ * invent the next question, which is the moment most people close it.
+ * Each answer suggests two or three that follow from it, and anything
+ * already asked is dropped so the same suggestion never reappears.
+ */
+export function followUpQuestions(ctx: ChatContext, lastQuestion: string, asked: string[]): string[] {
+  const { profile, corpus } = ctx;
+  const target = profile.targetRole || "my target role";
+  const top = corpus.rankedJobs[0];
+
+  const byIntent: Partial<Record<Intent, string[]>> = {
+    risk: [
+      "How do I fix the biggest one?",
+      "Which of these should I ignore for now?",
+      `What's stopping me getting ${target}?`,
+    ],
+    salary: [
+      "How do I ask for more without an offer in hand?",
+      `What does ${target} pay?`,
+      "Is my current job worth staying in?",
+    ],
+    gap: [
+      "Which gap should I close first?",
+      "How long will that take?",
+      "What counts as proof for it?",
+    ],
+    plan: [
+      "Why that order?",
+      "What if I only have two hours a week?",
+      "What should I skip?",
+    ],
+    jobs: [
+      top ? `Am I ready for ${top.company}?` : "Which job am I closest to?",
+      "Why isn't my current role at the top?",
+      "What would raise my match the most?",
+    ],
+    evidence: [
+      "What's the fastest thing to verify?",
+      "Does a personal project count?",
+      "How much does verified actually change?",
+    ],
+    interview: [
+      "What will they push hardest on?",
+      "How do I answer a weakness honestly?",
+      "What should I ask them?",
+    ],
+    archetype: [
+      "How was that worked out?",
+      "Can my archetype change?",
+      `Does it fit ${target}?`,
+    ],
+    paths: [
+      "Which one do you actually recommend?",
+      "What if none of them appeal?",
+      "How risky is staying put?",
+    ],
+    switch: [
+      "What would I lose by moving?",
+      "How do I explain the move in an interview?",
+      "Is there a faster route?",
+    ],
+    score: [
+      "What's dragging it down most?",
+      "How high can it realistically get?",
+      "What should I do first?",
+    ],
+    compare: [
+      "What would change your answer?",
+      "Which one is riskier?",
+      `Which gets me to ${target} sooner?`,
+    ],
+    signal: [
+      "How do I cover that gap?",
+      "Is that common for my role?",
+      "What's my biggest risk right now?",
+    ],
+  };
+
+  const intent = classify(lastQuestion);
+  const pool = byIntent[intent] ?? [
+    "What's my biggest risk right now?",
+    "What should I do first?",
+    `What's stopping me getting ${target}?`,
+  ];
+
+  const seen = new Set(asked.map(q => q.trim().toLowerCase()));
+  return pool.filter(q => !seen.has(q.trim().toLowerCase())).slice(0, 3);
+}
+
 export function starterQuestions(profile: CareerProfile): string[] {
   const target = profile.targetRole || "my target role";
   return [

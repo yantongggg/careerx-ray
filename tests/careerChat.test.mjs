@@ -142,4 +142,29 @@ assert.match(ask(dev, "do I have enough evidence?"), /evidence|word alone|verifi
 assert.match(ask(dev, "what are my gaps?"), /Data Science Manager|gap/i);
 assert.match(ask(dev, "am I underpaid?"), /RM/);
 
+/* ── Follow-ups keep the conversation going ───────────────────── */
+
+const { followUpQuestions } = await loadTs("src/app/lib/careerChat.ts");
+
+for (const q of ["What's my biggest risk right now?", "am I underpaid?", "which job am I closest to?"]) {
+  const ups = followUpQuestions(dev, q, [q]);
+  assert.ok(ups.length >= 2, `"${q}" offered too few follow-ups`);
+  assert.ok(ups.every(u => u.trim().endsWith("?")), "follow-ups must be questions");
+  assert.ok(!ups.includes(q), "the question just asked must not be offered again");
+  /* Every suggestion has to be answerable, or it is a dead end. */
+  for (const u of ups) assert.ok(ask(dev, u).length > 40, `follow-up has no real answer: ${u}`);
+}
+
+/* They follow from the answer, not a fixed list. */
+assert.notDeepEqual(
+  followUpQuestions(dev, "am I underpaid?", []),
+  followUpQuestions(dev, "which job am I closest to?", []),
+  "follow-ups must depend on what was just asked",
+);
+
+/* Anything already asked drops out, so nothing repeats across a thread. */
+const first = followUpQuestions(dev, "What's my biggest risk right now?", []);
+const second = followUpQuestions(dev, "What's my biggest risk right now?", [first[0]]);
+assert.ok(!second.includes(first[0]), "an asked follow-up must not reappear");
+
 console.log("careerChat tests passed");

@@ -5,7 +5,7 @@ import { useCareerProfile } from "../state/careerProfile";
 import { useIntelligence } from "../state/intelligence";
 import { corpusFor } from "../lib/careerCorpus";
 import {
-  askChat, starterQuestions,
+  askChat, followUpQuestions, starterQuestions,
   type ChatSource, type ChatTurn,
 } from "../lib/careerChat";
 
@@ -61,6 +61,15 @@ export function CareerChat({ page, open, onOpenChange, seed, onSeedConsumed }: C
   const inputRef = useRef<HTMLInputElement>(null);
 
   const starters = starterQuestions(profile);
+  const ctx = { profile, corpus: corpusFor(profile), risks, targetGaps, scorecard, page };
+
+  /* Offered after the latest answer, never after the user's own message
+     — suggesting a next question while one is still being answered
+     reads as impatience. */
+  const askedSoFar = turns.filter(t => t.role === "user").map(t => t.content);
+  const followUps = !pending && turns.length > 0 && turns[turns.length - 1].role === "assistant"
+    ? followUpQuestions(ctx, askedSoFar[askedSoFar.length - 1] ?? "", askedSoFar)
+    : [];
 
   /* Keep the newest message in view as the thread grows. */
   useEffect(() => {
@@ -97,7 +106,6 @@ export function CareerChat({ page, open, onOpenChange, seed, onSeedConsumed }: C
     setInput("");
     setPending(true);
 
-    const ctx = { profile, corpus: corpusFor(profile), risks, targetGaps, scorecard, page };
     const answer = await askChat(ctx, next.map(({ role, content }) => ({ role, content })));
 
     setTurns(prev => [...prev, {
@@ -224,6 +232,20 @@ export function CareerChat({ page, open, onOpenChange, seed, onSeedConsumed }: C
                 </div>
               )
             ))}
+
+            {followUps.length > 0 && (
+              <div className="space-y-2 pl-9">
+                {followUps.map(q => (
+                  <button
+                    key={q}
+                    onClick={() => send(q)}
+                    className="block w-full rounded-xl border border-border bg-white px-3 py-2 text-left text-sm text-foreground transition hover:border-primary/40 hover:bg-accent"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {pending && (
               <div className="flex gap-2.5">
