@@ -304,26 +304,7 @@ export function CareerDna({ onNavigate }: { onNavigate?: (page: string) => void 
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_0.9fr] gap-6">
-          <section className="bg-white border border-border rounded-xl p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <Brain size={17} className="text-muted-foreground" />
-              <h2 className="font-semibold text-foreground">Career Calibration sample</h2>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Short scenario questions reduce over-reliance on GitHub and LinkedIn, especially for non-technical users.
-            </p>
-            <div className="space-y-3">
-              {calibrationQuestions.map((item, i) => (
-                <div key={item.q} className="border border-border rounded-xl p-4">
-                  <p className="text-xs font-semibold text-muted-foreground mb-1">Q{i + 1}</p>
-                  <p className="text-sm font-semibold text-foreground">{item.q}</p>
-                  <p className="text-xs text-primary mt-2">Selected: {item.selected}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Maps to: {item.mapsTo}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+        <div className="grid gap-6">
 
           <section className="bg-white border border-border rounded-xl p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
